@@ -1,7 +1,7 @@
 export const WORKSPACE_ID = 'c8748032-cdd3-443b-8c56-2e846cc9bf31'
-export const TABLES = { businesses: 'cc_businesses', listings: 'cc_listings', emails: 'cc_emails', tasks: 'cc_tasks' }
+export const TABLES = { businesses: 'cc_businesses', listings: 'cc_listings', emails: 'cc_emails', tasks: 'cc_tasks', purchases: 'cc_purchases' }
 export const STAGES = ['New', 'Contacted', 'Discovery', 'Proposal', 'Won', 'Lost']
-export const emptyData = () => ({ businesses: [], listings: [], emails: [], tasks: [] })
+export const emptyData = () => ({ businesses: [], listings: [], emails: [], tasks: [], purchases: [] })
 export const currency = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(value) || 0)
 export function localDay(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -47,7 +47,7 @@ export function messageSummary(record) {
   return { sender: '', summary: record.notes || '', next_action: '', follow_up_on: '', response_status: 'No action', verification: 'Unverified' }
 }
 export function businessMessages(data, businessId) {
-  return data.emails.filter(e => e.business_id === businessId).sort((a, b) =>
+  return data.emails.filter(e => (e.business_id === businessId || (e.related_business_ids || []).includes(businessId))).sort((a, b) =>
     (b.occurred_on || '').localeCompare(a.occurred_on || '') || (b.created_at || '').localeCompare(a.created_at || '') || String(a.id).localeCompare(String(b.id)))
 }
 function validDay(value) {
@@ -70,8 +70,10 @@ export function cleanPayload(kind, draft) {
     if (result && !safeUrl(result)) throw new Error('Links must begin with https:// or http://.')
     return result
   }
+  const list = value => [...new Set((Array.isArray(value) ? value : String(value || '').split(',' )).map(v => String(v).trim()).filter(Boolean))]
   let payload
   if (kind === 'businesses') payload = {
+    description: text(draft.description), categories: list(draft.categories), social_urls: list(draft.social_urls).map(url), image_url: url(draft.image_url),
     name: text(draft.name, 200), contact_name: text(draft.contact_name, 200), email: email(draft.email), phone: text(draft.phone, 80),
     address: text(draft.address, 500), city: text(draft.city, 100), website: url(draft.website), kind: draft.kind,
     status: draft.status, stage: draft.stage, monthly_fee: number(draft.monthly_fee), deal_value: number(draft.deal_value), notes: text(draft.notes),
@@ -79,12 +81,14 @@ export function cleanPayload(kind, draft) {
   if (kind === 'listings') payload = {
     business_id: draft.business_id || null, site: draft.site, title: text(draft.title, 200), city: text(draft.city, 100),
     pages: Array.isArray(draft.pages) ? draft.pages : text(draft.pages, 2000).split(',').map(p => p.trim()).filter(Boolean),
-    url: url(draft.url), status: draft.status, description: text(draft.description),
+    url: url(draft.url), status: draft.status, description: text(draft.description), added_on: draft.added_on || null,
   }
   if (kind === 'emails') payload = {
+    occurred_at: draft.occurred_at || null, message_type: draft.message_type || 'Human', source_message_id: text(draft.source_message_id, 1000), related_business_ids: Array.isArray(draft.related_business_ids) ? draft.related_business_ids : [],
     business_id: draft.business_id || null, recipient: email(draft.recipient), subject: text(draft.subject, 300),
     direction: draft.direction, status: draft.status, occurred_on: draft.occurred_on || null, campaign: text(draft.campaign, 200), notes: text(draft.notes),
   }
+  if (kind === 'purchases') payload = { business_id: draft.business_id || null, product: text(draft.product, 200), purchased_on: draft.purchased_on || null, amount: number(draft.amount), status: draft.status, notes: text(draft.notes) }
   if (kind === 'tasks') payload = {
     business_id: draft.business_id || null, title: text(draft.title, 200), type: draft.type, status: draft.status,
     due_date: draft.due_date || null, assignee: text(draft.assignee, 100), priority: draft.priority, notes: text(draft.notes),
@@ -105,13 +109,15 @@ export function cleanPayload(kind, draft) {
     payload.notes = encoded
   }
   if (!payload) throw new Error('Unknown record type.')
-  if (!(payload.name || payload.title || payload.subject)) throw new Error('A name, title, or subject is required.')
+  if (!(payload.name || payload.title || payload.subject || payload.product)) throw new Error('A name, title, or subject is required.')
   if (kind === 'listings' && !payload.business_id) throw new Error('Choose the business this listing belongs to.')
   if (kind === 'emails' && !payload.recipient) throw new Error('An email address is required.')
   if (kind === 'emails' && ['Sent', 'Replied'].includes(payload.status) && !payload.occurred_on) throw new Error('Record the date for a sent message or reply.')
   if (kind === 'emails' && payload.direction === 'Inbound' && payload.status === 'Draft') throw new Error('An inbound message cannot be a draft.')
   if (kind === 'tasks' && payload.type === 'Follow-up' && !payload.due_date) throw new Error('Choose a follow-up date.')
-  for (const field of ['due_date', 'occurred_on']) {
+  if (kind === 'purchases' && (!payload.business_id || !payload.purchased_on)) throw new Error('Choose a business and the actual purchase date.')
+  if (kind === 'businesses' && (payload.categories.length > 40 || payload.categories.join(',').length > 2000 || payload.social_urls.length > 30 || payload.social_urls.join(',').length > 6000)) throw new Error('Shorten the category or social account list.')
+  for (const field of ['due_date', 'occurred_on', 'added_on', 'purchased_on']) {
     if (payload[field] && !validDay(payload[field])) throw new Error('Choose a valid date.')
   }
   return payload

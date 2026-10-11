@@ -6,11 +6,11 @@ The application is built from Michelle's uploaded React/Vite project. Original n
 
 The hosted application can be opened and explored in Practice mode. Practice data is fictional, stays in memory, is never sent to Supabase, and resets on reload or leaving the workspace. Do not use it for real client information.
 
-Live mode uses your existing Supabase project. The browser-safe publishable key, live database schema, and approved account user IDs were not supplied. No live migration, account creation, contact import, or inbox connection has been performed. A screenshot of a healthy project is not database-administrator access.
+Live mode uses your existing Supabase project. The existing live project is connected, migrations are applied, and Michelle has verified owner access. Website inventory and reviewed MKT Gmail summaries have been saved. See LIVE_SETUP_STATUS.md and DATABASE_MANAGEMENT.md for verified scope and remaining account/inbox settings.
 
 ## 1. Apply the database migration
 
-In your existing Supabase project, open SQL Editor > New query. Review and run supabase/migrations/202610110001_command_center.sql (also downloadable as /setup/database.sql from the app).
+In your existing Supabase project, open SQL Editor > New query. For a new empty database, review and run the ordered migrations in supabase/migrations (combined download: /setup/database.sql). For an existing database, apply only migrations not already applied. The connected live project already has all four migrations.
 
 It adds isolated cc_ tables with row-level security, member-only reads, owner/editor writes, no anonymous access, no browser membership editing, and an append-only audit log. It stops before any changes if Command Center tables already exist. If it stops, inspect existing tables instead of dropping them. Take an appropriate project backup before applying production migrations. Local PostgreSQL security tests do not replace a live-project verification.
 
@@ -52,8 +52,10 @@ No service worker caches confidential records. A web manifest is supplied; full 
 
 ## Actions needing access or approval
 
-Blocked by missing access/settings: live migration, approved Auth account creation, membership IDs, publishable key, and live persistence/RLS verification.
+Remaining: verified separate Loving Longmont Gmail connection; approved Tim/Kayli accounts, membership and hosted sharing; disable public signup and enable leaked-password protection in Supabase Auth settings.
 
-Separate approval required: sending any email; enabling automatic outreach, mailbox access, background notifications; importing real contact files; changing Site sharing to partners/public; changing existing community websites; merging the review branch into main. No such actions were performed.
+Separate authorization is required for sending emails, deleting records, changing hosted sharing, unrequested public website edits and merging the draft PR. The user has authorized database management, past business-message summary imports and publication-linked database records. No emails were sent.
 
 Cloudflare Pages account access and project selection are needed to deploy on Michelle's own Cloudflare account. The current private Site link is usable for review.
+
+Existing databases that already applied the initial migration need migrations 202610110002 through 202610110004, in order. They have already been applied to the connected live project. For a new empty database, the downloadable setup/database.sql now includes all four migrations. Do not rerun the initial migration over an existing database.

@@ -1,17 +1,15 @@
-# Review and authorization record
+# Completed work and remaining authorizations
 
-## Completed within the requested scope
+The user authorized completing the existing app, preserving data, secure database setup, business and listing imports, reviewing archived business conversations and saving brief summaries, managing individual/selected/all records, recording source-confirmed replies/purchases/follow-ups, verifying saved changes, and adding database records with newly published listings.
 
-Preserved the original upload; extended the React/Vite app; prepared an additive Supabase migration; implemented password sign-in, database membership verification, clients/prospects, two listing registers, manual email tracking, due-date reminders, pipeline, tasks, dashboard and CSV reports. Prepared a separate GitHub review branch and owner-private hosted app. No credentials are committed and no emails are sent.
+The existing project is connected. Four ordered migrations are applied. Directory enrichment and historical business-message summary imports are saved and verified. The GitHub merge-triggered listing automation is enabled; DATABASE_MANAGEMENT.md documents its limits. No credentials or actual customer import/message data are in source. No emails or invitations were sent. Existing website content and the GitHub default branch are preserved.
 
-## Live setup and remaining actions
+Remaining actions:
 
-Michelle applied the initial migration, approved her owner membership, signed in and confirmed persistence after refresh. No admin credentials are available to this agent. Public signup still needs disabling at the last verified setting. Tim/Kayli memberships and hosted sharing remain outstanding. Message summaries use the existing protected table; no additional SQL or approval is needed for this update. No historical messages have been imported.
+- Connect and verify the separate Loving Longmont Gmail mailbox before reviewing its remaining history.
+- Verify Tim/Kayli account identities, add their approved memberships and explicitly share the hosted app with them.
+- Disable public signup and enable leaked-password protection in Supabase Auth settings. Database tools do not expose these account settings.
+- Review and merge the draft GitHub pull request when ready.
+- Explicitly authorize any outgoing email, destructive deletion or additional public website change.
 
-## Concrete review items
-
-1. Review supabase/migrations/202610110001_command_center.sql before applying it on the existing project. User request authorizes database setup; execution is blocked by missing admin access, not by an additional approval requirement.
-2. Verify Michelle, Tim and Kayli's account emails and UUIDs before filling supabase/members.example.sql. No signup or invitation emails are triggered by the application.
-3. Review the GitHub pull request before merging to main. Existing main is retained.
-4. Keep the hosted Site owner-private until sharing with partners is explicitly directed. Partner database membership does not override the hosting audience.
-5. Any future email sending, inbox integration, contact import, automatic reminders, or changes to Loving Longmont/MKT Colorado public websites require an explicit follow-up instruction.
+These are concrete access/settings boundaries. No authorized database update was deferred for an extra approval. No paid purchases were inferred from free outreach.

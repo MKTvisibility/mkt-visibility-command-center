@@ -15,12 +15,15 @@ test('real PostgreSQL migration and RLS exercise approved, anonymous, revoked an
  await db.exec(`create role anon; create role authenticated; create schema auth; create table auth.users(id uuid primary key); create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$; grant usage on schema auth to authenticated,anon; grant execute on function auth.uid() to authenticated,anon;`)
  const migration=readFileSync(new URL('../supabase/migrations/202610110001_command_center.sql',import.meta.url),'utf8')
  await db.exec(migration)
+ await db.exec(readFileSync(new URL('../supabase/migrations/202610110002_business_profiles.sql',import.meta.url),'utf8'))
+ await db.exec(readFileSync(new URL('../supabase/migrations/202610110003_message_types.sql',import.meta.url),'utf8'))
+ await db.exec(readFileSync(new URL('../supabase/migrations/202610110004_restrict_event_trigger.sql',import.meta.url),'utf8'))
  await db.exec(`insert into auth.users values('${editor}'),('${viewer}'),('${stranger}'); insert into public.cc_workspaces values('${otherWorkspace}','Other workspace'); insert into public.cc_members(workspace_id,user_id,display_name,role) values ('${workspace}','${editor}','Editor','editor'),('${workspace}','${viewer}','Viewer','viewer');`)
  const asUser=async(user,role='authenticated')=>{await db.exec(`reset role; select set_config('request.jwt.claim.sub','${user}',false); set role ${role};`)}
  const rows=async(query)=> (await db.query(query)).rows
- await t.test('all seven application tables have row-level security',async()=>{
+ await t.test('all eight application tables have row-level security',async()=>{
   const result=await rows("select relname from pg_class where relname like 'cc_%' and relkind='r' and relrowsecurity")
-  assert.equal(result.length,7)
+  assert.equal(result.length,8)
  })
  await t.test('approved editor can create, read, update and trigger an immutable audit entry',async()=>{
   await asUser(editor)
@@ -40,7 +43,7 @@ test('real PostgreSQL migration and RLS exercise approved, anonymous, revoked an
  })
  await t.test('unapproved user cannot read or write records, audit log or workspace',async()=>{
   await asUser(stranger)
-  for(const table of ['cc_businesses','cc_listings','cc_emails','cc_tasks','cc_audit_log','cc_workspaces','cc_members'])assert.equal((await rows(`select * from ${table}`)).length,0)
+  for(const table of ['cc_businesses','cc_listings','cc_emails','cc_tasks','cc_purchases','cc_audit_log','cc_workspaces','cc_members'])assert.equal((await rows(`select * from ${table}`)).length,0)
   await assert.rejects(()=>db.exec("insert into cc_businesses(name) values('Blocked')"),/row-level security/)
  })
  await t.test('anonymous callers have no table or access-function privileges',async()=>{
@@ -73,6 +76,15 @@ test('real PostgreSQL migration and RLS exercise approved, anonymous, revoked an
   await assert.rejects(()=>db.exec("insert into cc_tasks(title,type) values('Bad','Follow-up')"),/check constraint/)
   await assert.rejects(()=>db.exec("insert into cc_emails(recipient,subject,status) values('test@example.com','Bad','Sent')"),/check constraint/)
   await assert.rejects(()=>db.exec(`insert into cc_listings(business_id,site,title) values('${stranger}','MKT Colorado','Bad')`),/foreign key constraint/)
+ })
+ await t.test('profile fields, purchases and message deduplication preserve workspace boundaries',async()=>{
+  await asUser(editor)
+  await db.exec(`update cc_businesses set description='Website description',categories=array['Restaurants','Pizza'],social_urls=array['https://instagram.com/example'] where id='${business}'; insert into cc_purchases(business_id,product,purchased_on,amount,status) values('${business}','Listing upgrade','2026-10-10',50,'Paid'); insert into cc_emails(business_id,related_business_ids,source_message_id,recipient,subject,status,occurred_on) values('${business}',array['${business}']::uuid[],'unique-message','test@example.com','Source message','Sent','2026-10-10');`)
+  await assert.rejects(()=>db.exec(`insert into cc_emails(source_message_id,recipient,subject) values('unique-message','test@example.com','Duplicate')`),/unique constraint/)
+  await assert.rejects(()=>db.exec(`insert into cc_emails(related_business_ids,recipient,subject) values(array['${stranger}']::uuid[],'test@example.com','Invalid link')`),/Related businesses/)
+  await asUser(viewer)
+  assert.equal((await rows('select * from cc_purchases')).length,1)
+  await assert.rejects(()=>db.exec(`insert into cc_purchases(business_id,product,purchased_on) values('${business}','Blocked','2026-10-10')`),/row-level security/)
  })
  await t.test('revoking membership blocks subsequent reads and writes',async()=>{
   await db.exec(`reset role; update cc_members set enabled=false where user_id='${editor}';`)
