@@ -43,3 +43,8 @@ test('paid listings disclose only explicitly checked fields and cap the gallery 
  value.notes=JSON.stringify({format:'mkt-portfolio-v1',publicationOptions:{tier:'Paid',fields:{}}})
  assert.equal(publicBusiness(value).email,'');assert.deepEqual(publicBusiness(value).social_urls,[])
 })
+test('legacy Colorado div cards such as Akron update and remove without changing neighboring cards',()=>{
+ const old='<section><div class="business-grid"><div class="business-card"><div class="business-photo">🌱</div><div class="business-body"><div class="business-type">Farm</div><h3>Test &amp; Shop</h3><p>Old</p><div class="business-meta">Old phone</div><div class="business-links"><a href="https://example.com">Visit</a></div></div></div><div class="business-card"><div class="business-body"><h3>Keep Neighbor</h3></div></div></div></section>'
+ const update=updatePage(old,b,'MKT Colorado',{path:'akron.html'},'publish');assert.equal(update.count,1);assert.ok(update.html.includes('class="business-photo"'));assert.ok(update.html.includes('class="business-card"'));assert.ok(update.html.includes('Keep Neighbor'));assert.ok(!update.html.includes('Old phone'))
+ const removal=updatePage(old,b,'MKT Colorado',{path:'akron.html'},'remove');assert.equal(removal.count,1);assert.ok(!removal.html.includes('Test &amp; Shop'));assert.ok(removal.html.includes('<h3>Keep Neighbor</h3>'));assert.ok(removal.html.endsWith('</div></section>'))
+})

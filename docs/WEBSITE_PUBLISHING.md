@@ -22,3 +22,5 @@ Existing website inventory URLs select the pages to update. For a new placement,
 ## Public field selections
 
 Free listings default to name, description, one main photo, address, phone and website. The name is required; other fields can be unchecked. Paid listings allow explicit opt-in to public email, social media links, category labels and up to four additional photos. Paid selection does not verify payment or change pricing. The server enforces these selections against saved business metadata. Switching back to Free excludes all paid extras without deleting their saved internal values. No internal notes, tasks, private contact name or billing fields can be selected for publication.
+
+Preview reads the public GitHub source and works before write credentials are connected. Without credentials, the preview clearly disables publishing/removal. Authorized writes still require server-only repository credentials.

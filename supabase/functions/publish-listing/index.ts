@@ -28,15 +28,15 @@ export async function handle(req:Request){
   if(!['preview','publish','remove'].includes(input.action))throw Error('Choose preview, publish or remove.')
   if(!/^[0-9a-f-]{36}$/i.test(input.businessId||''))throw Error('Choose a saved business.')
   if(!Array.isArray(input.sites)||input.sites.length<1||input.sites.length>2||new Set(input.sites).size!==input.sites.length||input.sites.some((s:string)=>!SITES[s]))throw Error('Choose Loving Longmont, MKT Colorado or both.')
-  if(input.sites.some((s:string)=>!ready[s]))return response({error:'Website publishing needs secure GitHub credentials in Supabase. Image uploads and saving changes are available; live publishing is not connected yet.',setupRequired:true},503)
+  if(input.action!=='preview'&&input.sites.some((s:string)=>!ready[s]))return response({error:'Website publishing needs secure GitHub credentials in Supabase. Image uploads and saving changes are available; live publishing is not connected yet.',setupRequired:true},503)
   const businesses=await read('cc_businesses',`workspace_id=eq.${WORKSPACE}&id=eq.${input.businessId}&select=*`);const raw=businesses[0];if(!raw)return response({error:'Business not found in your workspace.'},404)
   const operation=input.action==='remove'||input.intent==='remove'?'remove':'publish'
   const b=publicBusiness(operation==='remove'?{id:raw.id,name:raw.name}:raw);const listings=await read('cc_listings',`workspace_id=eq.${WORKSPACE}&business_id=eq.${input.businessId}&status=neq.Archived&select=site,url,title`)
   let notes={};try{notes=JSON.parse(raw.notes||'{}')||{}}catch{/* legacy plain notes */}
   const plans=[]
   for(const site of input.sites){
-   const config=SITES[site];const token=Deno.env.get(config.secret)!
-   const git=async(path:string,method='GET',body?:unknown)=>{const r=await fetch(`https://api.github.com/repos/${config.repo}/${path}`,{method,headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});if(!r.ok)throw Error(`${site}: GitHub operation failed (${r.status}). Check publishing access or retry after reviewing changes.`);return r.json()}
+   const config=SITES[site];const token=Deno.env.get(config.secret)||''
+   const git=async(path:string,method='GET',body?:unknown)=>{const r=await fetch(`https://api.github.com/repos/${config.repo}/${path}`,{method,headers:{...(token?{Authorization:'Bearer '+token}:{}),'User-Agent':'MKT-Command-Center',Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});if(!r.ok)throw Error(`${site}: GitHub operation failed (${r.status}). Check publishing access or retry after reviewing changes.`);return r.json()}
    const targets=new Map();for(const l of listings.filter((l:{site:string})=>l.site===site)){if(l.url){const t=pageTarget(site,l.url);targets.set(t.path,t)}}
    for(const url of [...((notes as any).publicationResults?.[site]?.pages||[]),...(input.extraUrls?.[site]||[])]){const t=pageTarget(site,url);targets.set(t.path,t)}
    if(!targets.size)throw Error(`${site}: add the page URL and category section before publishing.`)
@@ -55,7 +55,7 @@ export async function handle(req:Request){
    plans.push({site,repo:config.repo,parent,tree:commit.tree.sha,files,git})
   }
   const signature=await fingerprint({business:b,operation,plans:plans.map(p=>({site:p.site,parent:p.parent,files:p.files.map(f=>({path:f.path,sha:f.oldSha,content:f.content}))}))})
-  const preview={signature,business:b,operation,sites:plans.map(p=>({site:p.site,pages:p.files.map(f=>({url:f.url,path:f.path,count:f.count}))}))}
+  const preview={signature,business:b,operation,canPublish:input.sites.every((s:string)=>ready[s]),connectionMessage:input.sites.every((s:string)=>ready[s])?'':'Preview is ready. Live publishing and removal still need the secure GitHub connection.',sites:plans.map(p=>({site:p.site,pages:p.files.map(f=>({url:f.url,path:f.path,count:f.count}))}))}
   if(input.action==='preview')return response(preview)
   if(input.signature!==signature)return response({error:'The business or website changed after preview. Preview again before publishing.'},409)
   const results=[]
