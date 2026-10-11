@@ -26,9 +26,14 @@ export function liveRepository(client) {
     },
     async save(kind, draft) {
       const payload = { ...cleanPayload(kind, draft), workspace_id: WORKSPACE_ID }
-      const table = client.from(TABLES[kind])
+      const table = client.from(kind === 'business_notes' ? 'cc_businesses' : TABLES[kind])
       const query = draft.id ? table.update(payload).eq('id', draft.id).eq('workspace_id', WORKSPACE_ID) : table.insert(payload)
+      if (kind === 'business_notes') {
+        if (!draft.id) throw new Error('Choose a business before saving notes.')
+        query.eq('internal_notes', draft.previous_notes || '')
+      }
       const { data, error } = await query.select().single()
+      if (kind === 'business_notes' && error?.code === 'PGRST116') throw new Error('These notes changed or access was lost. Copy your draft, reload the profile and try again.')
       if (error) throw error
       return data
     },
@@ -43,11 +48,18 @@ export function demoRepository(initial = sampleData()) {
     async load() { return structuredClone(data) },
     async save(kind, draft) {
       const payload = cleanPayload(kind, draft)
+      if (kind === 'business_notes') {
+        const business = data.businesses.find(b => b.id === draft.id)
+        if (!business) throw new Error('Business not found.')
+        if ((business.internal_notes || '') !== (draft.previous_notes || '')) throw new Error('These notes changed. Reload the profile and try again.')
+        business.internal_notes = payload.internal_notes; business.updated_at = new Date().toISOString()
+        return structuredClone(business)
+      }
       const record = { ...payload, id: draft.id || crypto.randomUUID(), workspace_id: WORKSPACE_ID, created_at: draft.created_at || new Date().toISOString(), updated_at: new Date().toISOString() }
       const index = data[kind].findIndex(r => r.id === record.id)
       if (index < 0) data[kind].unshift(record)
-      else data[kind][index] = record
-      return structuredClone(record)
+      else data[kind][index] = { ...data[kind][index], ...record }
+      return structuredClone(data[kind].find(r => r.id === record.id))
     },
   }
 }

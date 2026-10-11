@@ -52,3 +52,10 @@
 .activity-row small,.directory-link small{font-size:12px;line-height:1.7}
 .info{line-height:1.8}
 @media(max-width:650px){.business-profile{padding:20px}.business-profile>article,.message-timeline article{padding:16px}.profile-details{grid-template-columns:1fr}.business-profile>.section-head:first-child h2{font-size:21px}.detail-text{font-size:14px}.message-timeline li{padding-left:12px}}
+
+.internal-notes{margin-top:32px;padding-top:24px;border-top:1px solid #e1e8ed}
+.internal-notes .section-head{flex-wrap:wrap;align-items:center}
+.internal-notes .section-head h3{margin:0}
+.internal-notes>.message-text{margin:18px 0;padding:20px 22px;background:#fffaf0;border:1px solid #eee2c6;border-radius:9px;line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere}
+.internal-notes form{margin-top:20px;gap:12px}
+.internal-notes textarea{line-height:1.8;margin-top:0;min-height:180px}

@@ -18,6 +18,7 @@ test('real PostgreSQL migration and RLS exercise approved, anonymous, revoked an
  await db.exec(readFileSync(new URL('../supabase/migrations/202610110002_business_profiles.sql',import.meta.url),'utf8'))
  await db.exec(readFileSync(new URL('../supabase/migrations/202610110003_message_types.sql',import.meta.url),'utf8'))
  await db.exec(readFileSync(new URL('../supabase/migrations/202610110004_restrict_event_trigger.sql',import.meta.url),'utf8'))
+ await db.exec(readFileSync(new URL('../supabase/migrations/202610110005_internal_notes.sql',import.meta.url),'utf8'))
  await db.exec(`insert into auth.users values('${editor}'),('${viewer}'),('${stranger}'); insert into public.cc_workspaces values('${otherWorkspace}','Other workspace'); insert into public.cc_members(workspace_id,user_id,display_name,role) values ('${workspace}','${editor}','Editor','editor'),('${workspace}','${viewer}','Viewer','viewer');`)
  const asUser=async(user,role='authenticated')=>{await db.exec(`reset role; select set_config('request.jwt.claim.sub','${user}',false); set role ${role};`)}
  const rows=async(query)=> (await db.query(query)).rows
@@ -79,11 +80,14 @@ test('real PostgreSQL migration and RLS exercise approved, anonymous, revoked an
  })
  await t.test('profile fields, purchases and message deduplication preserve workspace boundaries',async()=>{
   await asUser(editor)
-  await db.exec(`update cc_businesses set description='Website description',categories=array['Restaurants','Pizza'],social_urls=array['https://instagram.com/example'] where id='${business}'; insert into cc_purchases(business_id,product,purchased_on,amount,status) values('${business}','Listing upgrade','2026-10-10',50,'Paid'); insert into cc_emails(business_id,related_business_ids,source_message_id,recipient,subject,status,occurred_on) values('${business}',array['${business}']::uuid[],'unique-message','test@example.com','Source message','Sent','2026-10-10');`)
+  await db.exec(`update cc_businesses set internal_notes='Team notes only',description='Website description',categories=array['Restaurants','Pizza'],social_urls=array['https://instagram.com/example'] where id='${business}'; insert into cc_purchases(business_id,product,purchased_on,amount,status) values('${business}','Listing upgrade','2026-10-10',50,'Paid'); insert into cc_emails(business_id,related_business_ids,source_message_id,recipient,subject,status,occurred_on) values('${business}',array['${business}']::uuid[],'unique-message','test@example.com','Source message','Sent','2026-10-10');`)
   await assert.rejects(()=>db.exec(`insert into cc_emails(source_message_id,recipient,subject) values('unique-message','test@example.com','Duplicate')`),/unique constraint/)
   await assert.rejects(()=>db.exec(`insert into cc_emails(related_business_ids,recipient,subject) values(array['${stranger}']::uuid[],'test@example.com','Invalid link')`),/Related businesses/)
   await asUser(viewer)
   assert.equal((await rows('select * from cc_purchases')).length,1)
+  assert.equal((await rows('select internal_notes from cc_businesses'))[0].internal_notes,'Team notes only')
+  await db.exec("update cc_businesses set internal_notes='Blocked'")
+  assert.equal((await rows('select internal_notes from cc_businesses'))[0].internal_notes,'Team notes only')
   await assert.rejects(()=>db.exec(`insert into cc_purchases(business_id,product,purchased_on) values('${business}','Blocked','2026-10-10')`),/row-level security/)
  })
  await t.test('revoking membership blocks subsequent reads and writes',async()=>{

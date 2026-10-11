@@ -225,3 +225,5 @@ alter table public.cc_emails add column occurred_at timestamptz,
 commit;
 
 begin; do $$ begin if to_regprocedure('public.rls_auto_enable()') is not null then revoke execute on function public.rls_auto_enable() from public,anon,authenticated; end if; end $$; commit;
+
+begin; alter table public.cc_businesses add column internal_notes text not null default '' check(char_length(internal_notes)<=10000); commit;

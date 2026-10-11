@@ -79,3 +79,14 @@ test('client timeline isolates business records and sorts message dates without 
  assert.deepEqual(businessMessages(data,'one').map(e=>e.id),['d','c','a'])
  assert.equal(data.emails[0].occurred_on,null)
 })
+
+test('internal notes are isolated and stale edits cannot overwrite another save',async()=>{
+ const repo=demoRepository({businesses:[{id:'notes-business',name:'Sample',kind:'Prospect',status:'Active',stage:'New',notes:'Research preserved',internal_notes:''}],listings:[],emails:[],tasks:[],purchases:[]})
+ const updated=await repo.save('business_notes',{id:'notes-business',previous_notes:'',internal_notes:'Team only\nSecond line'})
+ assert.equal(updated.notes,'Research preserved');assert.equal(updated.internal_notes,'Team only\nSecond line')
+ await assert.rejects(()=>repo.save('business_notes',{id:'notes-business',previous_notes:'',internal_notes:'Stale overwrite'}),/notes changed/)
+ await repo.save('businesses',{...updated,name:'Renamed'})
+ assert.equal((await repo.load()).businesses[0].internal_notes,'Team only\nSecond line')
+ assert.deepEqual(cleanPayload('business_notes',{internal_notes:'Note',description:'Do not change'}),{internal_notes:'Note'})
+ assert.throws(()=>cleanPayload('business_notes',{internal_notes:'x'.repeat(10001)}),/10,000/)
+})

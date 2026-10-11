@@ -2,7 +2,7 @@
 
 The user authorized completing the existing app, preserving data, secure database setup, business and listing imports, reviewing archived business conversations and saving brief summaries, managing individual/selected/all records, recording source-confirmed replies/purchases/follow-ups, verifying saved changes, and adding database records with newly published listings.
 
-The existing project is connected. Four ordered migrations are applied. Directory enrichment and historical business-message summary imports are saved and verified. The GitHub merge-triggered listing automation is enabled; DATABASE_MANAGEMENT.md documents its limits. No credentials or actual customer import/message data are in source. No emails or invitations were sent. Existing website content and the GitHub default branch are preserved.
+The existing project is connected. Five ordered migrations are applied. Directory enrichment and historical business-message summary imports are saved and verified. The GitHub merge-triggered listing automation is enabled; DATABASE_MANAGEMENT.md documents its limits. No credentials or actual customer import/message data are in source. No emails or invitations were sent. Existing website content and the GitHub default branch are preserved.
 
 Remaining actions:
 

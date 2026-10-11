@@ -54,6 +54,11 @@ function validDay(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value
 }
 export function cleanPayload(kind, draft) {
+  if (kind === 'business_notes') {
+    const notes = String(draft.internal_notes ?? '')
+    if (Array.from(notes).length > 10000) throw new Error('Keep internal notes within 10,000 characters.')
+    return { internal_notes: notes }
+  }
   const number = value => {
     const result = Number(value || 0)
     if (!Number.isFinite(result) || result < 0 || result > 100000000) throw new Error('Amounts must be between 0 and 100,000,000.')
