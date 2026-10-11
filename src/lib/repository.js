@@ -34,6 +34,7 @@ export function liveRepository(client) {
       }
       const { data, error } = await query.select().single()
       if (kind === 'business_notes' && error?.code === 'PGRST116') throw new Error('These notes changed or access was lost. Copy your draft, reload the profile and try again.')
+      if (kind === 'statistics' && error?.code === '23505') throw new Error('This metric and reporting period already exist. Edit the existing record instead.')
       if (error) throw error
       return data
     },

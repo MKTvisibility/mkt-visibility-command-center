@@ -1,7 +1,11 @@
 export const WORKSPACE_ID = 'c8748032-cdd3-443b-8c56-2e846cc9bf31'
-export const TABLES = { businesses: 'cc_businesses', listings: 'cc_listings', emails: 'cc_emails', tasks: 'cc_tasks', purchases: 'cc_purchases' }
+export const BRANDS = ['MKT Visibility', 'MKT Colorado', 'Loving Longmont', 'Open Theory Cove', 'Boulder County Photography']
+export const CHANNELS = ['Website', 'Google Search', 'Facebook', 'Instagram', 'LinkedIn', 'YouTube', 'TikTok', 'Pinterest', 'Etsy']
+export const METRICS = ['Visitors', 'Page views', 'Sessions', 'Search clicks', 'Search impressions', 'Followers', 'Content views', 'Interactions', 'Posts published', 'Link clicks', 'Inquiries', 'Orders', 'Revenue']
+export const SOURCES = ['Manual report', 'Google Analytics', 'Google Search Console', 'Metricool', 'Platform report']
+export const TABLES = { businesses: 'cc_businesses', listings: 'cc_listings', emails: 'cc_emails', tasks: 'cc_tasks', purchases: 'cc_purchases', statistics: 'cc_statistics' }
 export const STAGES = ['New', 'Contacted', 'Discovery', 'Proposal', 'Won', 'Lost']
-export const emptyData = () => ({ businesses: [], listings: [], emails: [], tasks: [], purchases: [] })
+export const emptyData = () => ({ businesses: [], listings: [], emails: [], tasks: [], purchases: [], statistics: [] })
 export const currency = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(value) || 0)
 export function localDay(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -54,6 +58,13 @@ function validDay(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value
 }
 export function cleanPayload(kind, draft) {
+  if (kind === 'statistics') {
+    if (!BRANDS.includes(draft.brand) || !CHANNELS.includes(draft.channel) || !METRICS.includes(draft.metric) || !SOURCES.includes(draft.source)) throw new Error('Choose a valid brand, channel, metric and source.')
+    if (!validDay(draft.period_start || '') || !validDay(draft.period_end || '') || draft.period_start > draft.period_end || draft.period_end > localDay()) throw new Error('Choose a valid completed reporting period.')
+    if (draft.value === '' || draft.value == null || !Number.isFinite(Number(draft.value)) || Number(draft.value) < 0 || Number(draft.value) > 100000000) throw new Error('Enter a reported value between 0 and 100,000,000. Leave unreported metrics out.')
+    if (draft.source_url && !safeUrl(draft.source_url)) throw new Error('Source links must begin with https:// or http://.')
+    return { brand: draft.brand, channel: draft.channel, metric: draft.metric, period_start: draft.period_start, period_end: draft.period_end, value: Number(draft.value), source: draft.source, source_url: String(draft.source_url || '').slice(0,2000), notes: String(draft.notes || '').slice(0,4000) }
+  }
   if (kind === 'business_notes') {
     const notes = String(draft.internal_notes ?? '')
     if (Array.from(notes).length > 10000) throw new Error('Keep internal notes within 10,000 characters.')

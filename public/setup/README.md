@@ -10,7 +10,7 @@ Live mode uses your existing Supabase project. The existing live project is conn
 
 ## 1. Apply the database migration
 
-In your existing Supabase project, open SQL Editor > New query. For a new empty database, review and run the ordered migrations in supabase/migrations (combined download: /setup/database.sql). For an existing database, apply only migrations not already applied. The connected live project already has all five migrations.
+In your existing Supabase project, open SQL Editor > New query. For a new empty database, review and run the ordered migrations in supabase/migrations (combined download: /setup/database.sql). For an existing database, apply only migrations not already applied. The connected live project already has all six migrations.
 
 It adds isolated cc_ tables with row-level security, member-only reads, owner/editor writes, no anonymous access, no browser membership editing, and an append-only audit log. It stops before any changes if Command Center tables already exist. If it stops, inspect existing tables instead of dropping them. Take an appropriate project backup before applying production migrations. Local PostgreSQL security tests do not replace a live-project verification.
 
@@ -58,4 +58,4 @@ Separate authorization is required for sending emails, deleting records, changin
 
 Cloudflare Pages account access and project selection are needed to deploy on Michelle's own Cloudflare account. The current private Site link is usable for review.
 
-Existing databases that already applied the initial migration need migrations 202610110002 through 202610110005, in order. They have already been applied to the connected live project. For a new empty database, the downloadable setup/database.sql now includes all five migrations. Do not rerun the initial migration over an existing database.
+Existing databases that already applied the initial migration need migrations 202610110002 through 202610110006, in order. They have already been applied to the connected live project. For a new empty database, the downloadable setup/database.sql now includes all six migrations. Do not rerun the initial migration over an existing database.

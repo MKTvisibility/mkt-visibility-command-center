@@ -20,11 +20,12 @@ test('real PostgreSQL migration and RLS exercise approved, anonymous, revoked an
  await db.exec(readFileSync(new URL('../supabase/migrations/202610110004_restrict_event_trigger.sql',import.meta.url),'utf8'))
  await db.exec(readFileSync(new URL('../supabase/migrations/202610110005_internal_notes.sql',import.meta.url),'utf8'))
  await db.exec(`insert into auth.users values('${editor}'),('${viewer}'),('${stranger}'); insert into public.cc_workspaces values('${otherWorkspace}','Other workspace'); insert into public.cc_members(workspace_id,user_id,display_name,role) values ('${workspace}','${editor}','Editor','editor'),('${workspace}','${viewer}','Viewer','viewer');`)
+ await db.exec(readFileSync(new URL('../supabase/migrations/202610110006_performance_statistics.sql',import.meta.url),'utf8'))
  const asUser=async(user,role='authenticated')=>{await db.exec(`reset role; select set_config('request.jwt.claim.sub','${user}',false); set role ${role};`)}
  const rows=async(query)=> (await db.query(query)).rows
- await t.test('all eight application tables have row-level security',async()=>{
+ await t.test('all nine application tables have row-level security',async()=>{
   const result=await rows("select relname from pg_class where relname like 'cc_%' and relkind='r' and relrowsecurity")
-  assert.equal(result.length,8)
+  assert.equal(result.length,9)
  })
  await t.test('approved editor can create, read, update and trigger an immutable audit entry',async()=>{
   await asUser(editor)
@@ -44,7 +45,7 @@ test('real PostgreSQL migration and RLS exercise approved, anonymous, revoked an
  })
  await t.test('unapproved user cannot read or write records, audit log or workspace',async()=>{
   await asUser(stranger)
-  for(const table of ['cc_businesses','cc_listings','cc_emails','cc_tasks','cc_purchases','cc_audit_log','cc_workspaces','cc_members'])assert.equal((await rows(`select * from ${table}`)).length,0)
+  for(const table of ['cc_businesses','cc_listings','cc_emails','cc_tasks','cc_purchases','cc_statistics','cc_audit_log','cc_workspaces','cc_members'])assert.equal((await rows(`select * from ${table}`)).length,0)
   await assert.rejects(()=>db.exec("insert into cc_businesses(name) values('Blocked')"),/row-level security/)
  })
  await t.test('anonymous callers have no table or access-function privileges',async()=>{
@@ -89,6 +90,20 @@ test('real PostgreSQL migration and RLS exercise approved, anonymous, revoked an
   await db.exec("update cc_businesses set internal_notes='Blocked'")
   assert.equal((await rows('select internal_notes from cc_businesses'))[0].internal_notes,'Team notes only')
   await assert.rejects(()=>db.exec(`insert into cc_purchases(business_id,product,purchased_on) values('${business}','Blocked','2026-10-10')`),/row-level security/)
+ })
+ await t.test('statistics require approved editors, reject duplicates and preserve viewer read-only access',async()=>{
+  await asUser(editor)
+  const insert="insert into cc_statistics(brand,channel,metric,period_start,period_end,value,source) values('MKT Visibility','Website','Visitors','2026-10-01','2026-10-09',0,'Manual report')"
+  await db.exec(insert)
+  await assert.rejects(()=>db.exec(insert),/unique constraint/)
+  await assert.rejects(()=>db.exec(insert.replace(",0,'Manual report'",",-1,'Manual report'")),/check constraint/)
+  await asUser(viewer)
+  assert.equal(Number((await rows('select value from cc_statistics'))[0].value),0)
+  await db.exec('update cc_statistics set value=999')
+  assert.equal(Number((await rows('select value from cc_statistics'))[0].value),0)
+  await assert.rejects(()=>db.exec(insert),/row-level security/)
+  await asUser(stranger)
+  assert.equal((await rows('select * from cc_statistics')).length,0)
  })
  await t.test('revoking membership blocks subsequent reads and writes',async()=>{
   await db.exec(`reset role; update cc_members set enabled=false where user_id='${editor}';`)

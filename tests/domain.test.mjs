@@ -48,7 +48,7 @@ test('live repository pages beyond the default API cap and surfaces database err
  let calls=0
  const client={from(){const query={select(){return this},eq(){return this},order(){return this},async range(from){calls++;return {data:Array.from({length:from===0?500:3},(_,i)=>({id:from+i})),error:null}}};return query}}
  const data=await liveRepository(client).load()
- assert.equal(data.businesses.length,503);assert.equal(data.tasks.length,503);assert.equal(calls,10)
+ assert.equal(data.businesses.length,503);assert.equal(data.tasks.length,503);assert.equal(calls,12)
  const broken={from(){return {select(){return this},eq(){return this},order(){return this},async range(){return {error:new Error('RLS failure')}}}}}
  await assert.rejects(()=>liveRepository(broken).load(),/RLS failure/)
 })
@@ -89,4 +89,15 @@ test('internal notes are isolated and stale edits cannot overwrite another save'
  assert.equal((await repo.load()).businesses[0].internal_notes,'Team only\nSecond line')
  assert.deepEqual(cleanPayload('business_notes',{internal_notes:'Note',description:'Do not change'}),{internal_notes:'Note'})
  assert.throws(()=>cleanPayload('business_notes',{internal_notes:'x'.repeat(10001)}),/10,000/)
+})
+
+
+test('performance reports validate periods, preserve a real zero and reject missing values',()=>{
+ const record={brand:'MKT Visibility',channel:'Website',metric:'Visitors',source:'Manual report',period_start:'2026-10-01',period_end:'2026-10-09',value:0,notes:'No visitors reported'}
+ assert.equal(cleanPayload('statistics',record).value,0)
+ assert.throws(()=>cleanPayload('statistics',{...record,value:''}),/reported value/)
+ assert.throws(()=>cleanPayload('statistics',{...record,value:-1}),/reported value/)
+ assert.throws(()=>cleanPayload('statistics',{...record,period_start:'2026-10-10'}),/reporting period/)
+ assert.throws(()=>cleanPayload('statistics',{...record,brand:'Other brand'}),/valid brand/)
+ assert.throws(()=>cleanPayload('statistics',{...record,source_url:'javascript:alert(1)'}),/Source links/)
 })
