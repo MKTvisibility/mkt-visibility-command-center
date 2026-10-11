@@ -21,6 +21,24 @@ export function liveRepository(client) {
       if (!data) throw new Error('This account has not been approved for the MKT workspace. Ask the workspace owner to add your user ID.')
       return { ...data, user_id: auth.user.id }
     },
+    async uploadListingImage(businessId,file) {
+      const member=await this.membership()
+      if(member.role==='viewer') throw new Error('Your account is read-only.')
+      const extensions={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}
+      if(!extensions[file.type]||file.size>5*1024*1024||file.size===0)throw new Error('Choose a JPEG, PNG or WebP image no larger than 5 MB.')
+      const path=`${member.user_id}/${businessId}/${crypto.randomUUID()}.${extensions[file.type]}`
+      const {error}=await client.storage.from('cc-listing-images').upload(path,file,{contentType:file.type,upsert:false})
+      if(error)throw error
+      return client.storage.from('cc-listing-images').getPublicUrl(path).data.publicUrl
+    },
+    async publishBusiness(input) {
+      const member=await this.membership()
+      if(member.role==='viewer')throw new Error('Your account is read-only.')
+      const {data,error}=await client.functions.invoke('publish-listing',{body:input})
+      if(error){let message=error.message;try{message=(await error.context.json()).error||message}catch{ /* Network errors have no response body. */ }throw new Error(message)}
+      if(data.error)throw new Error(data.error)
+      return data
+    },
     async load() {
       const entries = await Promise.all(Object.entries(TABLES).map(async ([key, table]) => [key, key === 'tasks' ? (await readAll(client, table)).map(hydrateTask) : await readAll(client, table)]))
       return Object.fromEntries(entries)

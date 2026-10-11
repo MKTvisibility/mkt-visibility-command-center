@@ -91,3 +91,4 @@
 @media(max-width:600px){.checklist-priority{width:80px}.business-checklist .activity-row{gap:8px}}
 
 .workflow-stage { margin: 22px 0 6px; padding: 8px 10px; background: #edf3f6; border-radius: 6px; }
+.listing-image-preview{display:block;width:min(100%,320px);height:200px;object-fit:contain;border:1px solid #dbe4e8;background:#fff;border-radius:8px;margin:12px 0}.business-publishing{margin:24px 0}.business-publishing label{display:block;margin:12px 0}.business-publishing .check{display:flex}.upload-image input{display:block;margin-top:8px;max-width:100%}

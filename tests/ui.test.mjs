@@ -25,13 +25,17 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
  const checklistRaw=readFileSync(new URL('../src/BusinessChecklist.jsx',import.meta.url),'utf8').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
  const checklist=await transformWithOxc(checklistRaw,'BusinessChecklist.jsx',{jsx:{runtime:'automatic'}})
  const checklistFile=join(directory,'BusinessChecklist.mjs');writeFileSync(checklistFile,checklist.code)
- const raw=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8').replace('function Records(', 'export function Records(').replace('function Pipeline(', 'export function Pipeline(').replace('function BusinessProfile(', 'export function BusinessProfile(').replace("import './App.css'",'').replace("from './BusinessChecklist.jsx'","from '"+pathToFileURL(checklistFile).href+"'").replace("from './Portfolio.jsx'","from '"+pathToFileURL(portfolioFile).href+"'").replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
+ const publishingRaw=readFileSync(new URL('../src/BusinessPublishing.jsx',import.meta.url),'utf8').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
+ const publishing=await transformWithOxc(publishingRaw,'BusinessPublishing.jsx',{jsx:{runtime:'automatic'}})
+ const publishingFile=join(directory,'BusinessPublishing.mjs');writeFileSync(publishingFile,publishing.code)
+ const raw=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8').replace('function Records(', 'export function Records(').replace('function Pipeline(', 'export function Pipeline(').replace('function BusinessProfile(', 'export function BusinessProfile(').replace("import './App.css'",'').replace("from './BusinessPublishing.jsx'","from '"+pathToFileURL(publishingFile).href+"'").replace("from './BusinessChecklist.jsx'","from '"+pathToFileURL(checklistFile).href+"'").replace("from './Portfolio.jsx'","from '"+pathToFileURL(portfolioFile).href+"'").replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
  const transformed=await transformWithOxc(raw,'App.jsx',{jsx:{runtime:'automatic'}})
  const filename=join(directory,'App.mjs');writeFileSync(filename,transformed.code)
  let networkCalls=0
  const oldFetch=globalThis.fetch;globalThis.fetch=()=>{networkCalls++;throw new Error('Practice must not use the network')}
  try{
   const {default:App,Records,Pipeline,BusinessProfile}=await import(pathToFileURL(filename).href)
+  const {default:Publishing}=await import(pathToFileURL(publishingFile).href)
   render(React.createElement(App))
   assert.ok(screen.getByText('Connect your Command Center'))
   fireEvent.change(screen.getByLabelText('Supabase project URL'),{target:{value:'https://example.supabase.co'}})
@@ -322,6 +326,30 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   section.open=true
   assert.equal(within(section).getAllByRole('row').length,11)
   assert.ok(screen.getByText('Page 1 of 3 · 25 matching records'))
+
+  cleanup()
+  const publishCalls=[];let publishSaved
+  const publishBusiness={id:'publisher-shop',name:'Publish Test Shop',description:'Listing details',image_url:'https://example.com/logo.png',notes:encodeMetadata({},{text:'Private research',evidenceCompletion:{subject:'Keep evidence'}})}
+  const publishingData=emptyData();publishingData.businesses=[publishBusiness];publishingData.tasks=[{id:'private-task',status:'Done'}]
+  const publisher={publishBusiness:async input=>{publishCalls.push(input);return input.action==='preview'?{signature:'preview-signature',operation:input.intent,business:publishBusiness,sites:input.sites.map(site=>({site,pages:[{path:'businesses.html',count:1}]}))}:{results:input.sites.map(site=>({site,success:true,operation:input.action,commit:'testcommit',commitUrl:'https://github.com/example/repo/commit/testcommit',pages:['https://lovinglongmont.com/businesses.html'],submittedAt:'2026-10-11T23:00:00Z'}))}}}
+  render(React.createElement(Publishing,{business:publishBusiness,data:publishingData,repository:publisher,writable:true,onSave:async(_kind,draft)=>{publishSaved=draft}}))
+  fireEvent.change(screen.getByLabelText('Publish or remove on'),{target:{value:'Loving Longmont'}})
+  fireEvent.click(screen.getByRole('button',{name:'Preview publication'}))
+  await screen.findByText('Publication preview')
+  assert.deepEqual(publishCalls[0].sites,['Loving Longmont'])
+  fireEvent.click(screen.getByRole('button',{name:'Publish to selected websites'}))
+  await screen.findByText(/Loving Longmont: publication submitted/)
+  assert.equal(JSON.parse(publishSaved.notes).text,'Private research')
+  assert.equal(JSON.parse(publishSaved.notes).publicationResults['Loving Longmont'].commit,'testcommit')
+  fireEvent.change(screen.getByLabelText('Publish or remove on'),{target:{value:'Both'}})
+  fireEvent.click(screen.getByRole('button',{name:'Remove listing from website…'}))
+  await screen.findByText('Confirm removal')
+  assert.equal(screen.getByRole('button',{name:'Confirm website removal'}).disabled,true)
+  fireEvent.click(screen.getByRole('checkbox',{name:/Remove these public listing cards/}))
+  fireEvent.click(screen.getByRole('button',{name:'Confirm website removal'}))
+  await screen.findByText(/Loving Longmont: removal submitted/)
+  assert.deepEqual(publishCalls.at(-1).sites,['Loving Longmont','MKT Colorado'])
+  assert.equal(publishingData.tasks[0].status,'Done')
 
  }finally{cleanup();globalThis.fetch=oldFetch;rmSync(directory,{recursive:true,force:true});dom.window.close()}
 })
