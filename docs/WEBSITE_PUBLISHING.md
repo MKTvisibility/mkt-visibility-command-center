@@ -18,3 +18,7 @@ These repositories belong to two different GitHub accounts. Create each credenti
 The function is deployed with gateway JWT verification enabled and also verifies the user against Auth. No service-role key or GitHub token is sent to the browser. Deployment origins are restricted to the current GitHub and original Sites app URLs.
 
 Existing website inventory URLs select the pages to update. For a new placement, enter the selected site's URL with the existing category section, such as https://lovinglongmont.com/businesses.html#shops. New cards are inserted only into a supported grid in that section. Layouts not recognized by the service stop for manual review.
+
+## Public field selections
+
+Free listings default to name, description, one main photo, address, phone and website. The name is required; other fields can be unchecked. Paid listings allow explicit opt-in to public email, social media links, category labels and up to four additional photos. Paid selection does not verify payment or change pricing. The server enforces these selections against saved business metadata. Switching back to Free excludes all paid extras without deleting their saved internal values. No internal notes, tasks, private contact name or billing fields can be selected for publication.

@@ -29,3 +29,17 @@ test('preview signatures detect changed content and operation',async()=>{
  assert.notEqual(await fingerprint({b,operation:'publish'}),await fingerprint({b,operation:'remove'}))
  assert.notEqual(await fingerprint({b}),await fingerprint({b:{...b,image_url:'https://example.com/new.png'}}))
 })
+test('free listings never disclose paid fields, extra images or private references even when checkbox flags are tampered with',()=>{
+ const enhanced={...raw,social_urls:['https://facebook.com/shop'],notes:JSON.stringify({format:'mkt-portfolio-v1',text:'Private note',listingGalleryUrls:['https://example.com/extra.png'],publicationOptions:{tier:'Free',fields:{phone:false,email:true,social_urls:true,gallery_images:true,categories:true}}})}
+ const basic=publicBusiness(enhanced)
+ assert.equal(basic.phone,'');assert.equal(basic.email,'');assert.deepEqual(basic.social_urls,[]);assert.deepEqual(basic.gallery_images,[]);assert.deepEqual(basic.categories,[])
+ assert.equal(basic.name,raw.name);assert.equal(basic.image_url,raw.image_url);assert.equal(basic.listingTier,'Free')
+ const html=cardHtml(basic,'Loving Longmont');assert.ok(!html.includes(raw.email));assert.ok(!html.includes('facebook.com'));assert.ok(!html.includes('extra.png'));assert.ok(!html.includes('Private note'))
+})
+test('paid listings disclose only explicitly checked fields and cap the gallery at four additional photos',()=>{
+ const value={...raw,social_urls:['https://facebook.com/shop'],notes:JSON.stringify({format:'mkt-portfolio-v1',listingGalleryUrls:Array.from({length:7},(_,i)=>`https://example.com/extra${i}.png`),publicationOptions:{tier:'Paid',fields:{image_url:false,description:false,email:true,social_urls:true,gallery_images:true,categories:false}}})}
+ const paid=publicBusiness(value);assert.equal(paid.email,raw.email);assert.equal(paid.image_url,'');assert.equal(paid.description,'');assert.deepEqual(paid.social_urls,['https://facebook.com/shop']);assert.equal(paid.gallery_images.length,4)
+ const html=cardHtml(paid,'MKT Colorado');assert.ok(html.includes('extra3.png'));assert.ok(!html.includes('extra4.png'));assert.ok(!html.includes(raw.image_url));assert.ok(!html.includes('alert(1)'))
+ value.notes=JSON.stringify({format:'mkt-portfolio-v1',publicationOptions:{tier:'Paid',fields:{}}})
+ assert.equal(publicBusiness(value).email,'');assert.deepEqual(publicBusiness(value).social_urls,[])
+})

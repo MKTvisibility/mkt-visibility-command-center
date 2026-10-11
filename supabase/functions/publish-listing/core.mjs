@@ -1,3 +1,4 @@
+import {publicSettings} from '../_shared/public-fields.mjs'
 export const SITES = {
  'Loving Longmont':{repo:'LovingLongmont/loving-longmont-website',host:'lovinglongmont.com',secret:'LL_GITHUB_TOKEN'},
  'MKT Colorado':{repo:'MKTvisibility/Colorado',host:'mktcolorado.com',secret:'CO_GITHUB_TOKEN'}
@@ -15,13 +16,15 @@ export function pageTarget(site,value){
 }
 export function publicBusiness(b){
  if(!b.id||!b.name?.trim())throw Error('Save a business name before publishing.')
- const image=validUrl(b.image_url);if(image&&!image.startsWith('https:'))throw Error('Use an HTTPS image URL.')
- return {id:b.id,name:b.name.trim(),description:b.description||'',address:b.address||b.city||'',phone:b.phone||'',email:b.email||'',website:validUrl(b.website),image_url:image,categories:b.categories||[],social_urls:(b.social_urls||[]).map(validUrl).filter(Boolean)}
+ const {options,gallery}=publicSettings(b);const fields=options.fields
+ const imageUrl=value=>{const url=validUrl(value);if(url&&!url.startsWith('https:'))throw Error('Use an HTTPS image URL.');return url}
+ return {id:b.id,name:b.name.trim(),description:fields.description?(b.description||''):'',address:fields.address?(b.address||b.city||''):'',phone:fields.phone?(b.phone||''):'',email:fields.email?(b.email||''):'',website:fields.website?validUrl(b.website):'',image_url:fields.image_url?imageUrl(b.image_url):'',categories:fields.categories?(b.categories||[]):[],social_urls:fields.social_urls?(b.social_urls||[]).map(validUrl).filter(Boolean):[],gallery_images:fields.gallery_images?gallery.map(imageUrl).filter(Boolean):[],listingTier:options.tier}
 }
 export function cardHtml(b,site,id){
  const ll=site==='Loving Longmont';const imageClass=ll?'business-image':'card-photo';const bodyClass=ll?'business-body':'card-body'
+ const gallery=(b.gallery_images||[]).map((url,index)=>`<img src="${escapeHtml(url)}" alt="${escapeHtml(b.name)} — photo ${index+2}" loading="lazy" style="width:100%;height:180px;object-fit:contain" />`).join('')
  const links=[b.website&&[b.website,'Visit Website →'],...b.social_urls.map(u=>[u,new URL(u).hostname.replace(/^www\./,'')])].filter(Boolean).map(([u,label])=>`<a href="${escapeHtml(u)}" target="_blank" rel="noopener noreferrer" class="${ll?'business-button':''}">${escapeHtml(label)}</a>`).join(' ')
- return `<article class="${ll?'business-card':'card'}" id="${escapeHtml(id||'cc-'+b.id)}" data-cc-business="${escapeHtml(b.id)}">${b.image_url?`<div class="${imageClass}"><img src="${escapeHtml(b.image_url)}" alt="${escapeHtml(b.name)}" loading="lazy" style="width:100%;height:100%;object-fit:contain;object-position:center" /></div>`:ll?'':`<div class="name-panel"><span>${escapeHtml(b.name)}</span></div>`}<div class="${bodyClass}"><div class="${ll?'business-category':'tag'}">${escapeHtml(b.categories.join(' • '))}</div><h3>${escapeHtml(b.name)}</h3><p class="${ll?'business-description':''}">${escapeHtml(b.description)}</p><div class="${ll?'business-details':'details'}">${b.address?`<div>📍 ${escapeHtml(b.address)}</div>`:''}${b.phone?`<div>☎ <a href="tel:${escapeHtml(b.phone.replace(/[^+\d]/g,''))}">${escapeHtml(b.phone)}</a></div>`:''}${b.email?`<div>✉ <a href="mailto:${escapeHtml(b.email)}">${escapeHtml(b.email)}</a></div>`:''}</div><div class="${ll?'business-links':'details'}">${links}</div></div></article>`
+ return `<article class="${ll?'business-card':'card'}" id="${escapeHtml(id||'cc-'+b.id)}" data-cc-business="${escapeHtml(b.id)}">${b.image_url?`<div class="${imageClass}"><img src="${escapeHtml(b.image_url)}" alt="${escapeHtml(b.name)}" loading="lazy" style="width:100%;height:100%;object-fit:contain;object-position:center" /></div>`:ll?'':`<div class="name-panel"><span>${escapeHtml(b.name)}</span></div>`}<div class="${bodyClass}"><div class="${ll?'business-category':'tag'}">${escapeHtml(b.categories.join(' • '))}</div><h3>${escapeHtml(b.name)}</h3><p class="${ll?'business-description':''}">${escapeHtml(b.description)}</p>${gallery?`<div class="listing-gallery">${gallery}</div>`:''}<div class="${ll?'business-details':'details'}">${b.address?`<div>📍 ${escapeHtml(b.address)}</div>`:''}${b.phone?`<div>☎ <a href="tel:${escapeHtml(b.phone.replace(/[^+\d]/g,''))}">${escapeHtml(b.phone)}</a></div>`:''}${b.email?`<div>✉ <a href="mailto:${escapeHtml(b.email)}">${escapeHtml(b.email)}</a></div>`:''}</div><div class="${ll?'business-links':'details'}">${links}</div></div></article>`
 }
 export function updatePage(html,b,site,target,action,aliases=[]){
  let count=0;const names=new Set([b.name,...aliases].map(normalize));const id=escapeHtml(b.id)

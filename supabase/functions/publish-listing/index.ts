@@ -31,7 +31,7 @@ export async function handle(req:Request){
   if(input.sites.some((s:string)=>!ready[s]))return response({error:'Website publishing needs secure GitHub credentials in Supabase. Image uploads and saving changes are available; live publishing is not connected yet.',setupRequired:true},503)
   const businesses=await read('cc_businesses',`workspace_id=eq.${WORKSPACE}&id=eq.${input.businessId}&select=*`);const raw=businesses[0];if(!raw)return response({error:'Business not found in your workspace.'},404)
   const operation=input.action==='remove'||input.intent==='remove'?'remove':'publish'
-  const b=publicBusiness(operation==='remove'?{...raw,image_url:'',website:'',social_urls:[]}:raw);const listings=await read('cc_listings',`workspace_id=eq.${WORKSPACE}&business_id=eq.${input.businessId}&status=neq.Archived&select=site,url,title`)
+  const b=publicBusiness(operation==='remove'?{id:raw.id,name:raw.name}:raw);const listings=await read('cc_listings',`workspace_id=eq.${WORKSPACE}&business_id=eq.${input.businessId}&status=neq.Archived&select=site,url,title`)
   let notes={};try{notes=JSON.parse(raw.notes||'{}')||{}}catch{/* legacy plain notes */}
   const plans=[]
   for(const site of input.sites){
