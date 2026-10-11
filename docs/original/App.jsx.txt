@@ -1,0 +1,76 @@
+
+import { useState } from 'react'
+import './App.css'
+
+function App() {
+  const [activePage, setActivePage] = useState('Dashboard')
+
+  const pages = [
+    'Dashboard',
+    'Clients & Prospects',
+    'Loving Longmont',
+    'MKT Colorado',
+    'Email Campaigns',
+    'Follow-Ups',
+    'Sales Pipeline',
+    'Projects & Tasks',
+    'Reports'
+  ]
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
+      <aside style={{ width: 250, background: '#17324d', color: 'white', padding: 24 }}>
+        <h2>MKT Visibility</h2>
+        <p>Command Center</p>
+
+        {pages.map(page => (
+          <button
+            key={page}
+            onClick={() => setActivePage(page)}
+            style={{
+              display: 'block',
+              width: '100%',
+              padding: 12,
+              marginBottom: 8,
+              textAlign: 'left',
+              background: activePage === page ? '#327ca8' : 'transparent',
+              color: 'white',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer'
+            }}
+          >
+            {page}
+          </button>
+        ))}
+      </aside>
+
+      <main style={{ flex: 1, padding: 40, background: '#f3f6fa', color: '#17324d' }}>
+        <h1>{activePage}</h1>
+        <p>Welcome to your MKT Visibility business management system.</p>
+
+        {activePage === 'Dashboard' && (
+          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+            {['Total Businesses', 'Active Clients', 'Follow-Ups Due', 'Monthly Revenue'].map(item => (
+              <div
+                key={item}
+                style={{
+                  background: 'white',
+                  padding: 25,
+                  borderRadius: 10,
+                  minWidth: 180,
+                  boxShadow: '0 2px 8px #00000012'
+                }}
+              >
+                <h3>{item}</h3>
+                <p>Not connected yet</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}
+
+export default App
