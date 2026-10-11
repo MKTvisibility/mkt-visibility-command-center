@@ -48,7 +48,7 @@ test('live repository pages beyond the default API cap and surfaces database err
  let calls=0
  const client={from(){const query={select(){return this},eq(){return this},order(){return this},async range(from){calls++;return {data:Array.from({length:from===0?500:3},(_,i)=>({id:from+i})),error:null}}};return query}}
  const data=await liveRepository(client).load()
- assert.equal(data.businesses.length,503);assert.equal(data.tasks.length,503);assert.equal(calls,14)
+ assert.equal(data.businesses.length,503);assert.equal(data.tasks.length,503);assert.equal(calls,16)
  const broken={from(){return {select(){return this},eq(){return this},order(){return this},async range(){return {error:new Error('RLS failure')}}}}}
  await assert.rejects(()=>liveRepository(broken).load(),/RLS failure/)
 })
@@ -109,4 +109,12 @@ test('tracking dates preserve Mountain time and the 48-hour day boundary',async(
  assert.match(dates.check,/Oct 12, 2026/)
  assert.match(dates.check,/11:53 PM MDT/)
  assert.equal(trackingDates('invalid'),null)
+})
+
+test('individual notes strip forged attribution and support explicit deletion',()=>{
+ const clean=cleanPayload('notes',{business_id:'one',body:' A note ',author_name:'Fake',created_by:'fake'})
+ assert.deepEqual(clean,{business_id:'one',parent_id:null,body:'A note'})
+ assert.throws(()=>cleanPayload('notes',{business_id:'one',body:''}),/Enter a note/)
+ assert.throws(()=>cleanPayload('notes',{business_id:'one',remove:true}),/saved note/)
+ assert.equal(cleanPayload('notes',{id:'n',business_id:'one',remove:true}).body,'')
 })

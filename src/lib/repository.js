@@ -18,7 +18,7 @@ export function liveRepository(client) {
       const { data, error } = await client.from('cc_members').select('role,display_name').eq('workspace_id', WORKSPACE_ID).eq('user_id', auth.user.id).eq('enabled', true).maybeSingle()
       if (error) throw error
       if (!data) throw new Error('This account has not been approved for the MKT workspace. Ask the workspace owner to add your user ID.')
-      return data
+      return { ...data, user_id: auth.user.id }
     },
     async load() {
       const entries = await Promise.all(Object.entries(TABLES).map(async ([key, table]) => [key, await readAll(client, table)]))
@@ -28,11 +28,13 @@ export function liveRepository(client) {
       const payload = { ...cleanPayload(kind, draft), workspace_id: WORKSPACE_ID }
       const table = client.from(kind === 'business_notes' ? 'cc_businesses' : TABLES[kind])
       const query = draft.id ? table.update(payload).eq('id', draft.id).eq('workspace_id', WORKSPACE_ID) : table.insert(payload)
+      if (kind === 'notes' && draft.id) query.eq('updated_at', draft.previous_updated_at)
       if (kind === 'business_notes') {
         if (!draft.id) throw new Error('Choose a business before saving notes.')
         query.eq('internal_notes', draft.previous_notes || '')
       }
       const { data, error } = await query.select().single()
+      if (kind === 'notes' && error?.code === 'PGRST116') throw new Error('This note changed or permission was lost. Copy your draft and reload before trying again.')
       if (kind === 'business_notes' && error?.code === 'PGRST116') throw new Error('These notes changed or access was lost. Copy your draft, reload the profile and try again.')
       if (kind === 'statistics' && error?.code === '23505') throw new Error('This metric and reporting period already exist. Edit the existing record instead.')
       if (error) throw error
@@ -45,7 +47,7 @@ export function liveRepository(client) {
 export function demoRepository(initial = sampleData()) {
   let data = structuredClone(initial)
   return {
-    async membership() { return { role: 'owner', display_name: 'Practice workspace' } },
+    async membership() { return { role: 'owner', display_name: 'Practice workspace', user_id: 'practice-user' } },
     async load() { return structuredClone(data) },
     async save(kind, draft) {
       const payload = cleanPayload(kind, draft)
@@ -56,7 +58,15 @@ export function demoRepository(initial = sampleData()) {
         business.internal_notes = payload.internal_notes; business.updated_at = new Date().toISOString()
         return structuredClone(business)
       }
+      if (kind === 'notes' && draft.id) {
+        const original = data.notes.find(n => n.id === draft.id)
+        if (!original || original.deleted_at || original.updated_at !== draft.previous_updated_at) throw new Error('This note changed. Reload before trying again.')
+      }
       const record = { ...payload, id: draft.id || crypto.randomUUID(), workspace_id: WORKSPACE_ID, created_at: draft.created_at || new Date().toISOString(), updated_at: new Date().toISOString() }
+      if (kind === 'notes') {
+        const original = data.notes.find(n => n.id === draft.id)
+        Object.assign(record, {created_by:original?.created_by || 'practice-user',author_name:original?.author_name || 'Practice workspace',created_at:original?.created_at || record.created_at,edited_by_name:original ? 'Practice workspace' : ''})
+      }
       const index = data[kind].findIndex(r => r.id === record.id)
       if (index < 0) data[kind].unshift(record)
       else data[kind][index] = { ...data[kind][index], ...record }

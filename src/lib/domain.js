@@ -3,9 +3,9 @@ export const BRANDS = ['MKT Visibility', 'MKT Colorado', 'Loving Longmont', 'Ope
 export const CHANNELS = ['Website', 'Google Search', 'Facebook', 'Instagram', 'LinkedIn', 'YouTube', 'TikTok', 'Pinterest', 'Etsy']
 export const METRICS = ['Visitors', 'Page views', 'Sessions', 'Search clicks', 'Search impressions', 'Followers', 'Content views', 'Interactions', 'Posts published', 'Link clicks', 'Inquiries', 'Orders', 'Revenue']
 export const SOURCES = ['Manual report', 'Google Analytics', 'Google Search Console', 'Metricool', 'Platform report']
-export const TABLES = { businesses: 'cc_businesses', listings: 'cc_listings', emails: 'cc_emails', tasks: 'cc_tasks', purchases: 'cc_purchases', statistics: 'cc_statistics', tracking: 'cc_tracking_setup' }
+export const TABLES = { businesses: 'cc_businesses', listings: 'cc_listings', emails: 'cc_emails', tasks: 'cc_tasks', purchases: 'cc_purchases', statistics: 'cc_statistics', tracking: 'cc_tracking_setup', notes: 'cc_notes' }
 export const STAGES = ['New', 'Contacted', 'Discovery', 'Proposal', 'Won', 'Lost']
-export const emptyData = () => ({ businesses: [], listings: [], emails: [], tasks: [], purchases: [], statistics: [], tracking: [] })
+export const emptyData = () => ({ businesses: [], listings: [], emails: [], tasks: [], purchases: [], statistics: [], tracking: [], notes: [] })
 export const currency = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(value) || 0)
 export function localDay(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -58,6 +58,13 @@ function validDay(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value
 }
 export function cleanPayload(kind, draft) {
+  if (kind === 'notes') {
+    if (!draft.business_id) throw new Error('Choose a business for this note.')
+    const body = String(draft.body ?? '').trim()
+    if (!draft.remove && (!body || Array.from(body).length > 10000)) throw new Error('Enter a note within 10,000 characters.')
+    if (draft.remove && !draft.id) throw new Error('Choose a saved note to delete.')
+    return draft.remove ? {business_id:draft.business_id, parent_id:draft.parent_id || null, body:'', deleted_at:new Date().toISOString()} : {business_id:draft.business_id, parent_id:draft.parent_id || null, body}
+  }
   if (kind === 'statistics') {
     if (!BRANDS.includes(draft.brand) || !CHANNELS.includes(draft.channel) || !METRICS.includes(draft.metric) || !SOURCES.includes(draft.source)) throw new Error('Choose a valid brand, channel, metric and source.')
     if (!validDay(draft.period_start || '') || !validDay(draft.period_end || '') || draft.period_start > draft.period_end || draft.period_end > localDay()) throw new Error('Choose a valid completed reporting period.')

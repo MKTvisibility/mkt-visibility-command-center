@@ -22,11 +22,12 @@ test('real PostgreSQL migration and RLS exercise approved, anonymous, revoked an
  await db.exec(`insert into auth.users values('${editor}'),('${viewer}'),('${stranger}'); insert into public.cc_workspaces values('${otherWorkspace}','Other workspace'); insert into public.cc_members(workspace_id,user_id,display_name,role) values ('${workspace}','${editor}','Editor','editor'),('${workspace}','${viewer}','Viewer','viewer');`)
  await db.exec(readFileSync(new URL('../supabase/migrations/202610110006_performance_statistics.sql',import.meta.url),'utf8'))
  await db.exec(readFileSync(new URL('../supabase/migrations/202610110007_tracking_setup.sql',import.meta.url),'utf8'))
+ await db.exec(readFileSync(new URL('../supabase/migrations/202610110008_note_threads.sql',import.meta.url),'utf8'))
  const asUser=async(user,role='authenticated')=>{await db.exec(`reset role; select set_config('request.jwt.claim.sub','${user}',false); set role ${role};`)}
  const rows=async(query)=> (await db.query(query)).rows
- await t.test('all ten application tables have row-level security',async()=>{
+ await t.test('all eleven application tables have row-level security',async()=>{
   const result=await rows("select relname from pg_class where relname like 'cc_%' and relkind='r' and relrowsecurity")
-  assert.equal(result.length,10)
+  assert.equal(result.length,11)
  })
  await t.test('tracking setup is audited, unique per brand and protected from viewer changes',async()=>{
   await asUser(editor)
@@ -59,7 +60,7 @@ test('real PostgreSQL migration and RLS exercise approved, anonymous, revoked an
  })
  await t.test('unapproved user cannot read or write records, audit log or workspace',async()=>{
   await asUser(stranger)
-  for(const table of ['cc_businesses','cc_listings','cc_emails','cc_tasks','cc_purchases','cc_statistics','cc_tracking_setup','cc_audit_log','cc_workspaces','cc_members'])assert.equal((await rows(`select * from ${table}`)).length,0)
+  for(const table of ['cc_businesses','cc_listings','cc_emails','cc_tasks','cc_purchases','cc_statistics','cc_notes','cc_tracking_setup','cc_audit_log','cc_workspaces','cc_members'])assert.equal((await rows(`select * from ${table}`)).length,0)
   await assert.rejects(()=>db.exec("insert into cc_businesses(name) values('Blocked')"),/row-level security/)
  })
  await t.test('anonymous callers have no table or access-function privileges',async()=>{
@@ -118,6 +119,41 @@ test('real PostgreSQL migration and RLS exercise approved, anonymous, revoked an
   await assert.rejects(()=>db.exec(insert),/row-level security/)
   await asUser(stranger)
   assert.equal((await rows('select * from cc_statistics')).length,0)
+ })
+ await t.test('notes enforce author identity, partner reply permissions, immutable threads and deletion',async()=>{
+  await asUser(editor)
+  const note=(await rows(`insert into cc_notes(business_id,body,author_name,created_by) values('${business}','First note','Forged','${stranger}') returning *`))[0]
+  assert.equal(note.author_name,'Editor');assert.equal(note.created_by,editor)
+  await assert.rejects(()=>db.exec(`update cc_notes set author_name='Forged' where id='${note.id}'`),/attribution/)
+  await assert.rejects(()=>db.exec(`insert into cc_notes(business_id,parent_id,body) values('${business}','${note.id}','')`),/check constraint/)
+  await db.exec(`reset role; update cc_members set role='editor' where user_id='${viewer}'`)
+  await asUser(viewer)
+  const reply=(await rows(`insert into cc_notes(business_id,parent_id,body) values('${business}','${note.id}','Partner reply') returning *`))[0]
+  assert.equal(reply.author_name,'Viewer')
+  await db.exec(`update cc_notes set body='Blocked' where id='${note.id}'`)
+  assert.equal((await rows(`select body from cc_notes where id='${note.id}'`))[0].body,'First note')
+  await assert.rejects(()=>db.exec(`insert into cc_notes(business_id,parent_id,body) values('${business}','${reply.id}','Nested invalid reply')`),/active note/)
+  await asUser(editor)
+  await db.exec(`update cc_notes set body='Updated note' where id='${note.id}'`)
+  assert.equal((await rows(`select edited_by_name from cc_notes where id='${note.id}'`))[0].edited_by_name,'Editor')
+  await db.exec(`update cc_notes set deleted_at=now() where id='${note.id}'`)
+  assert.equal((await rows(`select body from cc_notes where id='${note.id}'`))[0].body,'')
+  assert.equal((await rows(`select body from cc_notes where id='${reply.id}'`))[0].body,'Partner reply')
+  await assert.rejects(()=>db.exec(`insert into cc_notes(business_id,parent_id,body) values('${business}','${note.id}','Late reply')`),/active note/)
+  await assert.rejects(()=>db.exec(`update cc_notes set deleted_at=null,body='Restore' where id='${note.id}'`),/Deleted notes/)
+  await db.exec(`reset role; update cc_members set role='owner' where user_id='${editor}'; update cc_members set role='viewer' where user_id='${viewer}'`)
+  await asUser(editor)
+  await db.exec(`update cc_notes set body='Owner correction' where id='${reply.id}'`)
+  assert.equal((await rows(`select edited_by_name from cc_notes where id='${reply.id}'`))[0].edited_by_name,'Editor')
+  await asUser(viewer)
+  await assert.rejects(()=>db.exec(`insert into cc_notes(business_id,body) values('${business}','Blocked')`),/row-level security/)
+  await db.exec(`update cc_notes set body='Blocked' where id='${reply.id}'`)
+  assert.equal((await rows(`select body from cc_notes where id='${reply.id}'`))[0].body,'Owner correction')
+  await asUser(stranger)
+  assert.equal((await rows('select * from cc_notes')).length,0)
+  await asUser('', 'anon')
+  await assert.rejects(()=>db.exec('select * from cc_notes'),/permission denied/)
+  await db.exec('reset role')
  })
  await t.test('revoking membership blocks subsequent reads and writes',async()=>{
   await db.exec(`reset role; update cc_members set enabled=false where user_id='${editor}';`)
