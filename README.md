@@ -1,28 +1,21 @@
 # MKT Visibility Command Center
 
-A secure, installable business management application for MKT Visibility and its partners.
+A React/Vite partner workspace for MKT Visibility, Loving Longmont and MKT Colorado, built by extending Michelle's existing uploaded application.
 
-## Business Management
-- Client and prospect database
-- Loving Longmont business directory
-- MKT Colorado business directory
-- Email campaign tracking
-- Follow-up reminders
-- Sales pipeline and revenue reporting
-- Partner tasks and project management
+## Included
 
-## Technology
-- GitHub for source code
-- React for the application interface
-- Supabase for authentication and database
-- Cloudflare Pages for hosting
-- Progressive Web App (PWA) technology
+Password authentication with Supabase; administrator-approved workspace membership; database row-level security; clients and prospects; linked community listings; manual email and reply tracking; date-based follow-ups; sales pipeline; projects/tasks; dashboard; CSV reports; audit metadata.
 
-## Security
-- Individual accounts for authorized partners
-- Database-level access controls
-- No confidential client data stored in GitHub
-- No secret API keys committed to GitHub
+No email-sending implementation, credentials, real client seed data, or automatic website publishing is included. Practice mode is clearly labeled and uses fictional data in memory.
 
-## Development Goals
-Build the application using AI-assisted coding while learning JavaScript, databases, APIs, security, and application development.
+## Run
+
+Requires Node 22.12+ or Node 24. Run `npm ci`, copy `.env.example` to ignored `.env.local` and enter public Supabase settings, then `npm run dev`. Missing settings open the connection screen rather than crashing. Settings can also be entered in the app for the current tab.
+
+- `npm test` — domain, repository, SQL security and DOM interaction checks.
+- `npm run lint` — source checks.
+- `npm run build` — production build and downloadable setup assets.
+
+See [live setup](docs/SETUP.md), [approval and access record](docs/APPROVALS.md), and [verification results](docs/VERIFICATION.md). Migration is additive and refuses to overwrite any existing cc_ tables. No live Supabase changes have been made without project access.
+
+The existing repository README and uploaded app are preserved under docs/original. Uploaded source assets are retained.
