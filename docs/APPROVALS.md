@@ -4,9 +4,9 @@
 
 Preserved the original upload; extended the React/Vite app; prepared an additive Supabase migration; implemented password sign-in, database membership verification, clients/prospects, two listing registers, manual email tracking, due-date reminders, pipeline, tasks, dashboard and CSV reports. Prepared a separate GitHub review branch and owner-private hosted app. No credentials are committed and no emails are sent.
 
-## Not completed on the live Supabase project
+## Live setup and remaining actions
 
-The publishable key, database-admin access, live schema and approved Auth user IDs are unavailable. The screenshot establishes the existing project, but does not authorize a technical connection or reveal its current database schema. The app can be connected through its Connection screen after the supplied migration and membership setup are applied.
+Michelle applied the initial migration, approved her owner membership, signed in and confirmed persistence after refresh. No admin credentials are available to this agent. Public signup still needs disabling at the last verified setting. Tim/Kayli memberships and hosted sharing remain outstanding. Message summaries use the existing protected table; no additional SQL or approval is needed for this update. No historical messages have been imported.
 
 ## Concrete review items
 

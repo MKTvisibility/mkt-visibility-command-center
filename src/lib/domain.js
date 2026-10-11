@@ -30,6 +30,29 @@ export function validateConfig({ url, key }) {
   if (!/^sb_publishable_[A-Za-z0-9_-]+$/.test(key)) throw new Error('Use a Supabase publishable key beginning sb_publishable_. Secret and service-role keys are not accepted.')
   return true
 }
+// Versioned summary metadata uses the existing protected notes column.
+// Legacy plain-text notes remain readable; no message bodies or email links are stored.
+export function messageSummary(record) {
+  try {
+    const value = JSON.parse(record.notes || '')
+    if (value?.format === 'mkt-message-summary-v1') return {
+      sender: typeof value.sender === 'string' ? value.sender : '',
+      summary: typeof value.summary === 'string' ? value.summary : '',
+      next_action: typeof value.next_action === 'string' ? value.next_action : '',
+      follow_up_on: typeof value.follow_up_on === 'string' ? value.follow_up_on : '',
+      response_status: typeof value.response_status === 'string' ? value.response_status : 'No action',
+      verification: value.verification === 'Reviewed' ? 'Reviewed' : 'Unverified',
+    }
+  } catch { /* Original notes are plain text. */ }
+  return { sender: '', summary: record.notes || '', next_action: '', follow_up_on: '', response_status: 'No action', verification: 'Unverified' }
+}
+export function businessMessages(data, businessId) {
+  return data.emails.filter(e => e.business_id === businessId).sort((a, b) =>
+    (b.occurred_on || '').localeCompare(a.occurred_on || '') || (b.created_at || '').localeCompare(a.created_at || '') || String(a.id).localeCompare(String(b.id)))
+}
+function validDay(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value
+}
 export function cleanPayload(kind, draft) {
   const number = value => {
     const result = Number(value || 0)
@@ -66,6 +89,21 @@ export function cleanPayload(kind, draft) {
     business_id: draft.business_id || null, title: text(draft.title, 200), type: draft.type, status: draft.status,
     due_date: draft.due_date || null, assignee: text(draft.assignee, 100), priority: draft.priority, notes: text(draft.notes),
   }
+  if (kind === 'emails' && Object.hasOwn(draft, 'summary')) {
+    if (String(draft.summary ?? '').trim().length > 2500) throw new Error('Keep the brief summary within 2,500 characters; existing notes have not been changed.')
+    if (String(draft.next_action ?? '').trim().length > 500) throw new Error('Keep the next action within 500 characters.')
+    const detail = {
+      format: 'mkt-message-summary-v1', sender: email(draft.sender), summary: text(draft.summary, 2500),
+      next_action: text(draft.next_action, 500), follow_up_on: draft.follow_up_on || '',
+      response_status: draft.response_status || 'No action', verification: draft.verification || 'Unverified',
+    }
+    if (!['No action', 'Needs our reply', 'Waiting for reply', 'Follow up', 'Closed'].includes(detail.response_status)) throw new Error('Choose a valid response status.')
+    if (!['Reviewed', 'Unverified'].includes(detail.verification)) throw new Error('Choose a valid verification status.')
+    if (detail.follow_up_on && !validDay(detail.follow_up_on)) throw new Error('Choose a valid follow-up date.')
+    const encoded = JSON.stringify(detail)
+    if (Array.from(encoded).length > 4000) throw new Error('Shorten the summary or next action to fit this record.')
+    payload.notes = encoded
+  }
   if (!payload) throw new Error('Unknown record type.')
   if (!(payload.name || payload.title || payload.subject)) throw new Error('A name, title, or subject is required.')
   if (kind === 'listings' && !payload.business_id) throw new Error('Choose the business this listing belongs to.')
@@ -74,11 +112,12 @@ export function cleanPayload(kind, draft) {
   if (kind === 'emails' && payload.direction === 'Inbound' && payload.status === 'Draft') throw new Error('An inbound message cannot be a draft.')
   if (kind === 'tasks' && payload.type === 'Follow-up' && !payload.due_date) throw new Error('Choose a follow-up date.')
   for (const field of ['due_date', 'occurred_on']) {
-    if (payload[field] && (!/^\d{4}-\d{2}-\d{2}$/.test(payload[field]) || Number.isNaN(Date.parse(payload[field])) || new Date(payload[field]).toISOString().slice(0, 10) !== payload[field])) throw new Error('Choose a valid date.')
+    if (payload[field] && !validDay(payload[field])) throw new Error('Choose a valid date.')
   }
   return payload
 }
 export function toCsv(rows) {
+  rows = rows.map(row => Object.hasOwn(row, 'direction') && Object.hasOwn(row, 'subject') ? { ...row, ...messageSummary(row), notes: undefined } : row)
   if (!rows.length) return ''
   const fields = Object.keys(rows[0]).filter(k => !['workspace_id', 'created_by'].includes(k))
   const cell = value => {

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { cleanPayload, dashboard, emptyData, isDue, safeUrl, toCsv, validateConfig } from '../src/lib/domain.js'
+import { businessMessages, messageSummary, cleanPayload, dashboard, emptyData, isDue, safeUrl, toCsv, validateConfig } from '../src/lib/domain.js'
 import { demoRepository, liveRepository } from '../src/lib/repository.js'
 
 test('dashboard counts only active clients, open opportunities and uncompleted due follow-ups', () => {
@@ -55,4 +55,27 @@ test('live repository pages beyond the default API cap and surfaces database err
 test('live membership requires a server-verified user and an approved database membership',async()=>{
  const client={auth:{async getUser(){return {data:{user:{id:'nonmember'}},error:null}}},from(){return {select(){return this},eq(){return this},async maybeSingle(){return {data:null,error:null}}}}}
  await assert.rejects(()=>liveRepository(client).membership(),/not been approved/)
+})
+
+test('summary metadata round trips safely and preserves old notes on unrelated edits', () => {
+ const old = {subject:'Old message',recipient:'client@example.com',direction:'Outbound',status:'Sent',occurred_on:'2026-10-09',notes:'Original notes'}
+ assert.equal(messageSummary(old).summary,'Original notes')
+ assert.equal(messageSummary(old).verification,'Unverified')
+ assert.equal(cleanPayload('emails',old).notes,'Original notes')
+ const saved=cleanPayload('emails',{...old,sender:'mkt@example.com',summary:'A brief summary',next_action:'Prepare quote',follow_up_on:'2026-10-15',response_status:'Needs our reply',verification:'Reviewed'})
+ assert.equal(messageSummary(saved).sender,'mkt@example.com')
+ assert.equal(messageSummary(saved).summary,'A brief summary')
+ assert.equal(messageSummary(saved).follow_up_on,'2026-10-15')
+ assert.equal(cleanPayload('emails',saved).notes,saved.notes)
+ assert.throws(()=>cleanPayload('emails',{...old,summary:'Test',sender:'invalid'}),/valid email/)
+ assert.throws(()=>cleanPayload('emails',{...old,summary:'Test',follow_up_on:'2026-02-30'}),/valid follow-up/)
+ assert.throws(()=>cleanPayload('emails',{...old,summary:'\\'.repeat(2500)}),/Shorten/)
+ assert.match(toCsv([saved]),/sender/)
+ assert.match(toCsv([saved]),/A brief summary/)
+ assert.doesNotMatch(toCsv([saved]),/mkt-message-summary-v1/)
+})
+test('client timeline isolates business records and sorts message dates without inventing dates', () => {
+ const data=emptyData();data.emails=[{id:'a',business_id:'one',occurred_on:null},{id:'b',business_id:'two',occurred_on:'2026-10-20'},{id:'c',business_id:'one',occurred_on:'2026-10-09'},{id:'d',business_id:'one',occurred_on:'2026-10-10'}]
+ assert.deepEqual(businessMessages(data,'one').map(e=>e.id),['d','c','a'])
+ assert.equal(data.emails[0].occurred_on,null)
 })
