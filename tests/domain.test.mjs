@@ -48,7 +48,7 @@ test('live repository pages beyond the default API cap and surfaces database err
  let calls=0
  const client={from(){const query={select(){return this},eq(){return this},order(){return this},async range(from){calls++;return {data:Array.from({length:from===0?500:3},(_,i)=>({id:from+i})),error:null}}};return query}}
  const data=await liveRepository(client).load()
- assert.equal(data.businesses.length,503);assert.equal(data.tasks.length,503);assert.equal(calls,12)
+ assert.equal(data.businesses.length,503);assert.equal(data.tasks.length,503);assert.equal(calls,14)
  const broken={from(){return {select(){return this},eq(){return this},order(){return this},async range(){return {error:new Error('RLS failure')}}}}}
  await assert.rejects(()=>liveRepository(broken).load(),/RLS failure/)
 })
@@ -100,4 +100,13 @@ test('performance reports validate periods, preserve a real zero and reject miss
  assert.throws(()=>cleanPayload('statistics',{...record,period_start:'2026-10-10'}),/reporting period/)
  assert.throws(()=>cleanPayload('statistics',{...record,brand:'Other brand'}),/valid brand/)
  assert.throws(()=>cleanPayload('statistics',{...record,source_url:'javascript:alert(1)'}),/Source links/)
+})
+
+test('tracking dates preserve Mountain time and the 48-hour day boundary',async()=>{
+ const {trackingDates}=await import('../src/lib/domain.js')
+ const dates=trackingDates('2026-10-11T05:53:20Z')
+ assert.match(dates.installed,/Oct 10, 2026/)
+ assert.match(dates.check,/Oct 12, 2026/)
+ assert.match(dates.check,/11:53 PM MDT/)
+ assert.equal(trackingDates('invalid'),null)
 })

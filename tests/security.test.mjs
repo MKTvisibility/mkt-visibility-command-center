@@ -21,11 +21,25 @@ test('real PostgreSQL migration and RLS exercise approved, anonymous, revoked an
  await db.exec(readFileSync(new URL('../supabase/migrations/202610110005_internal_notes.sql',import.meta.url),'utf8'))
  await db.exec(`insert into auth.users values('${editor}'),('${viewer}'),('${stranger}'); insert into public.cc_workspaces values('${otherWorkspace}','Other workspace'); insert into public.cc_members(workspace_id,user_id,display_name,role) values ('${workspace}','${editor}','Editor','editor'),('${workspace}','${viewer}','Viewer','viewer');`)
  await db.exec(readFileSync(new URL('../supabase/migrations/202610110006_performance_statistics.sql',import.meta.url),'utf8'))
+ await db.exec(readFileSync(new URL('../supabase/migrations/202610110007_tracking_setup.sql',import.meta.url),'utf8'))
  const asUser=async(user,role='authenticated')=>{await db.exec(`reset role; select set_config('request.jwt.claim.sub','${user}',false); set role ${role};`)}
  const rows=async(query)=> (await db.query(query)).rows
- await t.test('all nine application tables have row-level security',async()=>{
+ await t.test('all ten application tables have row-level security',async()=>{
   const result=await rows("select relname from pg_class where relname like 'cc_%' and relkind='r' and relrowsecurity")
-  assert.equal(result.length,9)
+  assert.equal(result.length,10)
+ })
+ await t.test('tracking setup is audited, unique per brand and protected from viewer changes',async()=>{
+  await asUser(editor)
+  const sql="insert into cc_tracking_setup(brand,measurement_id,installed_at,source_url) values('MKT Visibility','G-TEST123','2026-10-11T05:53:20Z','https://github.com/example/run')"
+  await db.exec(sql)
+  await assert.rejects(()=>db.exec(sql),/unique/)
+  await asUser(viewer)
+  assert.equal((await rows('select * from cc_tracking_setup')).length,1)
+  await assert.rejects(()=>db.exec(sql),/row-level security/)
+  await db.exec("update cc_tracking_setup set measurement_id='G-BLOCKED'")
+  assert.equal((await rows('select measurement_id from cc_tracking_setup'))[0].measurement_id,'G-TEST123')
+  await asUser('', 'anon')
+  await assert.rejects(()=>db.exec('select * from cc_tracking_setup'),/permission denied/)
  })
  await t.test('approved editor can create, read, update and trigger an immutable audit entry',async()=>{
   await asUser(editor)
@@ -33,7 +47,7 @@ test('real PostgreSQL migration and RLS exercise approved, anonymous, revoked an
   assert.equal((await rows('select created_by from cc_businesses'))[0].created_by,editor)
   await db.exec(`update cc_businesses set monthly_fee=200 where id='${business}'`)
   assert.equal(Number((await rows('select monthly_fee from cc_businesses'))[0].monthly_fee),200)
-  const audit=await rows('select actor_id,action,changed_fields from cc_audit_log order by id')
+  const audit=await rows("select actor_id,action,changed_fields from cc_audit_log where table_name='cc_businesses' order by id")
   assert.equal(audit.length,2);assert.equal(audit[0].actor_id,editor);assert.equal(audit[1].action,'UPDATE');assert.ok(audit[1].changed_fields.includes('monthly_fee'))
  })
  await t.test('read-only viewer can read but cannot insert or update',async()=>{
@@ -45,7 +59,7 @@ test('real PostgreSQL migration and RLS exercise approved, anonymous, revoked an
  })
  await t.test('unapproved user cannot read or write records, audit log or workspace',async()=>{
   await asUser(stranger)
-  for(const table of ['cc_businesses','cc_listings','cc_emails','cc_tasks','cc_purchases','cc_statistics','cc_audit_log','cc_workspaces','cc_members'])assert.equal((await rows(`select * from ${table}`)).length,0)
+  for(const table of ['cc_businesses','cc_listings','cc_emails','cc_tasks','cc_purchases','cc_statistics','cc_tracking_setup','cc_audit_log','cc_workspaces','cc_members'])assert.equal((await rows(`select * from ${table}`)).length,0)
   await assert.rejects(()=>db.exec("insert into cc_businesses(name) values('Blocked')"),/row-level security/)
  })
  await t.test('anonymous callers have no table or access-function privileges',async()=>{
