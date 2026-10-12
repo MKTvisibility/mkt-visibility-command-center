@@ -21,6 +21,28 @@ export function liveRepository(client) {
       if (!data) throw new Error('This account has not been approved for the MKT workspace. Ask the workspace owner to add your user ID.')
       return { ...data, user_id: auth.user.id }
     },
+    async loadLivePage(businessId) {
+      const {data:profile,error}=await client.from('cc_ll_live_profiles').select('*').eq('business_id',businessId).eq('workspace_id',WORKSPACE_ID).maybeSingle()
+      if(error)throw error
+      if(!profile)return null
+      const {data:publication,error:pubError}=await client.from('cc_ll_live_publications').select('revision,published_at,active').eq('business_id',businessId).maybeSingle()
+      if(pubError)throw pubError
+      return {profile,publication}
+    },
+    async saveLivePage(businessId,business,settings,businessVersion,profileVersion) {
+      const member=await this.membership();if(member.role==='viewer')throw new Error('Your account is read-only.')
+      const {data,error}=await client.rpc('cc_save_ll_live_profile',{p_business_id:businessId,p_business:business,p_settings:settings,p_business_version:businessVersion,p_profile_version:profileVersion})
+      if(error)throw error
+      const {data:saved,error:loadError}=await client.from('cc_businesses').select('*').eq('id',businessId).eq('workspace_id',WORKSPACE_ID).single()
+      if(loadError)throw new Error('Draft saved, but business refresh failed. Reload before continuing.')
+      return {...data,business:saved}
+    },
+    async previewLivePage(businessId) {
+      const {data,error}=await client.rpc('cc_preview_ll_live_profile',{p_business_id:businessId});if(error)throw error;return data
+    },
+    async publishLivePage(businessId,signature) {
+      const {data,error}=await client.rpc('cc_publish_ll_live_profile',{p_business_id:businessId,p_signature:signature});if(error)throw error;return data
+    },
     async loadDraftPublication(businessId) {
       const {data,error}=await client.from('cc_ll_draft_publications').select('*').eq('business_id',businessId).maybeSingle()
       if(error)throw error

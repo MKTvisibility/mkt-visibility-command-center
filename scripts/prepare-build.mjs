@@ -4,3 +4,7 @@ const migrations = readdirSync('supabase/migrations').filter(name => name.endsWi
 writeFileSync('public/setup/database.sql', migrations.map(name => readFileSync(`supabase/migrations/${name}`, 'utf8')).join('\n'))
 copyFileSync('supabase/members.example.sql', 'public/setup/members.sql')
 copyFileSync('docs/SETUP.md', 'public/setup/README.md')
+
+mkdirSync('public/live', {recursive:true})
+copyFileSync('src/lib/live-profile-view.mjs','public/live/profile-view.mjs')
+copyFileSync('src/live-profile.css','public/live/business-profile.css')

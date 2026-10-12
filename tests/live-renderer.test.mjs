@@ -1,0 +1,17 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {JSDOM} from 'jsdom'
+import {readFileSync,mkdtempSync,writeFileSync,rmSync} from 'node:fs'
+import {join} from 'node:path'
+import {pathToFileURL} from 'node:url'
+test('public renderer loads only published snapshots, honors placements, shows complete photos and leaves header/footer intact',async()=>{
+ const row={business_id:'b1',route:'photo.html',active:true,directory:true,spotlight_pages:['businesses.html','index.html'],spotlight_order:0,public_content:{name:'Photo Studio',description:'Public text',gallery:[{url:'https://example.com/one.webp'}]}};
+ const dir=mkdtempSync(join(process.cwd(),'.ui-test-'));let number=0;
+ async function run(html,path,rows){const dom=new JSDOM(html,{url:'https://lovinglongmont.com/'+path});globalThis.document=dom.window.document;globalThis.location=dom.window.location;globalThis.Event=dom.window.Event;globalThis.fetch=async url=>{assert.ok(url.includes('/cc_ll_live_publications?select='));assert.ok(!url.includes('cc_businesses'));return {ok:true,json:async()=>rows}};const raw=readFileSync(new URL('../public/live/live-page.mjs',import.meta.url),'utf8').replace("from './profile-view.mjs'","from '"+new URL('../src/lib/live-profile-view.mjs',import.meta.url).href+"'");const f=join(dir,'run'+number+++'.mjs');writeFileSync(f,raw);await import(pathToFileURL(f).href);await new Promise(resolve=>setImmediate(resolve));return dom}
+ try{let dom=await run('<header>Original header</header><main id="business-profile" data-ll-profile="b1"></main><footer>Original footer</footer>','photo.html',[row]);assert.equal(dom.window.document.querySelector('h1').textContent,'Photo Studio');assert.equal(dom.window.document.querySelectorAll('#business-profile img').length,1);assert.equal(dom.window.document.querySelector('footer').textContent,'Original footer');assert.ok(!dom.window.document.querySelector('[href^="tel:"]'));assert.ok(dom.window.document.querySelector('script[type="application/ld+json"]'));dom.window.close();
+ dom=await run('<header>Original header</header><div class="business-grid"><div id="photo" data-ll-live-business="b1" data-ll-placement="directory"></div></div><div data-ll-live-business="b1" data-ll-placement="spotlight"></div><footer>Original footer</footer>','businesses.html',[row]);assert.equal(dom.window.document.querySelectorAll('.business-card').length,1);assert.equal(dom.window.document.querySelectorAll('.ll-connected-card').length,1);assert.equal(dom.window.document.querySelectorAll('.ll-connected-spotlights').length,0);dom.window.close();
+ dom=await run('<header>Original header</header><div data-ll-live-business="b1" data-ll-placement="directory"></div><footer>Original footer</footer>','index.html',[{...row,directory:false}]);assert.equal(dom.window.document.querySelectorAll('[data-ll-placement]').length,0);assert.equal(dom.window.document.querySelectorAll('.ll-connected-spotlights').length,1);dom.window.close();
+ dom=await run('<main id="business-profile" data-ll-profile="b1"></main><footer>Original footer</footer>','photo.html',[]);assert.match(dom.window.document.querySelector('h1').textContent,/unavailable/);assert.ok(!dom.window.document.querySelector('img'));dom.window.close();
+ const css=readFileSync(new URL('../public/live/business-profile.css',import.meta.url),'utf8');assert.match(css,/height:auto!important/);assert.match(css,/object-fit:contain!important/);
+ }finally{rmSync(dir,{recursive:true,force:true})}
+});

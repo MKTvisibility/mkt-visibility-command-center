@@ -1,0 +1,24 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {readFileSync} from 'node:fs'
+import {PGlite} from '@electric-sql/pglite'
+const workspace='c8748032-cdd3-443b-8c56-2e846cc9bf31',editor='22222222-2222-4222-8222-222222222222',viewer='33333333-3333-4333-8333-333333333333',outsider='44444444-4444-4444-8444-444444444444',business='55555555-5555-4555-8555-555555555555';
+test('live drafts require approved editors, isolate unpublished edits, export only selected fields and reject stale previews',async()=>{
+ const db=new PGlite();await db.exec(`create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated,anon;grant execute on function auth.uid() to authenticated,anon;`);
+ for(const f of ['202610110001_command_center.sql','202610110002_business_profiles.sql','20261012075549_connected_live_business_pages.sql'])await db.exec(readFileSync(new URL('../supabase/migrations/'+f,import.meta.url),'utf8'));
+ const settings={fields:{description:true,phone:false,address:false,gallery:true,social_urls:true},gallery:[{url:'https://example.com/show.webp',enabled:true},{url:'https://example.com/hidden.webp',enabled:false}],social_visibility:{'https://instagram.com/private':false},directory:true,spotlight_pages:['businesses.html'],active:true};
+ await db.exec(`insert into auth.users values('${editor}'),('${viewer}'),('${outsider}');insert into cc_members(workspace_id,user_id,display_name,role) values('${workspace}','${editor}','Editor','editor'),('${workspace}','${viewer}','Viewer','viewer');insert into cc_businesses(id,name,description,address,phone,notes,social_urls) values('${business}','Test Shop','Original','PRIVATE HOME','PRIVATE PHONE','PRIVATE NOTES',array['https://facebook.com/public','https://instagram.com/private']);`);
+ await db.query(`insert into cc_ll_live_profiles(business_id,workspace_id,route,settings) values($1,$2,'test-shop.html',$3)`,[business,workspace,JSON.stringify(settings)]);
+ const as=async(user,role='authenticated')=>db.exec(`reset role;select set_config('request.jwt.claim.sub','${user}',false);set role ${role}`);
+ const preview=async()=> (await db.query('select cc_preview_ll_live_profile($1) result',[business])).rows[0].result;
+ const publish=async(p)=> (await db.query('select to_jsonb(cc_publish_ll_live_profile($1,$2)) result',[business,p.signature])).rows[0].result;
+ await as(editor);let p=await preview();assert.ok(!JSON.stringify(p).includes('PRIVATE'));assert.deepEqual(p.public_content.gallery,[{url:'https://example.com/show.webp'}]);assert.deepEqual(p.public_content.social_urls,['https://facebook.com/public']);let pub=await publish(p);assert.equal(pub.revision,1);
+ const b=(await db.query('select updated_at from cc_businesses where id=$1',[business])).rows[0],prof=(await db.query('select updated_at from cc_ll_live_profiles where business_id=$1',[business])).rows[0];
+ await db.query('select cc_save_ll_live_profile($1,$2,$3,$4,$5)',[business,JSON.stringify({description:'Saved only'}),JSON.stringify(settings),b.updated_at,prof.updated_at]);
+ assert.equal((await db.query('select public_content from cc_ll_live_publications')).rows[0].public_content.description,'Original');await assert.rejects(()=>publish(p),/preview changed/);await assert.rejects(()=>db.query('select cc_save_ll_live_profile($1,$2,$3,$4,$5)',[business,'{}',JSON.stringify(settings),b.updated_at,prof.updated_at]),/record changed/);
+ p=await preview();pub=await publish(p);assert.equal(pub.public_content.description,'Saved only');assert.equal(pub.revision,2);assert.equal((await db.query('select notes,address,phone from cc_businesses')).rows[0].notes,'PRIVATE NOTES');
+ await assert.rejects(()=>db.query("update cc_ll_live_publications set public_content=public_content||'{\"phone\":\"injected\"}'"),/row-level security/);
+ for(const user of [viewer,outsider]){await as(user);await assert.rejects(preview,/Approved editor required/);await assert.rejects(()=>publish(p),/Approved editor required/)}
+ await as('','anon');assert.equal((await db.query('select public_content from cc_ll_live_publications')).rows.length,1);for(const sql of ['select * from cc_businesses','select * from cc_ll_live_profiles','select published_by from cc_ll_live_publications'])await assert.rejects(()=>db.query(sql),/permission denied/);await assert.rejects(preview,/permission denied/);
+ await as(editor);await db.query(`update cc_ll_live_profiles set settings=jsonb_set(settings,'{active}','false'),updated_at=clock_timestamp()`);await publish(await preview());await as('','anon');assert.equal((await db.query('select public_content from cc_ll_live_publications')).rows.length,0);await db.close();
+});

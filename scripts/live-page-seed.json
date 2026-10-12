@@ -1,0 +1,67 @@
+{
+  "settings": {
+    "tagline": "People \u00b7 Places \u00b7 Real Moments",
+    "photographer": "Michelle Skolyak",
+    "service_area": "Longmont & Boulder County, Colorado",
+    "story": "Boulder County Photography focuses on the people, relationships and moments that matter. Photographer Michelle Skolyak offers personal portrait sessions that give individuals, couples and families room to feel comfortable and be themselves.\n\nFrom a senior milestone or engagement to welcoming a new baby or documenting family life, the approach is relaxed and centered on personality and connection. The goal is to create photographs that reflect this chapter of your life.",
+    "services": [
+      "Family portraits",
+      "Senior portraits",
+      "Couples & engagements",
+      "Individual portraits",
+      "Maternity portraits",
+      "Newborn photography",
+      "Personal milestones & special moments"
+    ],
+    "gallery": [
+      {
+        "url": "https://lovinglongmont.com/assets/boulder-county-photography/outdoor-portrait.webp",
+        "alt": "Outdoor portrait by Boulder County Photography",
+        "caption": "Original portrait photography by Boulder County Photography.",
+        "enabled": true
+      },
+      {
+        "url": "https://lovinglongmont.com/assets/boulder-county-photography/family-portrait.webp",
+        "alt": "Mother and child portrait by Boulder County Photography",
+        "caption": "Family connections",
+        "enabled": true
+      },
+      {
+        "url": "https://lovinglongmont.com/assets/boulder-county-photography/engagement-portrait.webp",
+        "alt": "Couple celebrating an engagement, photographed by Boulder County Photography",
+        "caption": "Couples & milestones",
+        "enabled": true
+      },
+      {
+        "url": "https://lovinglongmont.com/assets/boulder-county-photography/studio-portrait.webp",
+        "alt": "Portrait with a dark background by Boulder County Photography",
+        "caption": "Individual portraits",
+        "enabled": true
+      }
+    ],
+    "fields": {
+      "description": true,
+      "phone": true,
+      "email": true,
+      "website": true,
+      "image_url": true,
+      "categories": true,
+      "tagline": true,
+      "photographer": true,
+      "service_area": true,
+      "story": true,
+      "services": true,
+      "gallery": true,
+      "address": false,
+      "social_urls": false
+    },
+    "social_visibility": {},
+    "directory": true,
+    "spotlight_pages": [
+      "businesses.html"
+    ],
+    "spotlight_order": 0,
+    "active": true
+  },
+  "description": "Relaxed portrait and lifestyle photography with Michelle Skolyak, serving Longmont, Boulder County and surrounding Colorado communities."
+}
