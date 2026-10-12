@@ -1,7 +1,7 @@
 import { metadata } from './portfolio.js'
 export const BUSINESS_KINDS = ['Prospect','Client','Non-profit','Partner-owned Business']
 export const LISTING_ARRANGEMENTS = ['Not specified','Free basic listing','Paid listing','Coupon','Included in MKT Visibility package','Included with Loving Longmont','Partner-owned listing']
-export const PARTNERSHIP = 'Current partners: Michelle and Tim. Kayli may join later; she is not a current partner.'
+export const PARTNERSHIP = 'Current partners: Michelle and Tim.'
 export const LISTING_POLICY = 'Paid Loving Longmont listings include a free MKT Colorado listing of the same level and value. MKT Visibility paying customers may receive listings free or included in their purchased package. Partner-owned businesses have their own category.'
 export function listingBenefit(business) {
  const m=metadata(business)

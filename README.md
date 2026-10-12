@@ -22,4 +22,4 @@ Do not rerun the initial migration on the existing database. SQL files are schem
 
 Build command: npm run build. Output directory: dist. Configure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in the hosting provider's build settings. These are public browser configuration. Keep database passwords and service-role keys out of Git and the frontend. .openai/hosting.json preserves the original Site identity and is not required by other static hosts.
 
-Current partnership: Michelle and Tim. Kayli may join later.
+Current partnership: Michelle and Tim.
