@@ -1,0 +1,17 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {readFileSync,readdirSync} from 'node:fs'
+import {PGlite} from '@electric-sql/pglite'
+const workspace='c8748032-cdd3-443b-8c56-2e846cc9bf31',editor='22222222-2222-4222-8222-222222222222',business='55555555-5555-4555-8555-555555555555';
+test('draft publication snapshots isolate saved edits, hide fields and individual social accounts, preserve placement and reject anonymous publishing',async()=>{
+ const db=new PGlite();await db.exec(`create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated,anon;grant execute on function auth.uid() to authenticated,anon;`);
+ const dir=new URL('../supabase/migrations/',import.meta.url);
+ for(const file of ['202610110001_command_center.sql','202610110002_business_profiles.sql','20261012045938_loving_longmont_draft_publication.sql',...readdirSync(dir).filter(f=>f.endsWith('_loving_longmont_draft_social_visibility.sql'))])await db.exec(readFileSync(new URL(file,dir),'utf8'));
+ await db.exec(`insert into auth.users values('${editor}');insert into cc_members(workspace_id,user_id,display_name,role) values('${workspace}','${editor}','Editor','editor');select set_config('request.jwt.claim.sub','${editor}',false);set role authenticated;`);
+ const metadata={format:'mkt-portfolio-v1',text:'Private research',businessStory:'Approved story',draftSocialVisibility:{'https://instagram.com/shop':false},publicationOptions:{tier:'Paid',fields:{phone:false,story:false,social_urls:true}}};
+ await db.query(`insert into cc_businesses(id,name,description,phone,social_urls,notes) values($1,'Test Shop','Published description','555-1212',array['https://facebook.com/shop','https://instagram.com/shop'],$2)`,[business,JSON.stringify(metadata)]);
+ const publish=()=>db.query(`select (cc_publish_ll_draft($1,array['events.html','community.html'],false,array['index.html','events.html'],7,true)).*`,[business]);
+ let row=(await publish()).rows[0];assert.equal(row.directory,false);assert.deepEqual(row.pages,['events.html','community.html']);assert.equal(row.spotlight_order,7);assert.deepEqual(row.public_content.social_urls,['https://facebook.com/shop']);assert.ok(!('phone' in row.public_content));assert.ok(!('story' in row.public_content));assert.ok(!('notes' in row.public_content));
+ await db.exec("update cc_businesses set description='Saved change'");row=(await db.query('select public_content from cc_ll_draft_publications')).rows[0];assert.equal(row.public_content.description,'Published description');row=(await publish()).rows[0];assert.equal(row.public_content.description,'Saved change');assert.equal((await db.query('select phone,social_urls,notes from cc_businesses')).rows[0].phone,'555-1212');
+ await db.exec("reset role;select set_config('request.jwt.claim.sub','',false);set role anon;");await assert.rejects(publish,/permission denied/);await assert.rejects(()=>db.query('select * from cc_businesses'),/permission denied/);assert.equal((await db.query('select public_content from cc_ll_draft_publications')).rows.length,1);await assert.rejects(()=>db.query('select published_by from cc_ll_draft_publications'),/permission denied/);await db.close();
+});
