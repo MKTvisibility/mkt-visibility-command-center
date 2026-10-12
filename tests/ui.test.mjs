@@ -38,6 +38,7 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
  const transformed=await transformWithOxc(raw,'App.jsx',{jsx:{runtime:'automatic'}})
  const filename=join(directory,'App.mjs');writeFileSync(filename,transformed.code)
  let networkCalls=0
+ const originalConsoleError=console.error,duplicateKeyWarnings=[];console.error=(...args)=>{if(String(args[0]).includes('same key'))duplicateKeyWarnings.push(args);else originalConsoleError(...args)};
  const oldFetch=globalThis.fetch;globalThis.fetch=()=>{networkCalls++;throw new Error('Practice must not use the network')}
  try{
   const {default:App,Records,Pipeline,BusinessProfile}=await import(pathToFileURL(filename).href)
@@ -412,7 +413,7 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   const savedPublic=JSON.parse(publishSaved.notes)
   assert.equal(savedPublic.publicationOptions.tier,'Paid');assert.equal(savedPublic.publicationOptions.fields.phone,false)
   assert.equal(savedPublic.publicationOptions.fields.email,true);assert.equal(savedPublic.listingGalleryUrls.length,2)
-  assert.equal(savedPublic.text,'Private research')
+  assert.equal(savedPublic.text,'Private research');assert.equal(duplicateKeyWarnings.length,0,'Updating a client must not duplicate editor or notes panels')
 
- }finally{cleanup();globalThis.fetch=oldFetch;rmSync(directory,{recursive:true,force:true});dom.window.close()}
+ }finally{console.error=originalConsoleError;cleanup();globalThis.fetch=oldFetch;rmSync(directory,{recursive:true,force:true});dom.window.close()}
 })
