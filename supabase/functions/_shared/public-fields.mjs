@@ -1,5 +1,5 @@
 export const PUBLIC_FIELDS = [
- ['name','Business name',false],['description','Description',false],['image_url','Main photo',false],['address','Address',false],['phone','Phone',false],['website','Website',false],
+ ['story','Business story',false],['name','Business name',false],['description','Description',false],['image_url','Main photo',false],['address','Address',false],['phone','Phone',false],['website','Website',false],
  ['email','Public email',true],['social_urls','Social media links',true],['categories','Category labels',true],['gallery_images','Additional photos',true]
 ]
 export function sanitizePublicationOptions(value={}) {

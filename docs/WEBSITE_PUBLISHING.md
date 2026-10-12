@@ -24,3 +24,9 @@ Existing website inventory URLs select the pages to update. For a new placement,
 Free listings default to name, description, one main photo, address, phone and website. The name is required; other fields can be unchecked. Paid listings allow explicit opt-in to public email, social media links, category labels and up to four additional photos. Paid selection does not verify payment or change pricing. The server enforces these selections against saved business metadata. Switching back to Free excludes all paid extras without deleting their saved internal values. No internal notes, tasks, private contact name or billing fields can be selected for publication.
 
 Preview reads the public GitHub source and works before write credentials are connected. Without credentials, the preview clearly disables publishing/removal. Authorized writes still require server-only repository credentials.
+
+## Loving Longmont draft business pages
+
+The private Loving Longmont draft uses `cc_ll_draft_publications`, a separate snapshot of explicitly selected public fields. Editors save business information and image uploads, then choose **Publish to Loving Longmont draft**. The `cc_publish_ll_draft` SECURITY INVOKER function reads saved records under membership RLS, applies public field selections, and creates the snapshot. Directory and spotlight previews share `business.html?id=<business-id>` as the canonical individual page. Publishing to this draft does not commit changes to either live website.
+
+Draft directory inclusion, page placements, spotlight placements and order are separate from the individual page's active status. Unpublishing retains the business and its uploaded images. Anonymous readers can retrieve only public content and layout fields; publisher identities and workspace IDs are not granted to anonymous readers. Stories are explicitly entered and approved; missing stories and missing images are not invented.

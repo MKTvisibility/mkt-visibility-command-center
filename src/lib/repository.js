@@ -21,6 +21,16 @@ export function liveRepository(client) {
       if (!data) throw new Error('This account has not been approved for the MKT workspace. Ask the workspace owner to add your user ID.')
       return { ...data, user_id: auth.user.id }
     },
+    async loadDraftPublication(businessId) {
+      const {data,error}=await client.from('cc_ll_draft_publications').select('*').eq('business_id',businessId).maybeSingle()
+      if(error)throw error
+      return data
+    },
+    async publishDraftBusiness(businessId,settings) {
+      const {data,error}=await client.rpc('cc_publish_ll_draft',{p_business_id:businessId,p_pages:settings.pages,p_directory:settings.directory,p_spotlight_pages:settings.spotlight_pages,p_order:settings.spotlight_order,p_active:settings.active})
+      if(error)throw error
+      return data
+    },
     async loadPartnerMessages() {
       const [messages,reactions] = await Promise.all([readAll(client,'cc_partner_messages'),readAll(client,'cc_partner_reactions')])
       return {messages,reactions}
