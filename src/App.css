@@ -93,3 +93,14 @@
 .workflow-stage { margin: 22px 0 6px; padding: 8px 10px; background: #edf3f6; border-radius: 6px; }
 .listing-image-preview{display:block;width:min(100%,320px);height:200px;object-fit:contain;border:1px solid #dbe4e8;background:#fff;border-radius:8px;margin:12px 0}.business-publishing{margin:24px 0}.business-publishing label{display:block;margin:12px 0}.business-publishing .check{display:flex}.upload-image input{display:block;margin-top:8px;max-width:100%}
 .public-field-options{border:1px solid #dbe4e8;padding:16px;border-radius:10px;margin:20px 0}.public-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 18px}.public-field-grid .check{align-items:center}@media(max-width:650px){.public-field-grid{grid-template-columns:1fr}}
+
+.partner-messages { margin-bottom:24px; }
+.partner-messages form { display:grid; gap:12px; margin:16px 0; }
+.partner-messages label { display:grid; gap:8px; }
+.partner-messages textarea { width:100%; min-height:86px; resize:vertical; }
+.partner-messages form>.primary { justify-self:start; }
+.partner-message { padding:20px 0; border-top:1px solid #dce6ec; }
+.partner-body { white-space:pre-wrap; overflow-wrap:anywhere; }
+.partner-reply { margin:16px 0 0 16px; padding:14px; background:#f4f8fa; border-left:3px solid #24766b; border-radius:6px; }
+.partner-messages button[aria-pressed=true] { background:#dceee8; border-color:#24766b; }
+.partner-messages .actions { flex-wrap:wrap; }

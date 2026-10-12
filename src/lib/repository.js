@@ -21,6 +21,21 @@ export function liveRepository(client) {
       if (!data) throw new Error('This account has not been approved for the MKT workspace. Ask the workspace owner to add your user ID.')
       return { ...data, user_id: auth.user.id }
     },
+    async loadPartnerMessages() {
+      const [messages,reactions] = await Promise.all([readAll(client,'cc_partner_messages'),readAll(client,'cc_partner_reactions')])
+      return {messages,reactions}
+    },
+    async postPartnerMessage(body,parent_id=null) {
+      const {data,error}=await client.from('cc_partner_messages').insert({workspace_id:WORKSPACE_ID,body,parent_id}).select().single()
+      if(error)throw error
+      return data
+    },
+    async reactPartnerMessage(message_id,value) {
+      const member=await this.membership()
+      const {data,error}=await client.from('cc_partner_reactions').upsert({workspace_id:WORKSPACE_ID,message_id,user_id:member.user_id,value},{onConflict:'message_id,user_id'}).select().single()
+      if(error)throw error
+      return data
+    },
     async uploadListingImage(businessId,file) {
       const member=await this.membership()
       if(member.role==='viewer') throw new Error('Your account is read-only.')
@@ -66,6 +81,17 @@ export function liveRepository(client) {
 export function demoRepository(initial = sampleData()) {
   let data = structuredClone(initial)
   return {
+    async loadPartnerMessages() { return structuredClone(this.partnerData || {messages:[],reactions:[]}) },
+    async postPartnerMessage(body,parent_id=null) {
+      this.partnerData ||= {messages:[],reactions:[]}
+      const message={id:crypto.randomUUID(),body,parent_id,author_name:'Practice workspace',created_at:new Date().toISOString()}
+      this.partnerData.messages.unshift(message);return message
+    },
+    async reactPartnerMessage(message_id,value) {
+      this.partnerData ||= {messages:[],reactions:[]}
+      const reaction={id:message_id,user_id:'practice-user',message_id,value}
+      this.partnerData.reactions=this.partnerData.reactions.filter(r=>r.id!==reaction.id).concat(reaction);return reaction
+    },
     async membership() { return { role: 'owner', display_name: 'Practice workspace', user_id: 'practice-user' } },
     async load() { return {...structuredClone(data),tasks:structuredClone(data.tasks).map(hydrateTask)} },
     async save(kind, draft) {
