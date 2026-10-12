@@ -22,9 +22,9 @@ export function liveRepository(client) {
       return { ...data, user_id: auth.user.id }
     },
     async loadLivePage(businessId) {
-      const {data:profile,error}=await client.from('cc_ll_live_profiles').select('*').eq('business_id',businessId).eq('workspace_id',WORKSPACE_ID).maybeSingle()
+      let {data:profile,error}=await client.from('cc_ll_live_profiles').select('*').eq('business_id',businessId).eq('workspace_id',WORKSPACE_ID).maybeSingle()
       if(error)throw error
-      if(!profile)return null
+      if(!profile){const result=await client.rpc('cc_ensure_live_profile',{p_business_id:businessId});if(result.error)throw result.error;profile=result.data}
       const {data:publication,error:pubError}=await client.from('cc_ll_live_publications').select('revision,published_at,active').eq('business_id',businessId).maybeSingle()
       if(pubError)throw pubError
       return {profile,publication}
