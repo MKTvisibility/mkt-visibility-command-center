@@ -648,3 +648,101 @@ end $$;
 revoke all on function public.cc_ensure_live_profile(uuid) from public,anon;grant execute on function public.cc_ensure_live_profile(uuid) to authenticated;
 grant insert on public.cc_ll_live_profiles to authenticated;
 create policy live_profile_create on public.cc_ll_live_profiles for insert to authenticated with check(public.cc_has_access(workspace_id,true) and exists(select 1 from public.cc_businesses b where b.id=cc_ll_live_profiles.business_id and b.workspace_id=cc_ll_live_profiles.workspace_id));
+
+begin;
+create extension if not exists pg_cron;
+create extension if not exists pg_net;
+alter table public.cc_statistics add column automated boolean not null default false;
+drop policy cc_insert on public.cc_statistics;
+drop policy cc_update on public.cc_statistics;
+create policy cc_insert on public.cc_statistics for insert to authenticated with check(public.cc_has_access(workspace_id,true) and not automated);
+create policy cc_update on public.cc_statistics for update to authenticated using(public.cc_has_access(workspace_id,true) and not automated) with check(public.cc_has_access(workspace_id,true) and not automated);
+
+create table public.cc_ga_sync_state (
+ workspace_id uuid not null references public.cc_workspaces(id),
+ brand text not null,
+ property_id text not null check(property_id ~ '^\d+$'),
+ status text not null default 'needs_setup' check(status in ('needs_setup','success','error')),
+ last_attempt_at timestamptz,last_success_at timestamptz,last_error text not null default '',
+ period_start date,period_end date,sources jsonb not null default '[]',locations jsonb not null default '[]',
+ primary key(workspace_id,brand)
+);
+alter table public.cc_ga_sync_state enable row level security;
+revoke all on public.cc_ga_sync_state from public,anon,authenticated;
+grant select on public.cc_ga_sync_state to authenticated;
+grant all on public.cc_ga_sync_state to service_role;
+create policy cc_read on public.cc_ga_sync_state for select to authenticated using(public.cc_has_access(workspace_id));
+create table public.cc_ga_sync_control (
+ workspace_id uuid primary key references public.cc_workspaces(id),lease uuid,lease_until timestamptz,last_requested_at timestamptz
+);
+alter table public.cc_ga_sync_control enable row level security;
+revoke all on public.cc_ga_sync_control from public,anon,authenticated;
+grant all on public.cc_ga_sync_control to service_role;
+
+commit;
+
+begin;
+-- Only the backend can obtain this scheduler token. It never enters browser code.
+do $$ begin
+ if not exists(select 1 from vault.secrets where name='cc_ga_cron_token') then
+  perform vault.create_secret(replace(gen_random_uuid()::text||gen_random_uuid()::text,'-',''),'cc_ga_cron_token','Command Center Analytics scheduler');
+ end if;
+end $$;
+create function public.cc_ga_cron_token() returns text language plpgsql security definer set search_path='' as $$
+begin
+ if (select auth.jwt()->>'role') is distinct from 'service_role' then raise exception 'Backend access required'; end if;
+ return (select decrypted_secret from vault.decrypted_secrets where name='cc_ga_cron_token');
+end $$;
+revoke all on function public.cc_ga_cron_token() from public,anon,authenticated;
+grant execute on function public.cc_ga_cron_token() to service_role;
+
+create function public.cc_ga_claim() returns uuid language plpgsql security invoker set search_path='' as $$
+declare result uuid;
+begin
+ update public.cc_ga_sync_control set lease=gen_random_uuid(),lease_until=now()+interval '5 minutes',last_requested_at=now()
+ where workspace_id='c8748032-cdd3-443b-8c56-2e846cc9bf31' and (lease_until is null or lease_until<now()) and (last_requested_at is null or last_requested_at<now()-interval '1 minute') returning lease into result;
+ return result;
+end $$;
+create function public.cc_ga_release(p_lease uuid) returns void language sql security invoker set search_path='' as $$
+ update public.cc_ga_sync_control set lease=null,lease_until=null where lease=p_lease and workspace_id='c8748032-cdd3-443b-8c56-2e846cc9bf31';
+$$;
+create function public.cc_ga_failure(p_brand text,p_error text,p_status text default 'error') returns void language sql security invoker set search_path='' as $$
+ update public.cc_ga_sync_state set status=p_status,last_attempt_at=now(),last_error=left(p_error,500) where workspace_id='c8748032-cdd3-443b-8c56-2e846cc9bf31' and brand=p_brand;
+$$;
+create function public.cc_ga_store(p_report jsonb) returns void language plpgsql security invoker set search_path='' as $$
+declare r jsonb; expected_property text;
+begin
+ select property_id into expected_property from public.cc_ga_sync_state where workspace_id='c8748032-cdd3-443b-8c56-2e846cc9bf31' and brand=p_report->>'brand';
+ if expected_property is null or expected_property is distinct from p_report->>'property' or jsonb_array_length(p_report->'records')<>24 then raise exception 'Invalid Analytics property report'; end if;
+ for r in select value from jsonb_array_elements(p_report->'records') loop
+  if r->>'brand' is distinct from p_report->>'brand' or r->>'channel'<>'Website' or r->>'source'<>'Google Analytics' or r->>'metric' not in ('Visitors','Page views','Sessions') then raise exception 'Invalid Analytics statistic'; end if;
+  insert into public.cc_statistics(workspace_id,brand,channel,metric,period_start,period_end,value,source,source_url,notes,automated)
+  values('c8748032-cdd3-443b-8c56-2e846cc9bf31',r->>'brand','Website',r->>'metric',(r->>'period_start')::date,(r->>'period_end')::date,(r->>'value')::numeric,'Google Analytics',r->>'source_url',r->>'notes',true)
+  on conflict(workspace_id,brand,channel,metric,period_start,period_end,source) do update set value=excluded.value,source_url=excluded.source_url,notes=excluded.notes,automated=true;
+ end loop;
+ update public.cc_ga_sync_state set status='success',last_attempt_at=now(),last_success_at=now(),last_error='',period_start=(p_report->'range'->>'start')::date,period_end=(p_report->'range'->>'end')::date,sources=p_report->'sources',locations=p_report->'locations'
+ where workspace_id='c8748032-cdd3-443b-8c56-2e846cc9bf31' and brand=p_report->>'brand';
+end $$;
+revoke all on function public.cc_ga_claim(),public.cc_ga_release(uuid),public.cc_ga_failure(text,text,text),public.cc_ga_store(jsonb) from public,anon,authenticated;
+grant execute on function public.cc_ga_claim(),public.cc_ga_release(uuid),public.cc_ga_failure(text,text,text),public.cc_ga_store(jsonb) to service_role;
+grant insert,update,select on public.cc_statistics to service_role;
+
+commit;
+
+begin;
+insert into public.cc_ga_sync_control(workspace_id) select id from public.cc_workspaces where id='c8748032-cdd3-443b-8c56-2e846cc9bf31';
+insert into public.cc_ga_sync_state(workspace_id,brand,property_id)
+select w.id,p.brand,p.property_id from public.cc_workspaces w cross join (values
+ ('Loving Longmont','558375784'),('MKT Colorado','558329947'),('MKT Visibility','558367806'),('Open Theory Cove','558417742'),('Boulder County Photography','558429449')) p(brand,property_id)
+where w.id='c8748032-cdd3-443b-8c56-2e846cc9bf31';
+-- Two UTC slots make 8 AM Mountain correct in both daylight and standard time.
+select cron.schedule('cc-google-analytics-daily','0 13,14 * * *',$job$
+ select net.http_post(
+  url:='https://gvmwkltwrlqwbqegieum.supabase.co/functions/v1/sync-google-analytics',
+  headers:=jsonb_build_object('Content-Type','application/json','x-cc-ga-token',(select decrypted_secret from vault.decrypted_secrets where name='cc_ga_cron_token')),
+  body:='{"action":"refresh"}'::jsonb,timeout_milliseconds:=180000)
+ where extract(hour from now() at time zone 'America/Denver')=8;
+$job$);
+commit;
+
+create policy cc_backend_only on public.cc_ga_sync_control for all to service_role using(true) with check(true);

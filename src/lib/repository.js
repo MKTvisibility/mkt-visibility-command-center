@@ -14,6 +14,16 @@ async function readAll(client, table) {
 }
 export function liveRepository(client) {
   return {
+    async analyticsStatus() {
+      const {data,error}=await client.functions.invoke('sync-google-analytics',{body:{action:'status'}})
+      if(error)throw error
+      return data
+    },
+    async refreshAnalytics(brand) {
+      const {data,error}=await client.functions.invoke('sync-google-analytics',{body:{action:'refresh',brand}})
+      if(error){let message=error.message;try{message=(await error.context.json()).error||message}catch{ /* No response body on network failures. */ }throw new Error(message)}
+      return data
+    },
     async membership() {
       const { data: auth, error: authError } = await client.auth.getUser()
       if (authError) throw authError
@@ -117,6 +127,8 @@ export function liveRepository(client) {
 export function demoRepository(initial = sampleData()) {
   let data = structuredClone(initial)
   return {
+    async analyticsStatus() { return {practice:true,configured:false,states:[]} },
+    async refreshAnalytics() { throw new Error('Google Analytics is unavailable in practice mode.') },
     async loadPartnerMessages() { return structuredClone(this.partnerData || {messages:[],reactions:[]}) },
     async postPartnerMessage(body,parent_id=null) {
       this.partnerData ||= {messages:[],reactions:[]}

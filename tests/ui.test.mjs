@@ -19,6 +19,8 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
  dom.window.HTMLDialogElement.prototype.close=function(){this.open=false}
  const {render,screen,fireEvent,waitFor,within,cleanup}=await import('@testing-library/react')
  const directory=mkdtempSync(join(process.cwd(),'.ui-test-'))
+ const analytics=await transformWithOxc(readFileSync(new URL('../src/AnalyticsSync.jsx',import.meta.url),'utf8'),'AnalyticsSync.jsx',{jsx:{runtime:'automatic'}})
+ const analyticsFile=join(directory,'AnalyticsSync.mjs');writeFileSync(analyticsFile,analytics.code)
  const portfolioRaw=readFileSync(new URL('../src/Portfolio.jsx',import.meta.url),'utf8').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
  const portfolio=await transformWithOxc(portfolioRaw,'Portfolio.jsx',{jsx:{runtime:'automatic'}})
  const portfolioFile=join(directory,'Portfolio.mjs');writeFileSync(portfolioFile,portfolio.code)
@@ -34,7 +36,7 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
  const liveRaw=readFileSync(new URL('../src/LiveBusinessPage.jsx',import.meta.url),'utf8').replace("import './live-profile.css'",'').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
  const live=await transformWithOxc(liveRaw,'LiveBusinessPage.jsx',{jsx:{runtime:'automatic'}})
  const liveFile=join(directory,'LiveBusinessPage.mjs');writeFileSync(liveFile,live.code)
- const raw=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8').replace('function Records(', 'export function Records(').replace('function Pipeline(', 'export function Pipeline(').replace('function BusinessProfile(', 'export function BusinessProfile(').replace("import './App.css'",'').replace("from './LiveBusinessPage.jsx'","from '"+pathToFileURL(liveFile).href+"'").replace("from './PartnerMessages.jsx'","from '"+pathToFileURL(messagesFile).href+"'").replace("from './BusinessPublishing.jsx'","from '"+pathToFileURL(publishingFile).href+"'").replace("from './BusinessChecklist.jsx'","from '"+pathToFileURL(checklistFile).href+"'").replace("from './Portfolio.jsx'","from '"+pathToFileURL(portfolioFile).href+"'").replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
+ const raw=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8').replace('function Records(', 'export function Records(').replace('function Pipeline(', 'export function Pipeline(').replace('function BusinessProfile(', 'export function BusinessProfile(').replace("import './App.css'",'').replace("from './AnalyticsSync.jsx'","from '"+pathToFileURL(analyticsFile).href+"'").replace("from './LiveBusinessPage.jsx'","from '"+pathToFileURL(liveFile).href+"'").replace("from './PartnerMessages.jsx'","from '"+pathToFileURL(messagesFile).href+"'").replace("from './BusinessPublishing.jsx'","from '"+pathToFileURL(publishingFile).href+"'").replace("from './BusinessChecklist.jsx'","from '"+pathToFileURL(checklistFile).href+"'").replace("from './Portfolio.jsx'","from '"+pathToFileURL(portfolioFile).href+"'").replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
  const transformed=await transformWithOxc(raw,'App.jsx',{jsx:{runtime:'automatic'}})
  const filename=join(directory,'App.mjs');writeFileSync(filename,transformed.code)
  let networkCalls=0
