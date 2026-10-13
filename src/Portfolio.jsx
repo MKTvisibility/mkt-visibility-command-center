@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { compareTasks, priorityLabel, BRANDS, currency, safeUrl } from './lib/domain.js'
 import { metadata, encodeMetadata, scopedData, CHECKLIST, townProfiles, townTasks, townKey, normalizeTown } from './lib/portfolio.js'
-const sites = {'MKT Visibility':'https://mktvisibility.github.io/website/','MKT Colorado':'https://mktcolorado.com','Loving Longmont':'https://lovinglongmont.com','Open Theory Cove':'https://opentheorycove.com','Boulder County Photography':'https://bouldercountyphotography.com'}
+const sites = {'MKT Visibility':'https://mktvisibility.github.io/website/','MKT Colorado':'https://mktcolorado.com','Loving Longmont':'https://mktvisibility.github.io/LovingLongmont/','Open Theory Cove':'https://opentheorycove.com','Boulder County Photography':'https://bouldercountyphotography.com'}
 async function saveTownWithChecklist(onSave, data, town) {
  const saved=await onSave('tasks',town)
  const key=townKey(saved)

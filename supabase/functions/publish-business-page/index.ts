@@ -1,7 +1,7 @@
 import {validPageFilename} from './page-filename.mjs'
 const WORKSPACE='c8748032-cdd3-443b-8c56-2e846cc9bf31'
 const SITES:Record<string,{repo:string,secret:string,url:string}>={
- 'Loving Longmont':{repo:'LovingLongmont/loving-longmont-website',secret:'LL_GITHUB_TOKEN',url:'https://lovinglongmont.com/'},
+ 'Loving Longmont':{repo:'MKTvisibility/LovingLongmont',secret:'CO_GITHUB_TOKEN',url:'https://mktvisibility.github.io/LovingLongmont/'},
  'MKT Colorado':{repo:'MKTvisibility/Colorado',secret:'CO_GITHUB_TOKEN',url:'https://mktcolorado.com/'}
 }
 const ORIGINS=['https://mktvisibility.github.io','https://mkt-visibility-command-center.wintryspark17.chatgpt.site']
@@ -45,8 +45,8 @@ Deno.serve(async(req:Request)=>{
     const marker=`data-ll-profile="${businessId}"`
     if(existing&&!decode64(existing.content).includes(marker))throw Error('That filename already belongs to another page. Choose a different page name.')
     const template=await git('contents/business.html?ref=main');if(!template?.content)throw Error('The public business page template is unavailable.')
-    let html=decode64(template.content)
-    if(!html.includes('data-ll-profile=""'))throw Error('The business template could not be identified safely.')
+    let html=existing?decode64(existing.content):decode64(template.content)
+    if(!existing&&!html.includes('data-ll-profile=""'))throw Error('The business template could not be identified safely.')
     html=html.replace('data-ll-profile=""',marker).replace(/<title>[\s\S]*?<\/title>/,`<title>${escapeHtml(row.public_content.name)} | ${escapeHtml(site)}</title>`)
     const result=existing&&decode64(existing.content)===html?{commit:{sha:'unchanged'}}:await git('contents/'+encodeURIComponent(route),'PUT',{message:`Command Center: create page for ${row.public_content.name}`,content:encode64(html),...(existing?{sha:existing.sha}:{}),branch:'main'})
     if(routes[businessId]!==route){routes[businessId]=route;await git('contents/assets/live/business-routes.json','PUT',{message:`Command Center: link named page for ${row.public_content.name}`,content:encode64(JSON.stringify(routes,null,2)),...(mapFile?{sha:mapFile.sha}:{}),branch:'main'})}
