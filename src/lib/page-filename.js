@@ -1,0 +1,3 @@
+const reserved=new Set(['index.html','business.html','businesses.html','events.html','community.html','history.html','jobs.html','spotlight.html','animals.html','about.html','contact.html','pricing.html','search.html','sitemap.html','things-to-do.html','404.html'])
+export function validPageFilename(value){return typeof value==='string'&&value.length<=100&&/^[a-z0-9]+(-[a-z0-9]+)*\.html$/.test(value)&&!reserved.has(value)}
+export function suggestPageFilename(name){const stem=String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,90).replace(/-+$/,'')||'local-business';const value=stem+'.html';return reserved.has(value)?stem+'-local.html':value}

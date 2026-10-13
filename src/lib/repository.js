@@ -1,4 +1,6 @@
 import { hydrateTask, prepareTask } from './task-evidence.js'
+import { encodeMetadata } from './portfolio.js'
+import { validPageFilename } from './page-filename.js'
 import { TABLES, WORKSPACE_ID, cleanPayload, emptyData } from './domain.js'
 
 async function readAll(client, table) {
@@ -25,23 +27,25 @@ export function liveRepository(client) {
       let {data:profile,error}=await client.from('cc_ll_live_profiles').select('*').eq('business_id',businessId).eq('workspace_id',WORKSPACE_ID).maybeSingle()
       if(error)throw error
       if(!profile){const result=await client.rpc('cc_ensure_live_profile',{p_business_id:businessId});if(result.error)throw result.error;profile=result.data}
-      const {data:publication,error:pubError}=await client.from('cc_ll_live_publications').select('revision,published_at,active').eq('business_id',businessId).maybeSingle()
+      const {data:publication,error:pubError}=await client.from('cc_ll_live_publications').select('revision,published_at,active,route').eq('business_id',businessId).maybeSingle()
       if(pubError)throw pubError
       return {profile,publication}
     },
     async saveLivePage(businessId,business,settings,businessVersion,profileVersion) {
       const member=await this.membership();if(member.role==='viewer')throw new Error('Your account is read-only.')
-      const {data,error}=await client.rpc('cc_save_ll_live_profile',{p_business_id:businessId,p_business:business,p_settings:settings,p_business_version:businessVersion,p_profile_version:profileVersion})
+      const {page_filename,...publicSettings}=settings
+      let {data,error}=await client.rpc('cc_save_ll_live_profile',{p_business_id:businessId,p_business:business,p_settings:publicSettings,p_business_version:businessVersion,p_profile_version:profileVersion})
       if(error)throw error
       const {data:saved,error:loadError}=await client.from('cc_businesses').select('*').eq('id',businessId).eq('workspace_id',WORKSPACE_ID).single()
       if(loadError)throw new Error('Draft saved, but business refresh failed. Reload before continuing.')
+      if(page_filename){if(!validPageFilename(page_filename))throw new Error('Choose a valid business page filename.');const result=await client.from('cc_businesses').update({notes:encodeMetadata(saved,{pageFilename:page_filename})}).eq('id',businessId).eq('workspace_id',WORKSPACE_ID).eq('updated_at',saved.updated_at).select().single();if(result.error)throw new Error('Business draft saved, but its page filename could not be saved. Reload before continuing.');return {...data,business:result.data,pageFilename:page_filename}}
       return {...data,business:saved}
     },
     async previewLivePage(businessId) {
       const {data,error}=await client.rpc('cc_preview_ll_live_profile',{p_business_id:businessId});if(error)throw error;return data
     },
     async publishLivePage(businessId,signature) {
-      const {data,error}=await client.rpc('cc_publish_ll_live_profile',{p_business_id:businessId,p_signature:signature});if(error)throw error;return data
+      const {data,error}=await client.rpc('cc_publish_ll_live_profile',{p_business_id:businessId,p_signature:signature});if(error)throw error;if(!data.active)return data;try{const result=await client.functions.invoke('publish-business-page',{body:{businessId}});return {...data,pageCreation:result.error?{results:[{site:'Business page',success:false,error:result.error.message}]}:result.data}}catch(e){return {...data,pageCreation:{results:[{site:'Business page',success:false,error:e.message}]}}}
     },
     async loadDraftPublication(businessId) {
       const {data,error}=await client.from('cc_ll_draft_publications').select('*').eq('business_id',businessId).maybeSingle()
