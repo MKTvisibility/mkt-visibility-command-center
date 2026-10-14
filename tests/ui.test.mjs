@@ -37,8 +37,9 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
  const live=await transformWithOxc(liveRaw,'LiveBusinessPage.jsx',{jsx:{runtime:'automatic'}})
  const liveFile=join(directory,'LiveBusinessPage.mjs');writeFileSync(liveFile,live.code)
  const biModules={}
- for(const name of ['Intelligence','MasterTasks','ProfileRatings','BusinessBasics','ProfileAtAGlance','BusinessReports','TaskCalendar','OutreachWorkflow','ProfileCompletion','PilotProfile','DashboardReports']){
+ for(const name of ['Intelligence','MasterTasks','ProfileRatings','BusinessBasics','ProfileAtAGlance','BusinessReports','TaskCalendar','OutreachWorkflow','ProfileCompletion','PilotProfile','BusinessOverview','DashboardReports']){
   let source=readFileSync(new URL('../src/'+name+'.jsx',import.meta.url),'utf8').replace('import "./intelligence.css";','').replaceAll('from "./','from "'+pathToFileURL(join(process.cwd(),'src')).href+'/').replace("import './intelligence.css'",'').replace("import './business-reports.css'",'').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
+  if(name==='DashboardReports')source=source.replace(pathToFileURL(join(process.cwd(),'src/BusinessOverview.jsx')).href,pathToFileURL(biModules.BusinessOverview).href)
   if(name==='ProfileAtAGlance')source=source.replace(pathToFileURL(join(process.cwd(),'src/ProfileRatings.jsx')).href,pathToFileURL(biModules.ProfileRatings).href)
   const compiled=await transformWithOxc(source,name+'.jsx',{jsx:{runtime:'automatic'}})
   const file=join(directory,name+'.mjs');writeFileSync(file,compiled.code);biModules[name]=file
@@ -199,7 +200,7 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   assert.ok(profile.getByRole('heading',{name:'UI tracking draft'}))
   assert.ok(profile.getByText('Date unknown · Draft'))
   assert.ok(profile.getByText('Discussed a listing update. <script>not executable</script>'))
-  assert.ok(profile.getByText(/Ask which image to use/))
+  assert.ok(within(profile.container?.querySelector?.('.message-next')||document.querySelector('.message-next')).getByText(/Ask which image to use/))
   assert.equal(document.querySelectorAll('.message-timeline script').length,0)
   fireEvent.click(profile.getByRole('button',{name:'＋ Add message summary'}))
   editor=within(screen.getByRole('dialog'))
@@ -392,6 +393,19 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   fireEvent.click(within(outreach).getByText('Schedule email / phone call'))
   assert.equal(appointments[0].value.type,'Follow-up')
   assert.equal(metadata(appointments[0].value).outreachStage,'intro')
+
+  cleanup()
+  const {default:BusinessOverview}=await import(pathToFileURL(biModules.BusinessOverview).href)
+  const overviewData=emptyData();overviewData.businesses=[{id:'listed',name:'Listed Shop',status:'Active'},{id:'notmatch',name:'Not Match Shop',status:'Active',notes:encodeMetadata({},{outreachDecision:'Not a match'})}];overviewData.listings=[{business_id:'listed',status:'Published'}]
+  const overviewLinks=[]
+  render(React.createElement(BusinessOverview,{data:overviewData,onView:id=>overviewLinks.push(id)}))
+  fireEvent.click(screen.getByRole('button',{name:'Businesses listed: 1 businesses'}))
+  fireEvent.click(screen.getByRole('button',{name:'Listed Shop'}))
+  assert.deepEqual(overviewLinks,['listed'])
+  fireEvent.change(screen.getByLabelText('Business status'),{target:{value:'Inactive'}})
+  fireEvent.click(screen.getByRole('button',{name:/Businesses in this report/}))
+  assert.ok(screen.getByRole('button',{name:'Not Match Shop'}))
+  assert.ok(!screen.queryByRole('button',{name:'Listed Shop'}))
 
   cleanup()
   const publishCalls=[];let publishSaved
