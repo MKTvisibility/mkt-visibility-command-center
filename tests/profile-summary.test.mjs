@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {profileSummary,contactSummary,isProfilePilot,portfolioProfileSummary,businessRatingGroups} from '../src/lib/profile-summary.js'
+import {profileSummary,contactSummary,isProfilePilot,portfolioProfileSummary,businessRatingGroups,siteReviewGroups} from '../src/lib/profile-summary.js'
 import {workflowTask} from '../src/lib/profile-workflow.js'
 import {emptyData} from '../src/lib/domain.js'
 
@@ -64,4 +64,15 @@ test('rating lists partition businesses once, preserving exact decimal ratings',
  assert.equal(groups.find(g=>g.stars===4).businesses[0].rating,3.5)
  assert.equal(groups.find(g=>g.stars===0).businesses[0].business.id,'b')
  assert.equal(groups.reduce((sum,g)=>sum+g.businesses.length,0),2)
+})
+
+test('site review totals deduplicate placements within a site and include shared businesses in both',()=>{
+ const data=emptyData();data.businesses=[{id:'a',name:'Shared'},{id:'b',name:'Colorado only'}];data.listings=[{business_id:'a',site:'Loving Longmont'},{business_id:'a',site:'Loving Longmont'},{business_id:'a',site:'MKT Colorado'},{business_id:'b',site:'MKT Colorado'}]
+ for(const [key,title] of profileSummary(data.businesses[0],data,null).steps)data.tasks.push({...workflowTask(data.businesses[0],data,key,title),status:'Done'})
+ const groups=siteReviewGroups(data,[])
+ assert.equal(groups.find(g=>g.key==='Loving Longmont').total,1)
+ assert.equal(groups.find(g=>g.key==='MKT Colorado').total,2)
+ assert.equal(groups.find(g=>g.key==='Loving Longmont:reviewed').businesses[0].business.id,'a')
+ assert.equal(groups.find(g=>g.key==='MKT Colorado:reviewed').businesses[0].business.id,'a')
+ assert.equal(groups.find(g=>g.key==='MKT Colorado:remaining').businesses[0].business.id,'b')
 })

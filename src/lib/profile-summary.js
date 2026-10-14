@@ -67,3 +67,15 @@ export function businessRatingGroups(data,profiles){
  for(const group of groups)group.businesses.sort((a,b)=>a.business.name.localeCompare(b.business.name,'en',{sensitivity:'base',numeric:true}))
  return groups
 }
+
+export function siteReviewGroups(data,profiles){
+ const byId=new Map(profiles.map(p=>[p.business_id,p])),groups=[]
+ for(const site of ['Loving Longmont','MKT Colorado']){
+  const ids=new Set(data.listings.filter(l=>l.site===site&&l.status!=='Archived').map(l=>l.business_id)),businesses=[]
+  for(const business of data.businesses.filter(b=>ids.has(b.id))){const review=profileSummary(business,{...data,tasks:data.tasks.filter(t=>t.business_id===business.id)},byId.get(business.id));businesses.push({business,reviewText:`${review.done} of ${review.total} steps · ${review.percent}%`,complete:review.done===review.total})}
+  businesses.sort((a,b)=>a.business.name.localeCompare(b.business.name,'en',{sensitivity:'base',numeric:true}))
+  const reviewed=businesses.filter(r=>r.complete),remaining=businesses.filter(r=>!r.complete)
+  groups.push({key:site,label:site,businesses,total:businesses.length,reviewed:reviewed.length},{key:site+':reviewed',label:site+' — reviewed',businesses:reviewed},{key:site+':remaining',label:site+' — needs review',businesses:remaining})
+ }
+ return groups
+}
