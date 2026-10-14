@@ -1,3 +1,5 @@
+import CategoryProfile from './CategoryProfile.jsx'
+import {BUTTERSCOTCH_ID} from './lib/category-profile.js'
 import {businessStatusMatches,inactiveBusiness} from './lib/business-report.js'
 import DashboardReports from './DashboardReports.jsx'
 import {activityReport,dueEmailStages,salesReport,SALES_SOURCES,SALE_TYPES} from './lib/dashboard-reports.js'
@@ -178,6 +180,7 @@ function BusinessProfile({ business, data, member, writable, onClose, onEdit, on
  const [ratingProfile,setRatingProfile]=useState(null)
  const messages=businessMessages(data,business.id)
  const profileTasks=data.tasks.filter(t=>t.business_id===business.id&&!isTownWork(t)&&!metadata(t).businessChecklistKey)
+ if(business.id===BUTTERSCOTCH_ID)return <CategoryProfile {...{business,data,member,writable,onClose,onEdit,onAdd,onSave,repository,onBusinessSaved}} components={{BusinessBasics,ProfileRatings,LiveBusinessPage,OutreachDecision,InternalNotes}}/>
  if(is5280Pilot(business))return <PilotProfile {...{business,data,member,writable,onClose,onEdit,onAdd,onSave,repository,onBusinessSaved}} components={{BusinessBasics,ProfileRatings,LiveBusinessPage,ProfileCompletion,OutreachDecision,InternalNotes}}/>
  return <section className="card business-profile profile-hub" aria-label="Business profile">
  <div className="section-head"><div><div className="eyebrow">BUSINESS PROFILE</div><h2>{business.name}</h2><p>{business.city||business.address||'Business details, ratings and directory publishing'}</p>{<ProfileAtAGlance business={business} data={data} profile={ratingProfile} writable={writable} onSave={onSave}/>}</div><button className="secondary" onClick={onClose}>Back to businesses</button></div>

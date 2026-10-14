@@ -37,14 +37,14 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
  const live=await transformWithOxc(liveRaw,'LiveBusinessPage.jsx',{jsx:{runtime:'automatic'}})
  const liveFile=join(directory,'LiveBusinessPage.mjs');writeFileSync(liveFile,live.code)
  const biModules={}
- for(const name of ['Intelligence','MasterTasks','ProfileRatings','BusinessBasics','ProfileAtAGlance','BusinessReports','TaskCalendar','OutreachWorkflow','ProfileCompletion','PilotProfile','BusinessOverview','DashboardReports']){
+ for(const name of ['Intelligence','MasterTasks','ProfileRatings','BusinessBasics','ProfileAtAGlance','BusinessReports','TaskCalendar','OutreachWorkflow','ProfileCompletion','PilotProfile','CategoryProfile','BusinessOverview','DashboardReports']){
   let source=readFileSync(new URL('../src/'+name+'.jsx',import.meta.url),'utf8').replace('import "./intelligence.css";','').replaceAll('from "./','from "'+pathToFileURL(join(process.cwd(),'src')).href+'/').replace("import './intelligence.css'",'').replace("import './business-reports.css'",'').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
   if(name==='DashboardReports')source=source.replace(pathToFileURL(join(process.cwd(),'src/BusinessOverview.jsx')).href,pathToFileURL(biModules.BusinessOverview).href)
   if(name==='ProfileAtAGlance')source=source.replace(pathToFileURL(join(process.cwd(),'src/ProfileRatings.jsx')).href,pathToFileURL(biModules.ProfileRatings).href)
   const compiled=await transformWithOxc(source,name+'.jsx',{jsx:{runtime:'automatic'}})
   const file=join(directory,name+'.mjs');writeFileSync(file,compiled.code);biModules[name]=file
  }
- const raw=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8').replace('function Records(', 'export function Records(').replace('function Pipeline(', 'export function Pipeline(').replace('function BusinessProfile(', 'export function BusinessProfile(').replace("import './profile-hub.css'",'').replace("import './App.css'",'').replace("from './AnalyticsSync.jsx'","from '"+pathToFileURL(analyticsFile).href+"'").replace("from './LiveBusinessPage.jsx'","from '"+pathToFileURL(liveFile).href+"'").replace("from './PartnerMessages.jsx'","from '"+pathToFileURL(messagesFile).href+"'").replace("from './BusinessPublishing.jsx'","from '"+pathToFileURL(publishingFile).href+"'").replace("from './BusinessChecklist.jsx'","from '"+pathToFileURL(checklistFile).href+"'").replace("from './Portfolio.jsx'","from '"+pathToFileURL(portfolioFile).href+"'").replace("from './BusinessReports.jsx'","from '"+pathToFileURL(biModules.BusinessReports).href+"'").replace("from './DashboardReports.jsx'","from '"+pathToFileURL(biModules.DashboardReports).href+"'").replace("from './PilotProfile.jsx'","from '"+pathToFileURL(biModules.PilotProfile).href+"'").replace("from './ProfileCompletion.jsx'","from '"+pathToFileURL(biModules.ProfileCompletion).href+"'").replace("from './ProfileAtAGlance.jsx'","from '"+pathToFileURL(biModules.ProfileAtAGlance).href+"'").replace("from './ProfileRatings.jsx'","from '"+pathToFileURL(biModules.ProfileRatings).href+"'").replace("from './BusinessBasics.jsx'","from '"+pathToFileURL(biModules.BusinessBasics).href+"'").replace("from './Intelligence.jsx'","from '"+pathToFileURL(biModules.Intelligence).href+"'").replace("from './MasterTasks.jsx'","from '"+pathToFileURL(biModules.MasterTasks).href+"'").replace("from './TaskCalendar.jsx'","from '"+pathToFileURL(biModules.TaskCalendar).href+"'").replace("from './OutreachWorkflow.jsx'","from '"+pathToFileURL(biModules.OutreachWorkflow).href+"'").replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
+ const raw=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8').replace('function Records(', 'export function Records(').replace('function Pipeline(', 'export function Pipeline(').replace('function BusinessProfile(', 'export function BusinessProfile(').replace("import './profile-hub.css'",'').replace("import './App.css'",'').replace("from './AnalyticsSync.jsx'","from '"+pathToFileURL(analyticsFile).href+"'").replace("from './LiveBusinessPage.jsx'","from '"+pathToFileURL(liveFile).href+"'").replace("from './PartnerMessages.jsx'","from '"+pathToFileURL(messagesFile).href+"'").replace("from './BusinessPublishing.jsx'","from '"+pathToFileURL(publishingFile).href+"'").replace("from './BusinessChecklist.jsx'","from '"+pathToFileURL(checklistFile).href+"'").replace("from './Portfolio.jsx'","from '"+pathToFileURL(portfolioFile).href+"'").replace("from './BusinessReports.jsx'","from '"+pathToFileURL(biModules.BusinessReports).href+"'").replace("from './DashboardReports.jsx'","from '"+pathToFileURL(biModules.DashboardReports).href+"'").replace("from './CategoryProfile.jsx'","from '"+pathToFileURL(biModules.CategoryProfile).href+"'").replace("from './PilotProfile.jsx'","from '"+pathToFileURL(biModules.PilotProfile).href+"'").replace("from './ProfileCompletion.jsx'","from '"+pathToFileURL(biModules.ProfileCompletion).href+"'").replace("from './ProfileAtAGlance.jsx'","from '"+pathToFileURL(biModules.ProfileAtAGlance).href+"'").replace("from './ProfileRatings.jsx'","from '"+pathToFileURL(biModules.ProfileRatings).href+"'").replace("from './BusinessBasics.jsx'","from '"+pathToFileURL(biModules.BusinessBasics).href+"'").replace("from './Intelligence.jsx'","from '"+pathToFileURL(biModules.Intelligence).href+"'").replace("from './MasterTasks.jsx'","from '"+pathToFileURL(biModules.MasterTasks).href+"'").replace("from './TaskCalendar.jsx'","from '"+pathToFileURL(biModules.TaskCalendar).href+"'").replace("from './OutreachWorkflow.jsx'","from '"+pathToFileURL(biModules.OutreachWorkflow).href+"'").replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
  const transformed=await transformWithOxc(raw,'App.jsx',{jsx:{runtime:'automatic'}})
  const filename=join(directory,'App.mjs');writeFileSync(filename,transformed.code)
  let networkCalls=0
@@ -406,6 +406,24 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   fireEvent.click(screen.getByRole('button',{name:/Businesses in this report/}))
   assert.ok(screen.getByRole('button',{name:'Not Match Shop'}))
   assert.ok(!screen.queryByRole('button',{name:'Listed Shop'}))
+
+  cleanup()
+  const {canonicalProfileTasks,categoryOf,BUTTERSCOTCH_ID}=await import('../src/lib/category-profile.js')
+  const categoryBusiness={id:BUTTERSCOTCH_ID,name:'Butterscotch Studios',status:'Active'}
+  let categoryData=emptyData();categoryData.businesses=[categoryBusiness]
+  categoryData.tasks=canonicalProfileTasks(categoryBusiness,categoryData).filter(t=>categoryOf(t)==='listing').map((t,i)=>({...t,id:`listing-${i}`,status:'Done'}))
+  let categoryView;const categoryProps=()=>({business:categoryBusiness,data:categoryData,member:{role:'owner'},writable:true,onClose:()=>{},onAdd:()=>{},onEdit:()=>{},onSave:async(kind,draft)=>{const result={...draft,id:draft.id||'new-task',updated_at:String(Date.now())};categoryData={...categoryData,tasks:[result,...categoryData.tasks.filter(t=>t.id!==result.id)]};categoryView.rerender(React.createElement(BusinessProfile,categoryProps()));return result}})
+  categoryView=render(React.createElement(BusinessProfile,categoryProps()))
+  assert.ok(screen.getByRole('region',{name:'Category business profile'}))
+  assert.ok(!screen.queryByRole('button',{name:'All profile work completed'}))
+  fireEvent.click(screen.getByRole('tab',{name:'Work & correspondence'}))
+  const pageCheckbox=screen.getByRole('checkbox',{name:'Complete: Review Listing'})
+  assert.equal(pageCheckbox.checked,true)
+  fireEvent.click(pageCheckbox)
+  await waitFor(()=>assert.equal(pageCheckbox.checked,false))
+  fireEvent.click(screen.getByRole('button',{name:/Undo last change: Review Listing/}))
+  await waitFor(()=>assert.equal(pageCheckbox.checked,true))
+  assert.equal(screen.getByLabelText('Conversation status: Business story / questionnaire').value,'Not started')
 
   cleanup()
   const publishCalls=[];let publishSaved
