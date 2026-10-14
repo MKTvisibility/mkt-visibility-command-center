@@ -6,3 +6,13 @@ body.bp-page{background:#fff;color:#183e35}.bp-main{box-sizing:border-box;max-wi
 .lp-editor .lp-fields{border:0;padding:0;margin:0;min-width:0}.lp-editor h4{margin-top:28px}.lp-editor .form-grid label{display:flex;flex-direction:column;gap:7px}.lp-editor label small{font-size:11px;color:#60766a}.lp-editor .lp-image{display:block;max-width:220px;width:100%;height:auto;object-fit:contain;border-radius:8px;margin:12px 0}.lp-editor .lp-photo{display:grid;grid-template-columns:180px minmax(0,1fr);gap:20px;padding:20px 0;border-bottom:1px solid #dce3df}.lp-photo label{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}.lp-photo .check{flex-direction:row}.lp-editor .lp-preview{border:1px solid #dce3df;border-radius:12px;max-height:650px;overflow:auto;background:#fff;color:#183e35}.lp-preview .bp-main{width:calc(100% - 36px);padding:22px 0}.lp-editor>section .bp-heading h1{font-size:38px}.lp-editor input[type=file]{display:none}.lp-editor .upload-image{display:inline-block;cursor:pointer}.lp-editor .public-field-grid{margin:16px 0}.lp-editor .public-field-grid .check{display:flex;align-items:center;gap:8px}@media(max-width:700px){.lp-editor .lp-photo{grid-template-columns:1fr}.lp-editor .lp-preview .bp-identity{grid-template-columns:1fr}.lp-editor .lp-preview .bp-content-grid{grid-template-columns:1fr}.lp-editor .lp-preview .bp-gallery-grid{grid-template-columns:1fr}}
 
 [data-ll-live-business].business-card{background:#fff;border-color:#dce3df}[data-ll-live-business] .business-image{height:auto!important;overflow:visible!important}[data-ll-live-business] .business-image img{transform:none!important}[data-ll-live-business] .business-detail{display:block;overflow-wrap:anywhere}
+
+/* Match the public page: main photo at left, logo above the business name. */
+.bp-profile .bp-identity{grid-template-columns:minmax(220px,.8fr) minmax(0,1.5fr);align-items:start;gap:32px}
+.bp-profile .bp-primary-image{margin:0;border-radius:12px;overflow:hidden}
+.bp-profile .bp-primary-image img{width:100%;height:auto!important;object-fit:contain!important}
+.bp-profile .bp-primary-image figcaption{font-size:12px;padding:8px}
+.bp-profile .bp-heading .bp-logo{max-width:240px;margin:0 0 20px}
+.bp-profile .bp-heading .bp-logo img{max-height:150px!important;object-fit:contain!important;width:auto;max-width:100%}
+.bp-profile .bp-identity.bp-no-feature{grid-template-columns:1fr}
+@media(max-width:620px){.bp-profile .bp-identity{grid-template-columns:1fr;gap:20px}.bp-profile .bp-primary-image{max-width:380px;margin:auto}}

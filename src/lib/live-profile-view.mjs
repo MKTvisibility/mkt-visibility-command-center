@@ -5,12 +5,13 @@ function addLink(make,parent,url,label,cls=''){if(!url)return null;const a=make(
 function photo(make,parent,url,alt,cls=''){url=safeWebUrl(url);if(!url)return;const img=make('img',cls);img.src=url;img.alt=alt||'';img.loading='lazy';img.addEventListener('error',()=>{img.hidden=true});parent.append(img);return img}
 export function renderProfile(root,b){const make=builder(root);root.replaceChildren();if(!b){root.append(make('h1','','Business page unavailable'),make('p','','This business page is not currently published.'));return}
  const article=make('article','bp-profile'),identity=make('div','bp-identity'),heading=make('div','bp-heading');
- if(safeWebUrl(b.image_url)){const logo=make('div','bp-logo');photo(make,logo,b.image_url,b.name+' image');identity.append(logo)}else identity.classList.add('bp-no-logo');
+ const gallery=(b.gallery||[]).filter(p=>p.enabled!==false&&safeWebUrl(p.url));
+ if(gallery.length){const media=make('figure','bp-primary-image');photo(make,media,gallery[0].url,gallery[0].alt||b.name);if(gallery[0].caption)media.append(make('figcaption','',gallery[0].caption));identity.append(media)}else identity.classList.add('bp-no-feature');
+ if(safeWebUrl(b.image_url)){const logo=make('div','bp-logo');photo(make,logo,b.image_url,b.name+' logo');heading.append(logo)}
  if(b.categories?.length)heading.append(make('p','bp-eyebrow',b.categories.join(' · ')));
  heading.append(make('h1','',b.name));if(b.tagline)heading.append(make('p','bp-tagline',b.tagline));if(b.description)heading.append(make('p','bp-intro',b.description));
  const actions=make('div','bp-actions');addLink(make,actions,safeWebUrl(b.website),'Visit Website ↗','bp-button');if(b.phone)addLink(make,actions,'tel:'+b.phone.replace(/[^+\d]/g,''),'Call '+b.phone,'bp-button bp-outline');if(b.email)addLink(make,actions,'mailto:'+encodeURIComponent(b.email),'Email '+(b.photographer?.split(' ')[0]||'Business'),'bp-button bp-outline');if(actions.childNodes.length)heading.append(actions);identity.append(heading);article.append(identity);
- const gallery=(b.gallery||[]).filter(p=>safeWebUrl(p.url));
- if(gallery.length){const figure=make('figure','bp-feature-photo');photo(make,figure,gallery[0].url,gallery[0].alt||b.name);if(gallery[0].caption)figure.append(make('figcaption','',gallery[0].caption));article.append(figure)}
+
  const grid=make('div','bp-content-grid'),story=make('div','bp-story');
  if(b.story){const section=make('section');section.append(make('p','bp-eyebrow','THE STORY BEHIND THE BUSINESS'),make('h2','','About '+b.name));for(const p of b.story.split(/\n\s*\n/).filter(Boolean))section.append(make('p','',p));story.append(section)}
  if(b.services?.length){const section=make('section');section.append(make('h2','','Services'));const list=make('ul','bp-service-list');b.services.forEach(s=>list.append(make('li','',s)));section.append(list);story.append(section)}
