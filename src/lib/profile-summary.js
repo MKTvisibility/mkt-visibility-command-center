@@ -31,7 +31,27 @@ export function contactSummary(business,data,profile,today=localDay()) {
     if(detail.response_status==='Needs our reply'||detail.response_status==='Follow up'||['Draft','Planned'].includes(email.status)||detail.follow_up_on)actions.push({title:detail.next_action||email.subject||'Contact business',date:detail.follow_up_on||''})
   }
   if(profile?.crm?.next_follow_up)actions.push({title:'Sales follow-up',date:profile.crm.next_follow_up})
-  actions.sort((a,b)=>(a.date||today).localeCompare(b.date||today))
+  actions.sort((a,b)=>(a.date||today).localeCompare(b.date||today)||a.title.localeCompare(b.title,'en',{numeric:true,sensitivity:'base'}))
   const due=actions.filter(a=>!a.date||a.date<=today)
   return due.length?{label:'Contact due',tone:'due',actions:due}:actions.length?{label:`Contact scheduled · ${actions[0].date}`,tone:'scheduled',actions}:{label:'No contact task recorded',tone:'quiet',actions:[]}
+}
+
+export function portfolioProfileSummary(data,profiles){
+ const byId=new Map(profiles.map(p=>[p.business_id,p])),tasks=new Map(),emails=new Map()
+ for(const [records,map] of [[data.tasks,tasks],[data.emails,emails]])for(const r of records){if(!map.has(r.business_id))map.set(r.business_id,[]);map.get(r.business_id).push(r)}
+ let reviewed=0,partial=0,contactDue=0;const ratings=[]
+ const outreach=[['intro','First contact email'],['story_request','Business story request'],['offer','Visibility Check invitation'],['report','Visibility Check report'],['followup','Follow-up emails']].map(([key,label])=>({key,label,count:0}))
+ for(const b of data.businesses){
+  const records={...data,tasks:tasks.get(b.id)||[],emails:emails.get(b.id)||[]},p=byId.get(b.id),review=profileSummary(b,records,p)
+  if(review.done===review.total)reviewed++;else if(review.done)partial++
+  if(review.rating!==null)ratings.push(review.rating)
+  if(contactSummary(b,records,p).tone==='due')contactDue++
+  if(b.status!=='Archived'&&!p?.crm?.do_not_contact){
+   for(const group of outreach){
+    const matches=group.key==='followup'?records.tasks.filter(t=>t.type==='Follow-up'||/follow.up.*email/i.test(t.title||'')):records.tasks.filter(t=>metadata(t).businessChecklistKey===group.key)
+    if(matches.some(t=>!['Done','Cancelled','Waiting on Client','Blocked'].includes(t.status)&&(!t.due_date||t.due_date<=localDay())))group.count++
+   }
+  }
+ }
+ return {total:data.businesses.length,reviewed,partial,contactDue,outreach,rated:ratings.length,rating:ratings.length?ratings.reduce((a,b)=>a+b,0)/ratings.length:null,percent:data.businesses.length?Math.round(reviewed/data.businesses.length*100):0}
 }

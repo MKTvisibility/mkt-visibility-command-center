@@ -22,6 +22,7 @@ export function intelligenceRepository(client) {
     }
   }
   return {
+    profiles(){return rows("cc_bi_profiles")},
     profile(businessId){return query(client.from("cc_bi_profiles").select("*").eq("workspace_id",WORKSPACE_ID).eq("business_id",businessId).maybeSingle())},
     taskHistory(id) {
       return query(
