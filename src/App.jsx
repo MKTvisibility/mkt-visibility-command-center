@@ -1,3 +1,4 @@
+import {readNavigation,saveNavigation} from './lib/navigation.js'
 import ProfileAtAGlance from './ProfileAtAGlance.jsx'
 import {isProfilePilot} from './lib/profile-summary.js'
 import BusinessBasics from './BusinessBasics.jsx'
@@ -186,8 +187,11 @@ function Reports({ data }) {
 }
 
 function Workspace({ repository, demo, session, onExit, onSetup }) {
-  const [profileId, setProfileId] = useState(null); const [activePage, setActivePage] = useState('Dashboard'); const [data, setData] = useState(emptyData); const [member, setMember] = useState(null)
+  const navigationKey = `mkt-navigation:${demo?'practice':session?.user?.id||'workspace'}`
+  const [initialNavigation] = useState(()=>demo?{page:'Dashboard',profileId:null}:readNavigation(window.sessionStorage,navigationKey,pages))
+  const [profileId, setProfileId] = useState(initialNavigation.profileId); const [activePage, setActivePage] = useState(initialNavigation.page); const [data, setData] = useState(emptyData); const [member, setMember] = useState(null)
   const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [notice, setNotice] = useState(''); const [editor, setEditor] = useState(null); const [refresh, setRefresh] = useState(0); const [saving, setSaving] = useState(false)
+  useEffect(()=>{if(!demo)saveNavigation(window.sessionStorage,navigationKey,activePage,profileId)},[demo,navigationKey,activePage,profileId])
   const epoch = useRef(0)
   useEffect(() => {
     let cancelled = false
