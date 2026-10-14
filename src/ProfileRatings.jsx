@@ -1,4 +1,4 @@
-import {useEffect,useState} from 'react'
+import {useEffect,useRef,useState} from 'react'
 import {safeUrl} from './lib/domain.js'
 import {emptyAssessment,PLATFORMS,RATING_STATES,validateAssessment} from './lib/intelligence.js'
 import {metadata} from './lib/portfolio.js'
@@ -12,8 +12,9 @@ export function SimpleProfileChecklist({business,data,writable,onSave}){
 }
 const platformUrl=(name,business,p={})=>p.url||(name==='Website'?business.website:business.social_urls?.find(url=>{const host=safeUrl(url)&&new URL(url).hostname;return host&&({Facebook:'facebook.com',Instagram:'instagram.com',TikTok:'tiktok.com',LinkedIn:'linkedin.com',YouTube:'youtube.com',Pinterest:'pinterest.com'}[name]&&host.includes({Facebook:'facebook.com',Instagram:'instagram.com',TikTok:'tiktok.com',LinkedIn:'linkedin.com',YouTube:'youtube.com',Pinterest:'pinterest.com'}[name]))}))||''
 export default function ProfileRatings({business,data,repository,writable,onSave,member}){
+ const initialAssessment=useRef(emptyAssessment(business))
  const [loaded,setLoaded]=useState(!repository?.intelligence),[profile,setProfile]=useState(null),[assessment,setAssessment]=useState(()=>repository?.intelligence?null:emptyAssessment(business)),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[changed,setChanged]=useState([])
- useEffect(()=>{let active=true;if(!repository?.intelligence)return;repository.intelligence.profile(business.id).then(p=>{if(!active)return;setProfile(p);setAssessment(p?.approved_at?structuredClone(p.approved):emptyAssessment(business));setLoaded(true)}).catch(e=>{if(active){setError(e.message);setLoaded(true)}});return()=>{active=false}},[business,repository])
+ useEffect(()=>{let active=true;if(!repository?.intelligence)return;repository.intelligence.profile(business.id).then(p=>{if(!active)return;setProfile(p);setAssessment(p?.approved_at?structuredClone(p.approved):initialAssessment.current);setLoaded(true)}).catch(e=>{if(active){setError(e.message);setLoaded(true)}});return()=>{active=false}},[business.id,repository])
  if(!loaded)return <p>Loading saved ratings…</p>
  if(!assessment)return <p role="alert" className="error">{error||'Ratings could not be loaded.'}</p>
  const platforms=assessment.platforms||{},names=[...new Set([...PLATFORMS,...Object.keys(platforms)])]
