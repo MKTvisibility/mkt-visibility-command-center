@@ -40,3 +40,18 @@ test('numbered follow-up emails display in natural sequence',()=>{
  for(const n of [3,1,2])data.tasks.push({business_id:'a',title:`Follow-up email ${n}`,status:'Open',type:'Follow-up'})
  assert.deepEqual(contactSummary(business,data,null).actions.map(a=>a.title),['Follow-up email 1','Follow-up email 2','Follow-up email 3'])
 })
+
+test('dashboard outreach places each business in only its next unfinished email step',()=>{
+ const data=emptyData(),business={id:'a'};data.businesses=[business]
+ for(const key of ['intro','story_request','offer','report'])data.tasks.push(workflowTask(business,data,key,key))
+ let groups=portfolioProfileSummary(data,[]).outreach
+ assert.equal(groups.find(g=>g.key==='intro').count,1)
+ assert.equal(groups.reduce((sum,g)=>sum+g.count,0),1)
+ data.tasks[0].status='Done'
+ groups=portfolioProfileSummary(data,[]).outreach
+ assert.equal(groups.find(g=>g.key==='intro').count,0)
+ assert.equal(groups.find(g=>g.key==='story_request').count,1)
+ assert.equal(groups.reduce((sum,g)=>sum+g.count,0),1)
+ data.tasks[1].status='Waiting on Client'
+ assert.equal(portfolioProfileSummary(data,[]).outreach.reduce((sum,g)=>sum+g.count,0),0)
+})

@@ -39,19 +39,22 @@ export function contactSummary(business,data,profile,today=localDay()) {
 export function portfolioProfileSummary(data,profiles){
  const byId=new Map(profiles.map(p=>[p.business_id,p])),tasks=new Map(),emails=new Map()
  for(const [records,map] of [[data.tasks,tasks],[data.emails,emails]])for(const r of records){if(!map.has(r.business_id))map.set(r.business_id,[]);map.get(r.business_id).push(r)}
- let reviewed=0,partial=0,contactDue=0;const ratings=[]
+ let reviewed=0,partial=0;const ratings=[]
  const outreach=[['intro','First contact email'],['story_request','Business story request'],['offer','Visibility Check invitation'],['report','Visibility Check report'],['followup','Follow-up emails']].map(([key,label])=>({key,label,count:0}))
  for(const b of data.businesses){
   const records={...data,tasks:tasks.get(b.id)||[],emails:emails.get(b.id)||[]},p=byId.get(b.id),review=profileSummary(b,records,p)
   if(review.done===review.total)reviewed++;else if(review.done)partial++
   if(review.rating!==null)ratings.push(review.rating)
-  if(contactSummary(b,records,p).tone==='due')contactDue++
   if(b.status!=='Archived'&&!p?.crm?.do_not_contact){
    for(const group of outreach){
     const matches=group.key==='followup'?records.tasks.filter(t=>t.type==='Follow-up'||/follow.up.*email/i.test(t.title||'')):records.tasks.filter(t=>metadata(t).businessChecklistKey===group.key)
-    if(matches.some(t=>!['Done','Cancelled','Waiting on Client','Blocked'].includes(t.status)&&(!t.due_date||t.due_date<=localDay())))group.count++
+    const pending=matches.filter(t=>!['Done','Cancelled'].includes(t.status))
+    if(pending.length){
+     if(pending.some(t=>!['Waiting on Client','Blocked'].includes(t.status)&&(!t.due_date||t.due_date<=localDay())))group.count++
+     break
+    }
    }
   }
  }
- return {total:data.businesses.length,reviewed,partial,contactDue,outreach,rated:ratings.length,rating:ratings.length?ratings.reduce((a,b)=>a+b,0)/ratings.length:null,percent:data.businesses.length?Math.round(reviewed/data.businesses.length*100):0}
+ return {total:data.businesses.length,reviewed,partial,contactDue:outreach.reduce((sum,g)=>sum+g.count,0),outreach,rated:ratings.length,rating:ratings.length?ratings.reduce((a,b)=>a+b,0)/ratings.length:null,percent:data.businesses.length?Math.round(reviewed/data.businesses.length*100):0}
 }
