@@ -10,7 +10,7 @@ const SITES=['Loving Longmont','MKT Colorado']
 const DIRECTORY_BASES={'Loving Longmont':'https://mktvisibility.github.io/LovingLongmont/','MKT Colorado':'https://mktcolorado.com/'}
 const ROWS=[
  ['Business directory','businesses.html','businesses.html'],['Homepage','index.html','index.html'],
- ['Things to Do / Experiences','things-to-do.html','experiences.html'],['Animals & Pets','animals.html',null],
+ ['Things to Do','things-to-do.html','things-to-do.html'],['Animals & Pets','animals.html',null],
  ['Community','community.html',null],['History','history.html',null],['Jobs','jobs.html',null],
  ['Events','events.html','events.html'],['In the Spotlight','spotlight.html','spotlight.html'],
  ['Food & Drink',null,'food-drink.html'],['Arts & Crafts / Makers',null,'makers.html'],
