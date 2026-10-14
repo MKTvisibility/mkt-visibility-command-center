@@ -37,13 +37,13 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
  const live=await transformWithOxc(liveRaw,'LiveBusinessPage.jsx',{jsx:{runtime:'automatic'}})
  const liveFile=join(directory,'LiveBusinessPage.mjs');writeFileSync(liveFile,live.code)
  const biModules={}
- for(const name of ['Intelligence','MasterTasks','ProfileRatings','BusinessBasics','ProfileAtAGlance','BusinessReports','TaskCalendar','OutreachWorkflow','ProfileCompletion']){
+ for(const name of ['Intelligence','MasterTasks','ProfileRatings','BusinessBasics','ProfileAtAGlance','BusinessReports','TaskCalendar','OutreachWorkflow','ProfileCompletion','PilotProfile']){
   let source=readFileSync(new URL('../src/'+name+'.jsx',import.meta.url),'utf8').replace('import "./intelligence.css";','').replaceAll('from "./','from "'+pathToFileURL(join(process.cwd(),'src')).href+'/').replace("import './intelligence.css'",'').replace("import './business-reports.css'",'').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
   if(name==='ProfileAtAGlance')source=source.replace(pathToFileURL(join(process.cwd(),'src/ProfileRatings.jsx')).href,pathToFileURL(biModules.ProfileRatings).href)
   const compiled=await transformWithOxc(source,name+'.jsx',{jsx:{runtime:'automatic'}})
   const file=join(directory,name+'.mjs');writeFileSync(file,compiled.code);biModules[name]=file
  }
- const raw=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8').replace('function Records(', 'export function Records(').replace('function Pipeline(', 'export function Pipeline(').replace('function BusinessProfile(', 'export function BusinessProfile(').replace("import './profile-hub.css'",'').replace("import './App.css'",'').replace("from './AnalyticsSync.jsx'","from '"+pathToFileURL(analyticsFile).href+"'").replace("from './LiveBusinessPage.jsx'","from '"+pathToFileURL(liveFile).href+"'").replace("from './PartnerMessages.jsx'","from '"+pathToFileURL(messagesFile).href+"'").replace("from './BusinessPublishing.jsx'","from '"+pathToFileURL(publishingFile).href+"'").replace("from './BusinessChecklist.jsx'","from '"+pathToFileURL(checklistFile).href+"'").replace("from './Portfolio.jsx'","from '"+pathToFileURL(portfolioFile).href+"'").replace("from './BusinessReports.jsx'","from '"+pathToFileURL(biModules.BusinessReports).href+"'").replace("from './ProfileCompletion.jsx'","from '"+pathToFileURL(biModules.ProfileCompletion).href+"'").replace("from './ProfileAtAGlance.jsx'","from '"+pathToFileURL(biModules.ProfileAtAGlance).href+"'").replace("from './ProfileRatings.jsx'","from '"+pathToFileURL(biModules.ProfileRatings).href+"'").replace("from './BusinessBasics.jsx'","from '"+pathToFileURL(biModules.BusinessBasics).href+"'").replace("from './Intelligence.jsx'","from '"+pathToFileURL(biModules.Intelligence).href+"'").replace("from './MasterTasks.jsx'","from '"+pathToFileURL(biModules.MasterTasks).href+"'").replace("from './TaskCalendar.jsx'","from '"+pathToFileURL(biModules.TaskCalendar).href+"'").replace("from './OutreachWorkflow.jsx'","from '"+pathToFileURL(biModules.OutreachWorkflow).href+"'").replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
+ const raw=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8').replace('function Records(', 'export function Records(').replace('function Pipeline(', 'export function Pipeline(').replace('function BusinessProfile(', 'export function BusinessProfile(').replace("import './profile-hub.css'",'').replace("import './App.css'",'').replace("from './AnalyticsSync.jsx'","from '"+pathToFileURL(analyticsFile).href+"'").replace("from './LiveBusinessPage.jsx'","from '"+pathToFileURL(liveFile).href+"'").replace("from './PartnerMessages.jsx'","from '"+pathToFileURL(messagesFile).href+"'").replace("from './BusinessPublishing.jsx'","from '"+pathToFileURL(publishingFile).href+"'").replace("from './BusinessChecklist.jsx'","from '"+pathToFileURL(checklistFile).href+"'").replace("from './Portfolio.jsx'","from '"+pathToFileURL(portfolioFile).href+"'").replace("from './BusinessReports.jsx'","from '"+pathToFileURL(biModules.BusinessReports).href+"'").replace("from './PilotProfile.jsx'","from '"+pathToFileURL(biModules.PilotProfile).href+"'").replace("from './ProfileCompletion.jsx'","from '"+pathToFileURL(biModules.ProfileCompletion).href+"'").replace("from './ProfileAtAGlance.jsx'","from '"+pathToFileURL(biModules.ProfileAtAGlance).href+"'").replace("from './ProfileRatings.jsx'","from '"+pathToFileURL(biModules.ProfileRatings).href+"'").replace("from './BusinessBasics.jsx'","from '"+pathToFileURL(biModules.BusinessBasics).href+"'").replace("from './Intelligence.jsx'","from '"+pathToFileURL(biModules.Intelligence).href+"'").replace("from './MasterTasks.jsx'","from '"+pathToFileURL(biModules.MasterTasks).href+"'").replace("from './TaskCalendar.jsx'","from '"+pathToFileURL(biModules.TaskCalendar).href+"'").replace("from './OutreachWorkflow.jsx'","from '"+pathToFileURL(biModules.OutreachWorkflow).href+"'").replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
  const transformed=await transformWithOxc(raw,'App.jsx',{jsx:{runtime:'automatic'}})
  const filename=join(directory,'App.mjs');writeFileSync(filename,transformed.code)
  let networkCalls=0
@@ -359,6 +359,21 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   section.open=true
   assert.equal(within(section).getAllByRole('row').length,11)
   assert.ok(screen.getByText('Page 1 of 3 · 25 matching records'))
+
+  cleanup()
+  const pilotData=emptyData(),pilotBusiness={id:'3f2dd067-8b0d-5a87-adfd-ff8f473b3377',name:'5280 Staffing Solutions',email:'olga@5280staffing.com',status:'Active'}
+  pilotData.businesses=[pilotBusiness]
+  const pilotSaves=[]
+  render(React.createElement(BusinessProfile,{business:pilotBusiness,data:pilotData,member:{role:'owner'},writable:true,onSave:async(kind,value)=>pilotSaves.push({kind,value}),onClose:()=>{},onEdit:()=>{},onAdd:()=>{}}))
+  assert.ok(screen.getByRole('region',{name:'Business profile redesign'}))
+  assert.equal(screen.getAllByRole('tab').length,4)
+  assert.ok(!screen.queryByText('Additional records & full checklist history'))
+  fireEvent.click(screen.getByRole('tab',{name:'Work & outreach'}))
+  fireEvent.change(screen.getByLabelText('Status: Send Free Listing Email (Your Site Was Added)'),{target:{value:'done'}})
+  await waitFor(()=>assert.equal(pilotSaves.length,1))
+  assert.equal(pilotSaves[0].value.status,'Done')
+  fireEvent.click(screen.getByRole('tab',{name:'Messages & notes'}))
+  assert.ok(screen.getByRole('heading',{name:'Message timeline'}))
 
   cleanup()
   const publishCalls=[];let publishSaved

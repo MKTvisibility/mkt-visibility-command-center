@@ -1,4 +1,6 @@
 import TaskCalendar from './TaskCalendar.jsx'
+import PilotProfile from './PilotProfile.jsx'
+import {is5280Pilot} from './lib/pilot-profile.js'
 import ProfileCompletion from './ProfileCompletion.jsx'
 import {BeforeOutreach,ReadyContacts} from './OutreachWorkflow.jsx'
 import {sequence,blocked,day} from './lib/outreach-workflow.js'
@@ -7,7 +9,7 @@ import {portfolioProfileSummary,businessRatingGroups,siteReviewGroups} from './l
 import {readNavigation,saveNavigation} from './lib/navigation.js'
 import ProfileAtAGlance from './ProfileAtAGlance.jsx'
 import BusinessBasics from './BusinessBasics.jsx'
-import ProfileRatings, {SimpleProfileChecklist} from './ProfileRatings.jsx'
+import ProfileRatings, {SimpleProfileChecklist,OutreachDecision} from './ProfileRatings.jsx'
 import './profile-hub.css'
 import Intelligence from './Intelligence.jsx'
 import MasterTasks from './MasterTasks.jsx'
@@ -170,6 +172,7 @@ function BusinessProfile({ business, data, member, writable, onClose, onEdit, on
  const [ratingProfile,setRatingProfile]=useState(null)
  const messages=businessMessages(data,business.id)
  const profileTasks=data.tasks.filter(t=>t.business_id===business.id&&!isTownWork(t)&&!metadata(t).businessChecklistKey)
+ if(is5280Pilot(business))return <PilotProfile {...{business,data,member,writable,onClose,onEdit,onAdd,onSave,repository,onBusinessSaved}} components={{BusinessBasics,ProfileRatings,LiveBusinessPage,ProfileCompletion,OutreachDecision,InternalNotes}}/>
  return <section className="card business-profile profile-hub" aria-label="Business profile">
  <div className="section-head"><div><div className="eyebrow">BUSINESS PROFILE</div><h2>{business.name}</h2><p>{business.city||business.address||'Business details, ratings and directory publishing'}</p>{<ProfileAtAGlance business={business} data={data} profile={ratingProfile} writable={writable} onSave={onSave}/>}</div><button className="secondary" onClick={onClose}>Back to businesses</button></div>
  <ProfileCompletion business={business} data={data} profile={ratingProfile} writable={writable} onSave={onSave}/>
