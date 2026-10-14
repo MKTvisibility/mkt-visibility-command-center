@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {profileSummary,contactSummary,isProfilePilot,portfolioProfileSummary} from '../src/lib/profile-summary.js'
+import {profileSummary,contactSummary,isProfilePilot,portfolioProfileSummary,businessRatingGroups} from '../src/lib/profile-summary.js'
 import {workflowTask} from '../src/lib/profile-workflow.js'
 import {emptyData} from '../src/lib/domain.js'
 
@@ -33,7 +33,8 @@ test('dashboard counts fully reviewed businesses once and excludes unrated busin
  for(const [key,title] of profileSummary(data.businesses[0],data,profiles[0]).steps)data.tasks.push({...workflowTask(data.businesses[0],data,key,title),status:'Done'})
  data.tasks.push({...workflowTask(data.businesses[1],data,'basics','Verify details'),status:'Done'})
  data.tasks.push(workflowTask(data.businesses[1],data,'intro','Send first contact email'))
- assert.deepEqual(portfolioProfileSummary(data,profiles),{total:3,reviewed:1,partial:1,contactDue:1,outreach:[{key:'intro',label:'First contact email',count:1},{key:'story_request',label:'Business story request',count:0},{key:'offer',label:'Visibility Check invitation',count:0},{key:'report',label:'Visibility Check report',count:0},{key:'followup',label:'Follow-up emails',count:0}],rated:2,rating:3,percent:33})
+ const aggregate=portfolioProfileSummary(data,profiles)
+ assert.deepEqual({...aggregate,outreach:aggregate.outreach.map(({key,label,count})=>({key,label,count}))},{total:3,reviewed:1,partial:1,contactDue:1,outreach:[{key:'intro',label:'First contact email',count:1},{key:'story_request',label:'Business story request',count:0},{key:'offer',label:'Visibility Check invitation',count:0},{key:'report',label:'Visibility Check report',count:0},{key:'followup',label:'Follow-up emails',count:0}],rated:2,rating:3,percent:33})
 })
 test('numbered follow-up emails display in natural sequence',()=>{
  const data=emptyData(),business={id:'a'}
@@ -51,7 +52,16 @@ test('dashboard outreach places each business in only its next unfinished email 
  groups=portfolioProfileSummary(data,[]).outreach
  assert.equal(groups.find(g=>g.key==='intro').count,0)
  assert.equal(groups.find(g=>g.key==='story_request').count,1)
+ assert.equal(groups.find(g=>g.key==='story_request').businesses[0].business.id,'a')
  assert.equal(groups.reduce((sum,g)=>sum+g.count,0),1)
  data.tasks[1].status='Waiting on Client'
  assert.equal(portfolioProfileSummary(data,[]).outreach.reduce((sum,g)=>sum+g.count,0),0)
+})
+
+test('rating lists partition businesses once, preserving exact decimal ratings',()=>{
+ const data=emptyData();data.businesses=[{id:'a',name:'Alpha'},{id:'b',name:'Beta'}]
+ const groups=businessRatingGroups(data,[{business_id:'a',approved_at:'today',approved:{platforms:{Website:{state:'Rated',score:3},Facebook:{state:'Rated',score:4}}}}])
+ assert.equal(groups.find(g=>g.stars===4).businesses[0].rating,3.5)
+ assert.equal(groups.find(g=>g.stars===0).businesses[0].business.id,'b')
+ assert.equal(groups.reduce((sum,g)=>sum+g.businesses.length,0),2)
 })

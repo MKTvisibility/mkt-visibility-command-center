@@ -34,3 +34,7 @@
 .profile-glance .dashboard-outreach-types{list-style:none;padding:0;margin:12px 0 0}.dashboard-outreach-types li{display:flex;justify-content:space-between;gap:12px;border-top:1px solid #eadfcf;padding:7px 0;font-size:11px}.dashboard-outreach-types strong{color:#955a19;font-size:13px}
 
 .review-task-links{display:inline-flex;gap:10px;flex-wrap:wrap;margin-left:10px;font-size:12px}.review-task-links a{white-space:nowrap;color:#286c81;text-decoration:underline;text-underline-offset:3px}
+
+.rating-buckets{margin-top:12px;display:grid;gap:4px}.rating-buckets button{display:flex;justify-content:space-between;gap:12px;padding:7px 9px;border-radius:6px;text-align:left;font-size:12px}.rating-buckets button:hover,.rating-buckets button[aria-pressed=true]{background:#f3e7cb}.rating-business-results{margin-top:22px;border-top:1px solid #dde6eb;padding-top:18px}.rating-business-results table{min-width:540px}
+
+.dashboard-outreach-types button{display:flex;justify-content:space-between;width:100%;gap:12px;font-size:11px;text-align:left;padding:3px 5px;border-radius:4px}.dashboard-outreach-types button:hover,.dashboard-outreach-types button[aria-pressed=true]{background:#f4e5ce}
