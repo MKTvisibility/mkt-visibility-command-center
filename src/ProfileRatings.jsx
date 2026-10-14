@@ -4,7 +4,7 @@ import {safeUrl} from './lib/domain.js'
 import {emptyAssessment,PLATFORMS,RATING_STATES,validateAssessment} from './lib/intelligence.js'
 import {metadata,encodeMetadata} from './lib/portfolio.js'
 import {SIMPLE_STEPS,workflowTask,profileTask} from './lib/profile-workflow.js'
-const OUTREACH_CHOICES=['Not decided','Pursue as a client','Stop outreach','Not a match','Offer a discount','Offer free service']
+const OUTREACH_CHOICES=['Not decided','Pursue as a client','Stop outreach','Not a match','Potential networking opportunity','Offer a discount','Offer free service']
 const LABELS=['','1 — Poor','2 — Needs improvement','3 — Average','4 — Good','5 — Excellent']
 export function OutreachDecision({business,writable,onSave}){
  const [busy,setBusy]=useState(false),[error,setError]=useState('')
