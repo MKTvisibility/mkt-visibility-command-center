@@ -1,3 +1,4 @@
+import {encodeMetadata} from '../src/lib/portfolio.js'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {profileSummary,contactSummary,isProfilePilot,portfolioProfileSummary,businessRatingGroups,siteReviewGroups} from '../src/lib/profile-summary.js'
@@ -75,4 +76,10 @@ test('site review totals deduplicate placements within a site and include shared
  assert.equal(groups.find(g=>g.key==='Loving Longmont:reviewed').businesses[0].business.id,'a')
  assert.equal(groups.find(g=>g.key==='MKT Colorado:reviewed').businesses[0].business.id,'a')
  assert.equal(groups.find(g=>g.key==='MKT Colorado:remaining').businesses[0].business.id,'b')
+})
+
+test('N/A review tasks are excluded from the total without counting as completed',()=>{
+ const business={id:'na-business'},data={tasks:[{business_id:'na-business',status:'Cancelled',notes:encodeMetadata({},{businessChecklistKey:'image',notApplicable:true})}],emails:[],businesses:[],listings:[]}
+ const result=profileSummary(business,data,null)
+ assert.equal(result.notApplicable,1);assert.equal(result.done,0);assert.equal(result.total,result.steps.length-1);assert.equal(result.percent,0)
 })

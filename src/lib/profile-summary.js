@@ -1,5 +1,5 @@
 import {PLATFORMS} from './intelligence.js'
-import {profileTask} from './profile-workflow.js'
+import {profileTask,taskNotApplicable} from './profile-workflow.js'
 import {businessMessages,messageSummary,localDay} from './domain.js'
 import {metadata} from './portfolio.js'
 
@@ -14,9 +14,10 @@ export function profileSummary(business,data,profile) {
   const platforms=profile?.approved_at ? profile.approved?.platforms || {} : {}
   const names=[...new Set([...PLATFORMS,...Object.keys(platforms)])]
   const steps=[...REVIEW_STEPS,...names.filter(name=>platforms[name]?.state!=='Not Applicable').map(name=>[`rating:${name}`,`Review ${name==='Google Business Profile'?'Google listing & reviews':name}`])]
-  const done=steps.filter(([key])=>profileTask(data,business,key)?.status==='Done').length
+  const applicableSteps=steps.filter(([key])=>!taskNotApplicable(profileTask(data,business,key)))
+  const done=applicableSteps.filter(([key])=>profileTask(data,business,key)?.status==='Done').length
   const scores=Object.values(platforms).filter(p=>p.state==='Rated'&&p.relevant!==false&&Number.isFinite(p.score)&&p.score>=1&&p.score<=5).map(p=>p.score)
-  return {steps,done,total:steps.length,percent:Math.round(done/steps.length*100),rating:scores.length?scores.reduce((a,b)=>a+b,0)/scores.length:null,ratedCount:scores.length}
+  return {steps,done,total:applicableSteps.length,notApplicable:steps.length-applicableSteps.length,percent:applicableSteps.length?Math.round(done/applicableSteps.length*100):100,rating:scores.length?scores.reduce((a,b)=>a+b,0)/scores.length:null,ratedCount:scores.length}
 }
 export function contactSummary(business,data,profile,today=localDay()) {
   if(profile?.crm?.do_not_contact)return {label:'Do not contact',tone:'blocked',actions:[]}

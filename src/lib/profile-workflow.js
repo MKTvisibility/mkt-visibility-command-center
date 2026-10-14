@@ -14,3 +14,8 @@ export function workflowTask(business,data,key,title){
  return {business_id:business.id,title,type:'Task',status:'Open',priority:'Normal',assignee:'Unassigned',due_date:null,notes:encodeMetadata({},{brand,businessChecklistKey:key,checklistGroup:'Business profile',text:'Check this off after you complete the work. Existing email and completion evidence is kept.'}),details:{company:brand,category:key.startsWith('rating:')?'Verification':key==='intro'||key==='story_request'?'Outreach':'Other',suggestion_key:`profile:${key}`}}
 }
 export function profileTask(data,business,key){return data.tasks.find(t=>t.business_id===business.id&&metadata(t).businessChecklistKey===key&&t.status!=='Cancelled')||data.tasks.find(t=>t.business_id===business.id&&metadata(t).businessChecklistKey===key)}
+
+export const taskNotApplicable=task=>metadata(task||{}).notApplicable===true
+export function taskChoice(task,choice){
+ return {...task,status:choice==='na'?'Cancelled':choice==='done'?'Done':'Open',notes:encodeMetadata(task,{notApplicable:choice==='na',notApplicableAt:choice==='na'?new Date().toISOString():null,...task._evidenceChecked&&choice!=='done'?{evidenceCompletionIgnored:true}:{}})}
+}

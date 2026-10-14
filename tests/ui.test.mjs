@@ -146,14 +146,17 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   assert.ok(profile.getByText('Gift Shops'))
   fireEvent.click(profile.getByText('Additional records & full checklist history'));
   let checklistRegion=within(profile.getByRole('region',{name:'Business completion checklist'}))
-  assert.equal(checklistRegion.getAllByRole('checkbox').length,8)
+  assert.equal(checklistRegion.getAllByRole('checkbox',{name:/^Complete /}).length,8)
   fireEvent.click(checklistRegion.getByRole('button',{name:'Add 21 missing checklist tasks'}))
-  await waitFor(()=>assert.equal(checklistRegion.getAllByRole('checkbox').length,29))
+  await waitFor(()=>assert.equal(checklistRegion.getAllByRole('checkbox',{name:/^Complete /}).length,29))
   assert.ok(!checklistRegion.queryByRole('button',{name:/missing checklist tasks/}))
-  const firstCheck=checklistRegion.getAllByRole('checkbox')[0]
+  const firstCheck=checklistRegion.getAllByRole('checkbox',{name:/^Complete /})[0]
   fireEvent.click(firstCheck)
   await waitFor(()=>assert.equal(firstCheck.checked,true))
   assert.ok(checklistRegion.getByText(/Completed by Practice workspace/))
+  const firstNA=checklistRegion.getAllByRole('checkbox',{name:/^Not applicable:/})[0]
+  fireEvent.click(firstNA);await waitFor(()=>assert.equal(firstNA.checked,true));assert.equal(firstCheck.checked,false)
+  fireEvent.click(firstCheck);await waitFor(()=>assert.equal(firstCheck.checked,true));assert.equal(firstNA.checked,false)
   fireEvent.click(checklistRegion.getAllByRole('button')[0])
   editor=within(screen.getByRole('dialog'))
   fireEvent.change(editor.getByLabelText('Priority'),{target:{value:'High'}})

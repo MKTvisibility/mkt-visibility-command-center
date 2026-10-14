@@ -45,3 +45,5 @@
 .glance-decision .outreach-decision{margin-top:16px}.glance-decision label{display:grid;gap:6px;margin:12px 0;font-size:12px}.glance-decision select,.glance-decision textarea{width:100%;min-width:0;font-size:12px}.glance-decision .secondary{width:100%;font-size:12px}
 @media(max-width:850px){.profile-hub .profile-glance{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:500px){.profile-hub .profile-glance{grid-template-columns:1fr}}
+
+.task-na{white-space:nowrap;font-size:12px!important;flex:0 0 auto!important}.compact-checklist .simple-task>label{flex:0 0 auto}.review-choice-row{display:flex;align-items:flex-start;gap:10px}.review-choice-row>label:first-child{flex:1;flex-wrap:wrap}.task-na input{width:16px;height:16px}
