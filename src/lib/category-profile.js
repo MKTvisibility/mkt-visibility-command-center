@@ -4,7 +4,7 @@ import {taskChoice,taskNotApplicable,workflowTask} from './profile-workflow.js'
 export const BUTTERSCOTCH_ID='05e3d0d9-619e-5386-a120-171771e867b0'
 export const WORK_CATEGORIES=[['research','Business details & research'],['listing','Images & public listing'],['visibility','Visibility Check assessment'],['services','Client services & payments'],['maintenance','Follow-ups & maintenance']]
 export const TOPICS=[['listing','Listing notification / corrections',['intro']],['story','Business story / questionnaire',['story_request','story_questionnaire']],['visibility','Free Visibility Check',['offer','report']],['services','Proposal / paid services',['proposal','service_confirmation']]]
-export const CONVERSATION_STATES=['Not started','We need to respond','Waiting for client','Follow-up scheduled','Closed','N/A']
+export const CONVERSATION_STATES=['Not started','We need to respond','Waiting for client','Follow-up scheduled','Done / Completed','Closed','N/A']
 const actionKeys=new Set(TOPICS.flatMap(t=>t[2]))
 export function categoryOf(task){
  const m=metadata(task),key=m.businessChecklistKey||''
@@ -35,8 +35,8 @@ export function conversationStatus(business,data,topic,tasks){
  const keys=TOPICS.find(t=>t[0]===topic)?.[2]||[],rows=tasks.filter(t=>keys.includes(metadata(t).businessChecklistKey)),tracking=rows.map(t=>metadata(t).outreachTracking||{})
  if(tracking.some(t=>t.state==='Client is waiting to hear back from us'||t.received&&!t.responded))return 'We need to respond'
  if(tracking.some(t=>t.state==='Waiting to hear back from client'))return 'Waiting for client'
- if(tracking.some(t=>t.state==='No further outreach needed')||topic==='listing'&&tracking.some(t=>t.received&&t.responded))return 'Closed'
+ if(tracking.some(t=>t.state==='No further outreach needed')||topic==='listing'&&tracking.some(t=>t.received&&t.responded))return 'Done / Completed'
  if(rows.some(t=>t.status==='Done'&&!metadata(t).profileBulkCompletion&&!taskNotApplicable(t)))return 'Waiting for client'
  return 'Not started'
 }
-export function conversationUpdate(task,changes){const c={...metadata(task).outreachTracking,...changes},map={'We need to respond':'Client is waiting to hear back from us','Waiting for client':'Waiting to hear back from client','Follow-up scheduled':'Schedule outreach','Closed':'No further outreach needed','N/A':'No further outreach needed','Not started':'Not set'};return {...task,notes:encodeMetadata(task,{outreachTracking:{...metadata(task).outreachTracking,conversationState:c.state,state:map[c.state]}})}}
+export function conversationUpdate(task,changes){const c={...metadata(task).outreachTracking,...changes},map={'We need to respond':'Client is waiting to hear back from us','Waiting for client':'Waiting to hear back from client','Follow-up scheduled':'Schedule outreach','Done / Completed':'Completed','Closed':'No further outreach needed','N/A':'No further outreach needed','Not started':'Not set'};return {...task,notes:encodeMetadata(task,{outreachTracking:{...metadata(task).outreachTracking,conversationState:c.state,state:map[c.state],closedReason:c.state==='Closed'?(c.reason||metadata(task).outreachTracking?.closedReason||'Other'):null}})}}
