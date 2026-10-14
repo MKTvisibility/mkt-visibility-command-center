@@ -1,3 +1,5 @@
+import ProfileAtAGlance from './ProfileAtAGlance.jsx'
+import {isProfilePilot} from './lib/profile-summary.js'
 import BusinessBasics from './BusinessBasics.jsx'
 import ProfileRatings, {SimpleProfileChecklist} from './ProfileRatings.jsx'
 import './profile-hub.css'
@@ -150,12 +152,13 @@ function InternalNotes({ business, data, member, writable, onSave }) {
 }
 
 function BusinessProfile({ business, data, member, writable, onClose, onEdit, onAdd, onSave, repository, onBusinessSaved }) {
+ const [ratingProfile,setRatingProfile]=useState(null)
  const messages=businessMessages(data,business.id)
  const profileTasks=data.tasks.filter(t=>t.business_id===business.id&&!isTownWork(t)&&!metadata(t).businessChecklistKey)
  return <section className="card business-profile profile-hub" aria-label="Business profile">
- <div className="section-head"><div><div className="eyebrow">BUSINESS PROFILE</div><h2>{business.name}</h2><p>{business.city||business.address||'Business details, ratings and directory publishing'}</p></div><button className="secondary" onClick={onClose}>Back to businesses</button></div>
+ <div className="section-head"><div><div className="eyebrow">BUSINESS PROFILE</div><h2>{business.name}</h2>{isProfilePilot(business)&&<ProfileAtAGlance business={business} data={data} profile={ratingProfile} writable={writable} onSave={onSave}/>}<p>{business.city||business.address||'Business details, ratings and directory publishing'}</p></div><button className="secondary" onClick={onClose}>Back to businesses</button></div>
  <details className="profile-section" open><summary>1. Basic business details<small>Name, contact information, description & categories</small></summary><BusinessBasics business={business} writable={writable} onSave={onSave}/></details>
- <details className="profile-section" open><summary>2. Review & ratings<small>Website, Google reviews and social media</small></summary><ProfileRatings key={`profile-ratings-${business.id}`} business={business} data={data} member={member} repository={repository} writable={writable} onSave={onSave}/></details>
+ <details className="profile-section" open><summary>2. Review & ratings<small>Website, Google reviews and social media</small></summary><ProfileRatings key={`profile-ratings-${business.id}`} business={business} data={data} member={member} repository={repository} writable={writable} onSave={onSave} onProfileLoaded={setRatingProfile}/></details>
  <details className="profile-section" open><summary>3. Basic checklist<small>Emails, business story and page review</small></summary><SimpleProfileChecklist business={business} data={data} writable={writable} onSave={onSave}/></details>
  <details className="profile-section"><summary>4. Business page & spotlights<small>Edit the page, images, and placement on Loving Longmont / MKT Colorado</small></summary><LiveBusinessPage key={`live-page-${business.id}`} business={business} repository={repository} writable={writable} onBusinessSaved={onBusinessSaved}/></details>
  <details className="profile-section"><summary>5. Messages & private notes<small>{messages.length} recorded messages</small></summary><div className="section-head"><h3>Message timeline</h3>{writable && <button className="primary" onClick={() => onAdd('emails', { business_id: business.id, recipient: business.email || '' })}>＋ Add message summary</button>}</div><p className="fine">Summaries only. Dates describe the message, not when the record was entered. Planned messages have not been sent.</p>{!messages.length ? <div className="empty"><h3>No message summaries yet.</h3><p>Add sent and received messages to build this business’s history.</p></div> : <ol className="message-timeline">{messages.map(message => {
