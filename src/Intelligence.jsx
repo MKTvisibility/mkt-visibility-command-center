@@ -104,7 +104,7 @@ function ClientReport({ business, a, onClose }) {
           ? "Reviewed assessment"
           : "Draft — review findings before sharing"}
       </p>
-      <p>{a.summary}</p>
+      <p>{a.client_summary || "This Visibility Check summarizes the online presence we could assess from the supporting public sources."}</p>
       {Object.entries(a.platforms || {})
         .filter(
           ([, p]) =>
@@ -115,7 +115,7 @@ function ClientReport({ business, a, onClose }) {
           <article key={name}>
             <h3>{name}</h3>
             <p>{ratingLabel(p)}</p>
-            <p>{p.explanation}</p>
+            <p>{p.client_explanation || "Review the source links below and discuss practical improvements with MKT Visibility."}</p>
             {(p.evidence || []).map((e, i) => (
               <p key={i}>
                 <Source url={e.url} />
@@ -125,7 +125,7 @@ function ClientReport({ business, a, onClose }) {
         ))}
       <h3>Recommended next steps</h3>
       <p>
-        {a.services ||
+        {a.client_services ||
           "A conversation about your business goals can help identify the most useful next steps."}
       </p>
       <p>
@@ -156,7 +156,8 @@ function Assessment({
     ),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [report, setReport] = useState(false);
+    [report, setReport] = useState(false),
+    [platformName, setPlatformName] = useState("");
   const change = (key, value) => setDraft((d) => ({ ...d, [key]: value }));
   function choose(value) {
     setWhich(value);
@@ -356,7 +357,11 @@ function Assessment({
           1 Poor · 2 Needs Improvement · 3 Average · 4 Good · 5 Excellent.
           Choose Not Applicable for irrelevant platforms.
         </p>
-        {PLATFORMS.map((name) => {
+        <div className="actions">
+          <label>Additional platform name<input value={platformName} maxLength={80} onChange={e=>setPlatformName(e.target.value)}/></label>
+          <button type="button" disabled={!platformName.trim()||Object.hasOwn(platforms,platformName.trim())} onClick={()=>{const name=platformName.trim();change('platforms',{...platforms,[name]:{state:'Not Researched',score:null,relevant:null,url:'',explanation:'',evidence:[],criteria:{}}});setPlatformName('')}}>Add platform</button>
+        </div>
+        {[...new Set([...PLATFORMS,...Object.keys(platforms)])].map((name) => {
           const p = platforms[name] || {};
           const edit = (v) =>
             change("platforms", { ...platforms, [name]: { ...p, ...v } });
@@ -425,8 +430,12 @@ function Assessment({
                   })
                 }
               />
-              <label>
-                Explanation / reviewer notes
+                <label>
+                  Client-facing explanation (safe to share)
+                  <textarea value={p.client_explanation || ""} onChange={(e) => edit({client_explanation:e.target.value})}/>
+                </label>
+                <label>
+                  Explanation / reviewer notes
                 <textarea
                   value={p.explanation || ""}
                   onChange={(e) => edit({ explanation: e.target.value })}
@@ -562,6 +571,8 @@ function Assessment({
           ["summary", "Internal opportunity summary"],
           ["services", "Recommended services"],
           ["first_contact", "Suggested first contact approach"],
+          ["client_summary", "Client-facing summary (safe to share)"],
+          ["client_services", "Client-facing recommended next steps (safe to share)"],
           ["notes", "Reviewer notes"],
         ].map(([key, label]) => (
           <label key={key}>

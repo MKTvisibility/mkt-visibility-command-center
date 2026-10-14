@@ -32,7 +32,7 @@ Task details support descriptions, categories, dependencies, document links, exe
 
 ## Reports and exports
 
-Business Intelligence > Opportunity Reports provides nine report choices. Business filters and sorting apply to rankings and opportunity tables; dates refer to research dates. Team productivity uses task creation dates. CSV exports filtered records. Print / Save PDF uses the browser's PDF destination. A Visibility Check removes private lead scores and sales notes and identifies drafts. Review before sharing. Printing/exporting does not contact clients.
+Business Intelligence > Opportunity Reports provides nine report choices. Business filters and sorting apply to rankings and opportunity tables; dates refer to research dates. Team productivity uses task creation dates. CSV exports filtered records. Print / Save PDF uses the browser's PDF destination. A Visibility Check uses dedicated client-facing summary, explanation and next-step fields, excludes internal summaries and sales strategy, and identifies drafts. Fill the client-facing fields before sharing. Review before sharing. Printing/exporting does not contact clients.
 
 ## One-time cloud research connection
 

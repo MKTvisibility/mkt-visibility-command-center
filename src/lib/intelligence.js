@@ -147,7 +147,7 @@ export function leadScores(assessment = {}, crm = {}, settings = {}) {
     else if (Number.isFinite(p.score) && p.score >= 1 && p.score <= 5)
       value = (5 - p.score) * 25;
     if (value !== null) {
-      inputs.push({ value, weight: platformWeights[name] || 5 });
+      inputs.push({ value, weight: platformWeights[name] ?? 5 });
       findings.push(
         `${name}: ${p.state === "Missing" ? "verified missing" : `${p.score}/5`} → ${value}% service need. ${p.explanation || ""}`,
       );

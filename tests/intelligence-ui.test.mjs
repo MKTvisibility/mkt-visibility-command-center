@@ -6,6 +6,7 @@ import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import React from "react";
+import {emptyAssessment} from "../src/lib/intelligence.js";
 import { emptyData } from "../src/lib/domain.js";
 test("BI review, pipeline, research queue and master task editing use real commands and preserve unknowns", async () => {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", {
@@ -83,7 +84,7 @@ test("BI review, pipeline, research queue and master task editing use real comma
         {
           id: "profile",
           business_id: "test-business",
-          approved: {},
+          approved: {...emptyAssessment(data.businesses[0]),summary:"PRIVATE SALES NOTE",services:"INTERNAL SALES STRATEGY"},
           crm: { stage: "Researching" },
           updated_at: "2026-10-14T00:00:00Z",
         },
@@ -122,6 +123,10 @@ test("BI review, pipeline, research queue and master task editing use real comma
     );
     fireEvent.click(screen.getByRole("button", { name: "Review / rate" }));
     assert.ok(screen.getByText(/Never/));
+    fireEvent.click(screen.getByRole("button", {name:"Visibility Check report"}));
+    assert.equal(screen.queryByText("PRIVATE SALES NOTE"),null);
+    assert.equal(screen.queryByText("INTERNAL SALES STRATEGY"),null);
+    fireEvent.click(screen.getByRole("button", {name:"Close report"}));
     fireEvent.click(screen.getByRole("button", { name: "Approve assessment" }));
     await waitFor(() => assert.equal(commands[0]?.action, "approve"));
     assert.equal(commands[0].input.assessment.platforms.Website.score, null);
