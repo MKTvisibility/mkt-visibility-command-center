@@ -1,0 +1,14 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {JSDOM} from 'jsdom'
+import {transformWithOxc} from 'vite'
+import {mkdtempSync,readFileSync,writeFileSync,rmSync} from 'node:fs'
+import {join} from 'node:path'
+import {pathToFileURL} from 'node:url'
+import React from 'react'
+import {emptyData} from '../src/lib/domain.js'
+test('report workflow runs only on request, supports filters and profile links, and never starts research',async()=>{
+ const dom=new JSDOM('<!doctype html><html><body></body></html>',{url:'https://localhost/'});for(const key of ['window','document','HTMLElement','Node','MutationObserver','getComputedStyle'])Object.defineProperty(globalThis,key,{value:dom.window[key],configurable:true});Object.defineProperty(globalThis,'navigator',{value:dom.window.navigator,configurable:true});globalThis.IS_REACT_ACT_ENVIRONMENT=true
+ const {render,screen,fireEvent,cleanup}=await import('@testing-library/react'),dir=mkdtempSync(join(process.cwd(),'.ui-test-'));const raw=readFileSync('src/BusinessReports.jsx','utf8').replace("import './business-reports.css'",'').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/');writeFileSync(join(dir,'Reports.mjs'),(await transformWithOxc(raw,'BusinessReports.jsx',{jsx:{runtime:'automatic'}})).code)
+ try{const {default:Reports}=await import(pathToFileURL(join(dir,'Reports.mjs')).href),data=emptyData();data.businesses=[{id:'a',name:'Sample Studio',city:'Longmont'},{id:'b',name:'Sample Farm',city:'Boulder'}];data.listings=[{business_id:'a',site:'Loving Longmont'},{business_id:'b',site:'MKT Colorado'}];let loads=0,viewed;const repository={intelligence:{load:async()=>{loads++;return {profiles:[],research:[],settings:[]}},queue:()=>{throw Error('Reports must not queue research')}}};render(React.createElement(Reports,{data,repository,onView:id=>{viewed=id},onAdvanced:()=>{}}));assert.equal(loads,0);fireEvent.click(screen.getByRole('button',{name:'Run report →'}));await screen.findByRole('region',{name:'Business report results'});assert.equal(loads,1);assert.ok(screen.getByRole('button',{name:'Sample Studio ↗'}));fireEvent.click(screen.getByRole('button',{name:'Sample Studio ↗'}));assert.equal(viewed,'a');fireEvent.change(screen.getByLabelText('Include businesses from'),{target:{value:'Loving Longmont'}});assert.ok(screen.getByText(/Options have changed/));fireEvent.click(screen.getByRole('button',{name:'Run report →'}));await screen.findByText(/1 results from 1 businesses/);assert.equal(screen.queryByRole('button',{name:'Sample Farm ↗'}),null);fireEvent.click(screen.getByRole('radio',{name:/Networking opportunities/}));fireEvent.click(screen.getByRole('button',{name:'Run report →'}));await screen.findByText('No businesses match this report.');assert.equal(loads,3)}finally{cleanup();rmSync(dir,{recursive:true,force:true});dom.window.close()}
+})
