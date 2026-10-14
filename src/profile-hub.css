@@ -40,3 +40,8 @@
 .dashboard-outreach-types button{display:flex;justify-content:space-between;width:100%;gap:12px;font-size:11px;text-align:left;padding:3px 5px;border-radius:4px}.dashboard-outreach-types button:hover,.dashboard-outreach-types button[aria-pressed=true]{background:#f4e5ce}
 
 .site-review-count{margin:12px 0 18px}.site-review-count>strong{display:block;font-size:12px;color:#687d8c;margin-bottom:5px}.site-review-count .review-task-links{margin:8px 0 0;font-size:11px}.site-review-count button{font-size:11px}
+
+.profile-hub .profile-glance{grid-template-columns:repeat(4,minmax(0,1fr));max-width:none;align-items:start}
+.glance-decision .outreach-decision{margin-top:16px}.glance-decision label{display:grid;gap:6px;margin:12px 0;font-size:12px}.glance-decision select,.glance-decision textarea{width:100%;min-width:0;font-size:12px}.glance-decision .secondary{width:100%;font-size:12px}
+@media(max-width:850px){.profile-hub .profile-glance{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){.profile-hub .profile-glance{grid-template-columns:1fr}}
