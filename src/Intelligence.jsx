@@ -734,6 +734,7 @@ export default function Intelligence({
     [company, setCompany] = useState("All"),
     [selected, setSelected] = useState([]),
     [businessId, setBusinessId] = useState(null),
+    [reportPage, setReportPage] = useState(1),
     [status, setStatus] = useState(null),
     [busy, setBusy] = useState(false),
     [settingsOpen, setSettingsOpen] = useState(false),
@@ -1378,7 +1379,7 @@ export default function Intelligence({
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.slice(0, 300).map(({ b, profile, run, a, s }) => (
+                  {rows.slice((Math.min(reportPage,Math.max(1,Math.ceil(rows.length/25)))-1)*25,Math.min(reportPage,Math.max(1,Math.ceil(rows.length/25)))*25).map(({ b, profile, run, a, s }) => (
                     <tr key={b.id}>
                       <td className="bi-no-print">
                         <input
@@ -1397,7 +1398,7 @@ export default function Intelligence({
                       <td>
                         <button
                           className="text-button"
-                          onClick={() => setBusinessId(b.id)}
+                          onClick={() => onView(b.id)}
                         >
                           {b.name}
                         </button>
@@ -1443,9 +1444,10 @@ export default function Intelligence({
                             ? `Follow up ${profile.crm.next_follow_up}`
                             : a.first_contact || ""}
                         </small>
-                        <button onClick={() => setBusinessId(b.id)}>
+                        <button onClick={() => onView(b.id)}>
                           Review / rate
                         </button>
+                        <button className="text-button" onClick={()=>setBusinessId(b.id)}>Advanced research</button>
                       </td>
                     </tr>
                   ))}
@@ -1453,12 +1455,8 @@ export default function Intelligence({
               </table>
             </div>
           )}
-          {rows.length > 300 && (
-            <p>
-              Showing first 300. Narrow filters; CSV contains all matching
-              businesses.
-            </p>
-          )}
+          {view!=='Team Productivity'&&rows.length>25&&<div className="actions bi-no-print"><button disabled={reportPage<=1} onClick={()=>setReportPage(p=>p-1)}>Previous businesses</button><span>Page {Math.min(reportPage,Math.ceil(rows.length/25))} of {Math.ceil(rows.length/25)}</span><button disabled={reportPage>=Math.ceil(rows.length/25)} onClick={()=>setReportPage(p=>p+1)}>Next businesses</button></div>}
+
         </section>
       )}
       <details className="card bi-no-print">

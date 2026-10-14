@@ -37,12 +37,12 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
  const live=await transformWithOxc(liveRaw,'LiveBusinessPage.jsx',{jsx:{runtime:'automatic'}})
  const liveFile=join(directory,'LiveBusinessPage.mjs');writeFileSync(liveFile,live.code)
  const biModules={}
- for(const name of ['Intelligence','MasterTasks']){
+ for(const name of ['Intelligence','MasterTasks','ProfileRatings','BusinessBasics']){
   const source=readFileSync(new URL('../src/'+name+'.jsx',import.meta.url),'utf8').replace('import "./intelligence.css";','').replaceAll('from "./','from "'+pathToFileURL(join(process.cwd(),'src')).href+'/').replace("import './intelligence.css'",'').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
   const compiled=await transformWithOxc(source,name+'.jsx',{jsx:{runtime:'automatic'}})
   const file=join(directory,name+'.mjs');writeFileSync(file,compiled.code);biModules[name]=file
  }
- const raw=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8').replace('function Records(', 'export function Records(').replace('function Pipeline(', 'export function Pipeline(').replace('function BusinessProfile(', 'export function BusinessProfile(').replace("import './App.css'",'').replace("from './AnalyticsSync.jsx'","from '"+pathToFileURL(analyticsFile).href+"'").replace("from './LiveBusinessPage.jsx'","from '"+pathToFileURL(liveFile).href+"'").replace("from './PartnerMessages.jsx'","from '"+pathToFileURL(messagesFile).href+"'").replace("from './BusinessPublishing.jsx'","from '"+pathToFileURL(publishingFile).href+"'").replace("from './BusinessChecklist.jsx'","from '"+pathToFileURL(checklistFile).href+"'").replace("from './Portfolio.jsx'","from '"+pathToFileURL(portfolioFile).href+"'").replace("from './Intelligence.jsx'","from '"+pathToFileURL(biModules.Intelligence).href+"'").replace("from './MasterTasks.jsx'","from '"+pathToFileURL(biModules.MasterTasks).href+"'").replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
+ const raw=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8').replace('function Records(', 'export function Records(').replace('function Pipeline(', 'export function Pipeline(').replace('function BusinessProfile(', 'export function BusinessProfile(').replace("import './profile-hub.css'",'').replace("import './App.css'",'').replace("from './AnalyticsSync.jsx'","from '"+pathToFileURL(analyticsFile).href+"'").replace("from './LiveBusinessPage.jsx'","from '"+pathToFileURL(liveFile).href+"'").replace("from './PartnerMessages.jsx'","from '"+pathToFileURL(messagesFile).href+"'").replace("from './BusinessPublishing.jsx'","from '"+pathToFileURL(publishingFile).href+"'").replace("from './BusinessChecklist.jsx'","from '"+pathToFileURL(checklistFile).href+"'").replace("from './Portfolio.jsx'","from '"+pathToFileURL(portfolioFile).href+"'").replace("from './ProfileRatings.jsx'","from '"+pathToFileURL(biModules.ProfileRatings).href+"'").replace("from './BusinessBasics.jsx'","from '"+pathToFileURL(biModules.BusinessBasics).href+"'").replace("from './Intelligence.jsx'","from '"+pathToFileURL(biModules.Intelligence).href+"'").replace("from './MasterTasks.jsx'","from '"+pathToFileURL(biModules.MasterTasks).href+"'").replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
  const transformed=await transformWithOxc(raw,'App.jsx',{jsx:{runtime:'automatic'}})
  const filename=join(directory,'App.mjs');writeFileSync(filename,transformed.code)
  let networkCalls=0
@@ -143,10 +143,11 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   let profile=within(screen.getByRole('region',{name:'Business profile'}))
   assert.ok(profile.getByText('A local shop with handmade gifts.'))
   assert.ok(profile.getByText('Gift Shops'))
+  fireEvent.click(profile.getByText('Additional records & full checklist history'));
   let checklistRegion=within(profile.getByRole('region',{name:'Business completion checklist'}))
-  assert.equal(checklistRegion.getAllByRole('checkbox').length,23)
-  fireEvent.click(checklistRegion.getByRole('button',{name:'Add 5 missing checklist tasks'}))
-  await waitFor(()=>assert.equal(checklistRegion.getAllByRole('checkbox').length,28))
+  assert.equal(checklistRegion.getAllByRole('checkbox').length,8)
+  fireEvent.click(checklistRegion.getByRole('button',{name:'Add 21 missing checklist tasks'}))
+  await waitFor(()=>assert.equal(checklistRegion.getAllByRole('checkbox').length,29))
   assert.ok(!checklistRegion.queryByRole('button',{name:/missing checklist tasks/}))
   const firstCheck=checklistRegion.getAllByRole('checkbox')[0]
   fireEvent.click(firstCheck)
@@ -348,6 +349,7 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   profileData.tasks.push(...Array.from({length:25},(_,i)=>({id:`general-${i}`,title:`General work ${i}`,business_id:'internal',status:'Open',priority:'Normal',notes:encodeMetadata({},{brand:'MKT Colorado'})})))
   render(React.createElement(BusinessProfile,{business:internal,data:profileData,member:{role:'owner'},writable:false,onClose:()=>{}}))
   assert.ok(!screen.queryByText('Town work 0'))
+  fireEvent.click(screen.getByText('Additional records & full checklist history'));
   const section=document.querySelector('.profile-task-section');assert.equal(section.open,false)
   fireEvent.click(within(section).getByText('Review tasks (25 open · 0 completed)'))
   section.open=true

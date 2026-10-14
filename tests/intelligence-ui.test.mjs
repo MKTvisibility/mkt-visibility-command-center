@@ -121,7 +121,7 @@ test("BI review, pipeline, research queue and master task editing use real comma
     await waitFor(() =>
       assert.ok(screen.getByText(/1 central records connected/)),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Review / rate" }));
+    fireEvent.click(screen.getByRole("button", { name: "Advanced research" }));
     assert.ok(screen.getByText(/Never/));
     fireEvent.click(screen.getByRole("button", {name:"Visibility Check report"}));
     assert.equal(screen.queryByText("PRIVATE SALES NOTE"),null);
