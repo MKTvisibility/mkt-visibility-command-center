@@ -83,3 +83,25 @@ test('N/A review tasks are excluded from the total without counting as completed
  const result=profileSummary(business,data,null)
  assert.equal(result.notApplicable,1);assert.equal(result.done,0);assert.equal(result.total,result.steps.length-1);assert.equal(result.percent,0)
 })
+
+test('outreach box hides completed emails, internal review work and premature follow-ups',()=>{
+ const data=emptyData(),business={id:'a'};data.businesses=[business]
+ const add=(key,status='Open')=>data.tasks.push({...workflowTask(business,data,key,key),status})
+ add('intro','Done');add('story_request','Done');add('offer','Done');add('history');add('next');add('report');add('followup_email_1');add('followup_phone_2');add('followup_email_3')
+ assert.equal(contactSummary(business,data,null).actions.length,0)
+ add('audit','Done')
+ assert.deepEqual(contactSummary(business,data,null).actions.map(a=>a.title),['report'])
+ data.tasks.find(t=>t.title==='report').status='Done'
+ assert.deepEqual(contactSummary(business,data,null).actions.map(a=>a.title),['followup_email_1'])
+ data.tasks.find(t=>t.title==='followup_email_1').status='Done'
+ assert.deepEqual(contactSummary(business,data,null).actions.map(a=>a.title),['followup_phone_2'])
+})
+test('historical sent evidence removes an open storage record from the pending summary',()=>{
+ const data=emptyData(),business={id:'a'};data.businesses=[business]
+ const task=workflowTask(business,data,'intro','Send introduction')
+ data.tasks.push({...task,notes:encodeMetadata(task,{evidenceCompletion:{date:'2026-10-10',type:'Sent email'}})})
+ assert.equal(contactSummary(business,data,null).actions.length,0)
+ assert.equal(portfolioProfileSummary(data,[]).contactDue,0)
+ data.tasks[0].notes=encodeMetadata(data.tasks[0],{evidenceCompletionIgnored:true})
+ assert.equal(contactSummary(business,data,null).actions.length,1)
+})

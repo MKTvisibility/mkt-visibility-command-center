@@ -2,6 +2,22 @@ import {PLATFORMS} from './intelligence.js'
 import {profileTask,taskNotApplicable} from './profile-workflow.js'
 import {businessMessages,messageSummary,localDay} from './domain.js'
 import {metadata} from './portfolio.js'
+import {hydrateTask} from './task-evidence.js'
+
+export function pendingContactTasks(business,data) {
+ const records={...data,tasks:data.tasks.filter(t=>t.business_id===business.id).map(hydrateTask)}
+ const finished=key=>{const task=profileTask(records,business,key);return task?.status==='Done'&&!taskNotApplicable(task)}
+ const prerequisites={report:'audit',followup_email_1:'report',followup_phone_2:'followup_email_1',followup_email_3:'followup_phone_2'}
+ return records.tasks.filter(task=>{
+  if(['Done','Cancelled','Waiting on Client','Blocked'].includes(task.status)||taskNotApplicable(task))return false
+  const key=metadata(task).businessChecklistKey
+  if(key&&profileTask(records,business,key)!==task)return false
+  if(key&&prerequisites[key]&&!finished(prerequisites[key]))return false
+  if(key==='followup'&&!finished('intro'))return false
+  if(key)return ['intro','story_request','offer','report','followup','followup_email_1','followup_phone_2','followup_email_3'].includes(key)||key.startsWith('outreach:')&&!key.endsWith(':verify')
+  return task.type==='Follow-up'||/\b(send|email|call|contact)\b/i.test(task.title||'')&&!/\b(review|verify|record|research)\b/i.test(task.title||'')
+ })
+}
 
 export const isProfilePilot = business => String(business.name || '').toLowerCase().replace(/[^a-z0-9]/g,'') === 'apetsplaceanimalhospital'
 export const REVIEW_STEPS = [
@@ -22,10 +38,7 @@ export function profileSummary(business,data,profile) {
 export function contactSummary(business,data,profile,today=localDay()) {
   if(profile?.crm?.do_not_contact)return {label:'Do not contact',tone:'blocked',actions:[]}
   const actions=[]
-  const contactKeys=['intro','story_request','offer','report','next']
-  for(const task of data.tasks.filter(t=>t.business_id===business.id&&!['Done','Cancelled','Waiting on Client','Blocked'].includes(t.status))) {
-    if(contactKeys.includes(metadata(task).businessChecklistKey)||task.type==='Follow-up'||/\b(email|contact|follow.up)\b/i.test(task.title||''))actions.push({title:task.title,date:task.due_date||''})
-  }
+  for(const task of pendingContactTasks(business,data))actions.push({title:task.title,date:task.due_date||''})
   for(const email of businessMessages(data,business.id)) {
     const detail=messageSummary(email)
     if(detail.response_status==='Closed')continue
@@ -48,10 +61,11 @@ export function portfolioProfileSummary(data,profiles){
   if(review.rating!==null)ratings.push(review.rating)
   if(b.status!=='Archived'&&!p?.crm?.do_not_contact){
    for(const group of outreach){
-    const matches=group.key==='followup'?records.tasks.filter(t=>t.type==='Follow-up'||/follow.up.*email/i.test(t.title||'')):records.tasks.filter(t=>metadata(t).businessChecklistKey===group.key)
+    const actionable=pendingContactTasks(b,records)
+    const matches=group.key==='followup'?records.tasks.map(hydrateTask).filter(t=>t.type==='Follow-up'||/follow.up.*email/i.test(t.title||'')):records.tasks.map(hydrateTask).filter(t=>metadata(t).businessChecklistKey===group.key)
     const pending=matches.filter(t=>!['Done','Cancelled'].includes(t.status))
     if(pending.length){
-     const next=pending.filter(t=>!['Waiting on Client','Blocked'].includes(t.status)&&(!t.due_date||t.due_date<=localDay())).sort((a,b)=>a.title.localeCompare(b.title,'en',{numeric:true}))[0]
+     const next=pending.filter(t=>actionable.some(a=>a.id?a.id===t.id:a===t)&&(!t.due_date||t.due_date<=localDay())).sort((a,b)=>a.title.localeCompare(b.title,'en',{numeric:true}))[0]
      if(next){group.count++;group.businesses.push({business:b,nextAction:next.title})}
      break
     }
