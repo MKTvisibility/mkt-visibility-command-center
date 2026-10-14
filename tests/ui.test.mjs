@@ -38,7 +38,8 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
  const liveFile=join(directory,'LiveBusinessPage.mjs');writeFileSync(liveFile,live.code)
  const biModules={}
  for(const name of ['Intelligence','MasterTasks','ProfileRatings','BusinessBasics','ProfileAtAGlance']){
-  const source=readFileSync(new URL('../src/'+name+'.jsx',import.meta.url),'utf8').replace('import "./intelligence.css";','').replaceAll('from "./','from "'+pathToFileURL(join(process.cwd(),'src')).href+'/').replace("import './intelligence.css'",'').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
+  let source=readFileSync(new URL('../src/'+name+'.jsx',import.meta.url),'utf8').replace('import "./intelligence.css";','').replaceAll('from "./','from "'+pathToFileURL(join(process.cwd(),'src')).href+'/').replace("import './intelligence.css'",'').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
+  if(name==='ProfileAtAGlance')source=source.replace(pathToFileURL(join(process.cwd(),'src/ProfileRatings.jsx')).href,pathToFileURL(biModules.ProfileRatings).href)
   const compiled=await transformWithOxc(source,name+'.jsx',{jsx:{runtime:'automatic'}})
   const file=join(directory,name+'.mjs');writeFileSync(file,compiled.code);biModules[name]=file
  }
