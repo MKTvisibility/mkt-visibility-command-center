@@ -1,4 +1,5 @@
 import TaskCalendar from './TaskCalendar.jsx'
+import ProfileCompletion from './ProfileCompletion.jsx'
 import {BeforeOutreach,ReadyContacts} from './OutreachWorkflow.jsx'
 import {sequence,blocked,day} from './lib/outreach-workflow.js'
 import BusinessReports from './BusinessReports.jsx'
@@ -171,6 +172,7 @@ function BusinessProfile({ business, data, member, writable, onClose, onEdit, on
  const profileTasks=data.tasks.filter(t=>t.business_id===business.id&&!isTownWork(t)&&!metadata(t).businessChecklistKey)
  return <section className="card business-profile profile-hub" aria-label="Business profile">
  <div className="section-head"><div><div className="eyebrow">BUSINESS PROFILE</div><h2>{business.name}</h2><p>{business.city||business.address||'Business details, ratings and directory publishing'}</p>{<ProfileAtAGlance business={business} data={data} profile={ratingProfile} writable={writable} onSave={onSave}/>}</div><button className="secondary" onClick={onClose}>Back to businesses</button></div>
+ <ProfileCompletion business={business} data={data} profile={ratingProfile} writable={writable} onSave={onSave}/>
  <BeforeOutreach business={business} data={data} profile={ratingProfile} writable={writable} onSave={onSave} onEdit={onEdit} onAdd={onAdd}/>
  <details className="profile-section" open><summary>1. Basic business details<small>Name, contact information, description & categories</small></summary><BusinessBasics business={business} writable={writable} onSave={onSave}/></details>
  <details className="profile-section" open><summary>2. Review & ratings<small>Website, Google reviews and social media</small></summary><ProfileRatings key={`profile-ratings-${business.id}`} business={business} data={data} member={member} repository={repository} writable={writable} onSave={onSave} onProfileLoaded={setRatingProfile}/></details>
@@ -242,12 +244,12 @@ function Workspace({ repository, demo, session, onExit, onSetup }) {
       const business=data.businesses.find(b=>b.id===result.business_id)
       const saveRelated=async task=>{const saved=await repository.save('tasks',task);setData(prev=>({...prev,tasks:[saved,...prev.tasks.filter(t=>t.id!==saved.id)]}));working.tasks=[saved,...working.tasks.filter(t=>t.id!==saved.id)]}
       try {
-        if(business&&((kind==='tasks'&&metadata(result).businessChecklistKey==='intro'&&result.status==='Done')||(kind==='emails'&&result.direction==='Outbound'&&result.status==='Sent'&&result.message_type!=='Automatic'))&&!blocked(business)){
+        if(business&&!metadata(result).profileBulkCompletion&&((kind==='tasks'&&metadata(result).businessChecklistKey==='intro'&&result.status==='Done')||(kind==='emails'&&result.direction==='Outbound'&&result.status==='Sent'&&result.message_type!=='Automatic'))&&!blocked(business)){
           const dated=kind==='emails'?result.occurred_on:metadata(result).evidenceCompletion?.date||result.due_date||day()
           const sent=data.emails.some(e=>e.business_id===business.id&&e.direction==='Outbound'&&e.status==='Sent')
           if(kind==='tasks'||!sent)for(const task of sequence(business,working,dated||day()))await saveRelated(task)
         }
-        if(kind==='tasks'&&result.status==='Done'&&metadata(result).businessChecklistKey?.endsWith(':verify')){
+        if(kind==='tasks'&&!metadata(result).profileBulkCompletion&&result.status==='Done'&&metadata(result).businessChecklistKey?.endsWith(':verify')){
           const key=metadata(result).businessChecklistKey.replace(/:verify$/,':confirm')
           for(const task of working.tasks.filter(t=>t.business_id===result.business_id&&metadata(t).businessChecklistKey===key&&t.status==='Blocked'))await saveRelated({...task,status:'Open'})
         }

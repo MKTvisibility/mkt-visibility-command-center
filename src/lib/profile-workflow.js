@@ -17,5 +17,5 @@ export function profileTask(data,business,key){return data.tasks.find(t=>t.busin
 
 export const taskNotApplicable=task=>metadata(task||{}).notApplicable===true
 export function taskChoice(task,choice){
- return {...task,status:choice==='na'?'Cancelled':choice==='done'?'Done':'Open',notes:encodeMetadata(task,{notApplicable:choice==='na',notApplicableAt:choice==='na'?new Date().toISOString():null,...task._evidenceChecked&&choice!=='done'?{evidenceCompletionIgnored:true}:{}})}
+ return {...task,status:choice==='na'?'Cancelled':choice==='done'?'Done':'Open',notes:encodeMetadata(task,{profileBulkCompletion:false,notApplicable:choice==='na',notApplicableAt:choice==='na'?new Date().toISOString():null,...task._evidenceChecked&&choice!=='done'?{evidenceCompletionIgnored:true}:{}})}
 }

@@ -47,3 +47,8 @@
 @media(max-width:500px){.profile-hub .profile-glance{grid-template-columns:1fr}}
 
 .task-na{white-space:nowrap;font-size:12px!important;flex:0 0 auto!important}.compact-checklist .simple-task>label{flex:0 0 auto}.review-choice-row{display:flex;align-items:flex-start;gap:10px}.review-choice-row>label:first-child{flex:1;flex-wrap:wrap}.task-na input{width:16px;height:16px}
+.profile-completion{border:1px solid #d4a658;border-left:5px solid #b47c20;border-radius:10px;padding:14px 18px;margin:12px 0 18px;background:#fffaf0}
+.profile-completion.complete{border-color:#65a581;border-left-color:#247348;background:#edf8f1}
+.profile-completion>strong{display:block;font-size:1.15rem}
+.profile-completion>small{display:block;margin-top:5px}
+.profile-completion .actions{margin-top:12px;align-items:end}
