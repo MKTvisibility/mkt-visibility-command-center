@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {buildBusinessReport,businessReportCsv} from '../src/lib/business-reports.js'
+import {buildBusinessReport,businessReportCsv,printableBusinessReport} from '../src/lib/business-reports.js'
 import {emptyData} from '../src/lib/domain.js'
 import {encodeMetadata} from '../src/lib/portfolio.js'
 const options={type:'overview',scope:'Both sites',selected:[],town:'',category:'',decision:'',search:'',sort:'Name'}
@@ -14,3 +14,5 @@ test('reports deduplicate shared businesses, respect site and selection scope, a
 test('opportunity reports respect outreach choices and networking decisions',()=>{
  const data=fixture();assert.deepEqual(buildBusinessReport(data,bi,{...options,type:'clients'}).rows.map(r=>r.business.id),['a','c']);assert.deepEqual(buildBusinessReport(data,bi,{...options,type:'networking'}).rows.map(r=>r.business.id),['a']);assert.deepEqual(buildBusinessReport(data,bi,{...options,type:'gaps'}).rows.map(r=>r.business.id),['a','b']);assert.equal(buildBusinessReport(data,bi,options).rows.find(r=>r.business.id==='b').next,'Stop outreach')
 })
+
+test('printable report includes every result and safely escapes business content',()=>{const data=fixture();data.businesses[0].name='<script>unsafe</script>';const report=buildBusinessReport(data,bi,options);const html=printableBusinessReport(report);assert.ok(html.includes('&lt;script&gt;unsafe&lt;/script&gt;'));assert.ok(!html.includes('<script>unsafe'));assert.equal((html.match(/<article>/g)||[]).length,report.rows.length)})
