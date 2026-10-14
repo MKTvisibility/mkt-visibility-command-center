@@ -12,7 +12,7 @@ export function followupTask(b,data,key,title,date,status='Open'){return {...wor
 export function sequence(b,data,date=day()){
  if(businessMessages(data,b.id).some(e=>e.direction==='Inbound'&&e.status==='Received'&&e.message_type!=='Automatic'&&e.occurred_on>=date))return []
  const rows=[followupTask(b,data,'story_request','Email business story request if no response',plusDays(date,7)),followupTask(b,data,'outreach:listing_reminder','Email reminder to verify listing if no response to anything',plusDays(date,21))]
- return rows.filter(t=>!profileTask(data,b,metadata(t).businessChecklistKey))
+ return rows.flatMap(t=>{const existing=profileTask(data,b,metadata(t).businessChecklistKey);return !existing?[t]:!existing.due_date&&!['Done','Cancelled'].includes(existing.status)?[{...existing,type:'Follow-up',due_date:t.due_date}]:[]})
 }
 export function responseSequence(b,data,kind,date=day()){
  const key=`outreach:${kind}`

@@ -24,3 +24,5 @@ test('follow-up dates and deduplication survive month/year boundaries',()=>{
 test('received story or changes require verification before confirmation email',()=>{
  for(const kind of ['story','updates']){const tasks=responseSequence(b,data,kind,'2026-10-14');assert.equal(tasks[0].status,'Open');assert.equal(tasks[1].status,'Blocked');assert.match(tasks[1].title,/Free Visibility Check/);assert.equal(responseSequence(b,{...data,tasks},kind).length,0)}
 })
+
+test('existing unscheduled story request gets a calendar date without duplication',()=>{const existing={...workflowTask(b,data,'story_request','Story request'),id:'existing'};const tasks=sequence(b,{...data,tasks:[existing]},'2026-10-14');assert.equal(tasks[0].id,'existing');assert.equal(tasks[0].due_date,'2026-10-21');assert.equal(tasks[0].type,'Follow-up')})
