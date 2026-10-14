@@ -9,10 +9,12 @@ export function pendingContactTasks(business,data) {
  const finished=key=>{const task=profileTask(records,business,key);return task?.status==='Done'&&!taskNotApplicable(task)}
  const prerequisites={report:'audit',followup_email_1:'report',followup_phone_2:'followup_email_1',followup_email_3:'followup_phone_2'}
  return records.tasks.filter(task=>{
-  if(['Done','Cancelled','Waiting on Client','Blocked'].includes(task.status)||taskNotApplicable(task))return false
+  const tracking=metadata(task).outreachTracking||{},needsReply=tracking.received&&!tracking.responded||tracking.state==='Client is waiting to hear back from us'
+  if(['Waiting to hear back from client','No further outreach needed'].includes(tracking.state))return false
+  if(['Cancelled','Waiting on Client','Blocked'].includes(task.status)||task.status==='Done'&&!needsReply||taskNotApplicable(task))return false
   const key=metadata(task).businessChecklistKey
   if(key&&profileTask(records,business,key)!==task)return false
-  if(key&&prerequisites[key]&&!finished(prerequisites[key]))return false
+  if(!needsReply&&key&&prerequisites[key]&&!finished(prerequisites[key]))return false
   if(key==='followup'&&!finished('intro'))return false
   if(key)return ['intro','story_request','offer','report','followup','followup_email_1','followup_phone_2','followup_email_3'].includes(key)||key.startsWith('outreach:')&&!key.endsWith(':verify')
   return task.type==='Follow-up'||/\b(send|email|call|contact)\b/i.test(task.title||'')&&!/\b(review|verify|record|research)\b/i.test(task.title||'')
@@ -63,7 +65,7 @@ export function portfolioProfileSummary(data,profiles){
    for(const group of outreach){
     const actionable=pendingContactTasks(b,records)
     const matches=group.key==='followup'?records.tasks.map(hydrateTask).filter(t=>t.type==='Follow-up'||/follow.up.*email/i.test(t.title||'')):records.tasks.map(hydrateTask).filter(t=>metadata(t).businessChecklistKey===group.key)
-    const pending=matches.filter(t=>!['Done','Cancelled'].includes(t.status))
+    const pending=matches.filter(t=>!['Done','Cancelled'].includes(t.status)||t.status==='Done'&&(metadata(t).outreachTracking?.received&&!metadata(t).outreachTracking?.responded||metadata(t).outreachTracking?.state==='Client is waiting to hear back from us'))
     if(pending.length){
      const next=pending.filter(t=>actionable.some(a=>a.id?a.id===t.id:a===t)&&(!t.due_date||t.due_date<=localDay())).sort((a,b)=>a.title.localeCompare(b.title,'en',{numeric:true}))[0]
      if(next){group.count++;group.businesses.push({business:b,nextAction:next.title})}
