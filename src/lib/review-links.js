@@ -6,7 +6,7 @@ export function reviewLinks(business,data,key,task,profile){
   const sites=[...new Set(data.listings.filter(l=>l.business_id===business.id&&['Loving Longmont','MKT Colorado'].includes(l.site)).map(l=>l.site))]
   for(const site of sites){const base=site==='MKT Colorado'?'https://mktvisibility.github.io/Colorado/':'https://mktvisibility.github.io/LovingLongmont/';add(`Open ${site} page`,base+'business.html?id='+encodeURIComponent(business.id))}
  }
- if(['qa','description','image'].includes(key)){
+ if(['intro','qa','description','image'].includes(key)){
   if(key==='image')add('Open image / logo',business.image_url)
   page()
  }else if(key?.startsWith('rating:')){
