@@ -2,6 +2,7 @@ import { hydrateTask, prepareTask } from './task-evidence.js'
 import { encodeMetadata } from './portfolio.js'
 import { validPageFilename } from './page-filename.js'
 import { TABLES, WORKSPACE_ID, cleanPayload, emptyData } from './domain.js'
+import { intelligenceRepository } from './intelligence-repository.js'
 
 async function readAll(client, table) {
   const rows = []
@@ -14,6 +15,7 @@ async function readAll(client, table) {
 }
 export function liveRepository(client) {
   return {
+    intelligence: intelligenceRepository(client),
     async analyticsStatus() {
       const {data,error}=await client.functions.invoke('sync-google-analytics',{body:{action:'status'}})
       if(error)throw error

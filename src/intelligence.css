@@ -1,0 +1,167 @@
+.bi .bi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+.bi article {
+  padding: 12px;
+  border-bottom: 1px solid #dbe4e2;
+}
+.bi label,
+.bi-task-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bi input,
+.bi select,
+.bi textarea,
+.bi-task-editor input,
+.bi-task-editor select,
+.bi-task-editor textarea {
+  max-width: 100%;
+  padding: 10px;
+  border: 1px solid #bccbc6;
+  border-radius: 8px;
+  background: white;
+  color: #17362c;
+}
+.bi textarea {
+  min-height: 82px;
+}
+.bi .bi-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.bi .bi-scores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.bi-scores > div {
+  background: #eff5f2;
+  border-radius: 10px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bi-scores strong {
+  font-size: 1.3rem;
+}
+.bi-platform {
+  border: 1px solid #dce5e1;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.bi-platform summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+.bi fieldset,
+.bi-task-editor fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.bi td {
+  vertical-align: top;
+}
+.bi td small,
+.bi-calendar small {
+  display: block;
+  margin-top: 5px;
+}
+.bi-calendar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+.bi-task-editor {
+  max-height: 90vh;
+  overflow: auto;
+  width: min(950px, 94vw);
+}
+.bi-task-editor .bi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.bi .filters {
+  flex-wrap: wrap;
+}
+.bi .filters > * {
+  min-width: 130px;
+  flex: 1;
+}
+.bi button {
+  cursor: pointer;
+}
+.bi .actions {
+  flex-wrap: wrap;
+}
+.bi-client-report {
+  max-width: 100%;
+  line-height: 1.6;
+}
+.bi-client-report p {
+  white-space: pre-wrap;
+}
+@media (max-width: 720px) {
+  .bi .bi-scores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bi-task-editor .bi-grid {
+    grid-template-columns: 1fr;
+  }
+  .bi .table-wrap {
+    overflow-x: auto;
+  }
+  .bi .section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+@media print {
+  body:has(.bi) .sidebar,
+  body:has(.bi) .topbar,
+  body:has(.bi) .workspace-footer,
+  .bi-no-print {
+    display: none !important;
+  }
+  body:has(.bi) .workspace {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  body:has(.bi) .app-shell {
+    display: block;
+  }
+  body:has(.bi) .table-wrap {
+    overflow: visible;
+  }
+  body:has(.bi) .card {
+    box-shadow: none;
+    border: 0;
+  }
+  body:has(.bi) table {
+    font-size: 9pt;
+  }
+  body:has(.bi) td {
+    white-space: normal;
+  }
+  body:has(.bi) .bi-client-report ~ * {
+    display: none;
+  }
+  body:has(.bi-client-report) .bi > section,
+  body:has(.bi-client-report) .bi > details {
+    display: none;
+  }
+  body:has(.bi-client-report) .bi .bi-client-report {
+    display: block !important;
+  }
+}

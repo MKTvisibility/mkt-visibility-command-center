@@ -114,6 +114,7 @@ export function cleanPayload(kind, draft) {
   }
   if (kind === 'purchases') payload = { business_id: draft.business_id || null, product: text(draft.product, 200), purchased_on: draft.purchased_on || null, amount: number(draft.amount), status: draft.status, notes: text(draft.notes) }
   if (kind === 'tasks') payload = {
+    details: draft.details || {},
     business_id: draft.business_id || null, title: text(draft.title, 200), type: draft.type, status: draft.status,
     due_date: draft.due_date || null, assignee: text(draft.assignee, 100), priority: draft.priority === 'Medium' ? 'Normal' : draft.priority, notes: text(draft.notes),
   }
