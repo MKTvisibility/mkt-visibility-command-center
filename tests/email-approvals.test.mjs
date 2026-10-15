@@ -24,3 +24,7 @@ test('one pending exact email per business; withdrawal retains history; drafts a
 test('bounced recipients, self-mail, inactive contacts and empty custom messages are rejected',()=>{
  const {data,b}=setup(),draft={...approvalTemplate(b,data,'custom'),review_note:'Reviewed'};assert.throws(()=>validateApproval(draft,contactPlan(b,data)),/exact subject/);Object.assign(draft,{subject:'Follow-up',body:'A tailored reply.'});data.emails=[{...welcome(b),status:'Bounced',recipient:b.email}];assert.throws(()=>validateApproval(draft,contactPlan(b,data)),/bounce/);data.emails=[];draft.recipient=draft.sender;assert.throws(()=>validateApproval(draft,contactPlan(b,data)),/different/);b.status='Paused';assert.match(campaignBlock(contactPlan(b,data),'custom'),/stopped/)
 })
+
+test('all directory campaign drafts use the MKT Visibility sender',()=>{
+ const {data,b}=setup();for(const brand of ['Loving Longmont','MKT Colorado'])for(const campaign of ['welcome','story','visibility','upgrade','custom'])assert.equal(approvalTemplate(b,data,campaign,brand).sender,'mktvisibility@gmail.com')
+})

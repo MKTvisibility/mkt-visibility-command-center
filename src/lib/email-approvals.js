@@ -3,7 +3,7 @@ import {businessMessages,messageSummary} from './domain.js'
 import {CAMPAIGNS,classifyCampaign,campaignReport} from './campaigns.js'
 import {metadata} from './portfolio.js'
 import {inactiveBusiness} from './business-report.js'
-export const SENDERS=['hello.lovinglongmont@gmail.com','mktvisibility@gmail.com']
+export const SENDERS=['mktvisibility@gmail.com']
 export const ACTIVE_APPROVALS=['Approved','Sending','Needs reconciliation']
 export const approvalName=key=>CAMPAIGNS.find(c=>c.key===key)?.name||'Custom email'
 const human=e=>!e.message_type||e.message_type==='Human'
@@ -52,7 +52,7 @@ export function approvalTemplate(b,data,key,brand='Loving Longmont'){
  if(brand==='Loving Longmont'&&key==='visibility'){
   templates.visibility={subject:`A free Visibility Check for ${b.name}`,body:`${greeting}\n\nRunning a business takes time, and keeping your information current across websites, Google, and social media can be a lot to manage.\n\nThrough MKT Visibility, we’d like to offer ${b.name} a Free Business Visibility Check. We’ll review how your business appears online and identify three practical opportunities to help customers find you and learn about what you offer.\n\nThere’s no charge or obligation to purchase services. Our goal is to give you useful information you can put to work, whether you make changes yourself or would like help.\n\nIf you’re ready for more support, we also offer packages for social media, content creation, photography and video, website support, and Google Business Profile support. Packages can be customized around your business’s needs, priorities, and budget, whether you need help with one project or ongoing support.\n\nSimply reply to request your free check, ask about our packages, or tell us what you’d like help with. You can also request your Free Visibility Check through our short form:\nhttps://mktvisibility.com/free-visibility-check.html\n\nYou’re always welcome to reply with corrections or updates to your Loving Longmont listing. Your basic listing and updates remain free.\n\nThank you for being part of the Longmont community.\n\nMichelle Skolyak\nLoving Longmont + MKT Visibility\nWe Keep Your Business Visible\n\nExplore Loving Longmont: https://lovinglongmont.com\nLearn about MKT Visibility: https://mktvisibility.com`}
  }
- return {...templates[key],sender:brand==='Loving Longmont'?SENDERS[0]:SENDERS[1],recipient:b.email||'',brand,campaign_key:key,variant:key==='custom'?'Custom':brand==='Loving Longmont'&&key==='welcome'?'LL Welcome v2 — community introduction':brand==='Loving Longmont'&&key==='story'?'LL Story v2 — own story or questionnaire':brand==='Loving Longmont'&&key==='visibility'?'LL Visibility v2 — customized packages':'Review template v1',follow_up_on:'',review_note:''}
+ return {...templates[key],sender:SENDERS[0],recipient:b.email||'',brand,campaign_key:key,variant:key==='custom'?'Custom':brand==='Loving Longmont'&&key==='welcome'?'LL Welcome v2 — community introduction':brand==='Loving Longmont'&&key==='story'?'LL Story v2 — own story or questionnaire':brand==='Loving Longmont'&&key==='visibility'?'LL Visibility v2 — customized packages':'Review template v1',follow_up_on:'',review_note:''}
 }
 export function validateApproval(d,plan){
  const blocked=campaignBlock(plan,d.campaign_key);if(blocked)throw Error(blocked)
