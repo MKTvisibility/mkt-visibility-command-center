@@ -70,6 +70,12 @@ export function liveRepository(client) {
       if(error)throw error
       return data
     },
+    async askAISpecialist(thread_id,agent,prompt) {
+      const {data,error}=await client.functions.invoke('ai-headquarters',{body:{thread_id,agent,prompt}})
+      if(error){let message=error.message;try{message=(await error.context.json()).error||message}catch{}throw new Error(message)}
+      if(data?.error)throw new Error(data.error)
+      return data.message
+    },
     async loadAIHeadquarters() {
       const [tasks,threads,messages]=await Promise.all(['cc_ai_tasks','cc_ai_threads','cc_ai_messages'].map(table=>readAll(client,table)))
       return {tasks,threads,messages}
