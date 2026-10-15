@@ -3,7 +3,7 @@ import {profileWork} from './profile-completion.js'
 import {taskChoice,taskNotApplicable,workflowTask} from './profile-workflow.js'
 export const BUTTERSCOTCH_ID='05e3d0d9-619e-5386-a120-171771e867b0'
 export const WORK_CATEGORIES=[['research','Business details & research'],['listing','Images & public listing'],['visibility','Visibility Check assessment'],['services','Client services & payments'],['maintenance','Follow-ups & maintenance']]
-export const TOPICS=[['listing','Listing notification / corrections',['intro']],['story','Business story / questionnaire',['story_request','story_questionnaire']],['visibility','Free Visibility Check',['offer','report']],['services','Proposal / paid services',['proposal','service_confirmation']]]
+export const TOPICS=[['listing','Listing notification / corrections',['intro']],['story','Business story / questionnaire',['story_request','story_questionnaire']],['visibility','Free Visibility Check',['offer','report']],['services','Proposal / paid services',['proposal','service_confirmation','upgrade_offer']]]
 export const CONVERSATION_STATES=['Not started','We need to respond','Waiting for client','Follow-up scheduled','Done / Completed','Closed','N/A']
 const actionKeys=new Set(TOPICS.flatMap(t=>t[2]))
 export function categoryOf(task){

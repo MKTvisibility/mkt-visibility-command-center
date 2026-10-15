@@ -1,3 +1,4 @@
+import {campaignKey} from './campaign-types.js'
 import { metadata } from './portfolio.js'
 export const WORKSPACE_ID = 'c8748032-cdd3-443b-8c56-2e846cc9bf31'
 export const BRANDS = ['MKT Visibility', 'MKT Colorado', 'Loving Longmont', 'Open Theory Cove', 'Boulder County Photography']
@@ -48,6 +49,8 @@ export function messageSummary(record) {
       response_status: typeof value.response_status === 'string' ? value.response_status : 'No action',
       verification: value.verification === 'Reviewed' ? 'Reviewed' : 'Unverified',
       ...(['Loving Longmont','MKT Colorado'].includes(value.directoryBrand)?{directoryBrand:value.directoryBrand}:{}),
+      ...((campaignKey(value.campaignKey)||value.campaignKey==='unclassified')?{campaignKey:value.campaignKey}:{}),
+      ...(typeof value.campaignVariant==='string'&&value.campaignVariant?{campaignVariant:value.campaignVariant}:{}),
     }
   } catch { /* Original notes are plain text. */ }
   return { sender: '', summary: record.notes || '', next_action: '', follow_up_on: '', response_status: 'No action', verification: 'Unverified' }
@@ -132,6 +135,12 @@ export function cleanPayload(kind, draft) {
     if (detail.follow_up_on && !validDay(detail.follow_up_on)) throw new Error('Choose a valid follow-up date.')
     const directoryBrand=draft.directoryBrand||messageSummary(draft).directoryBrand
     if(['Loving Longmont','MKT Colorado'].includes(directoryBrand))detail.directoryBrand=directoryBrand
+    const savedCampaign=messageSummary(draft)
+    const chosenCampaign=Object.hasOwn(draft,'campaignType')?(campaignKey(draft.campaignType)||'unclassified'):(draft.campaignKey||savedCampaign.campaignKey)
+    if(campaignKey(chosenCampaign)||chosenCampaign==='unclassified')detail.campaignKey=chosenCampaign
+    const variant=String(draft.campaignVariant??savedCampaign.campaignVariant??'').trim()
+    if(variant.length>80)throw new Error('Keep the wording variant within 80 characters.')
+    if(variant)detail.campaignVariant=variant
     const encoded = JSON.stringify(detail)
     if (Array.from(encoded).length > 4000) throw new Error('Shorten the summary or next action to fit this record.')
     payload.notes = encoded
