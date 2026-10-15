@@ -119,3 +119,5 @@
 @media(max-width:900px){.stats-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:540px){.stats-kpis{gap:10px}.stats-kpi{padding:15px}.stats-kpi>strong{font-size:28px}.stats-panel{padding:14px}.stats-chart{gap:6px}.stats-bar-column{font-size:11px}.performance .dashboard-grid{grid-template-columns:1fr}}
 
 .workspace-nav-row{display:flex;align-items:stretch;gap:2px}.sidebar nav .workspace-nav-row>button:first-child{flex:1;min-width:0}.sidebar nav .nav-toggle{width:28px;padding:8px 4px;justify-content:center;flex:none}.workspace-nav-children{margin:3px 0 6px 14px;padding-left:7px;border-left:1px solid #ffffff2b}.workspace-nav-children[hidden]{display:none}.sidebar nav .workspace-nav-children button{font-size:12px;padding-top:9px;padding-bottom:9px}
+
+.project-queue{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:12px 0}.project-queue .calendar-task{padding:12px;border:1px solid #dce5ed;border-radius:10px}.task-calendar .calendar-task small{display:block}.task-calendar .calendar-task>button:first-child{font-weight:700;font-size:14px}.task-calendar .category-task{gap:12px}
