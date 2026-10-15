@@ -431,6 +431,17 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   fireEvent.click(screen.getByRole('button',{name:/Undo last change: Review Listing/}))
   await waitFor(()=>assert.equal(pageCheckbox.checked,true))
   assert.equal(screen.getByLabelText('Conversation status: Business story / questionnaire').value,'Not started')
+  // Collapsing changes visibility only; reopening keeps saved work and conversation state.
+  fireEvent.click(screen.getByRole('button',{name:'Collapse all sections'}))
+  await waitFor(()=>assert.ok([...document.querySelectorAll('.profile-fold')].every(section=>!section.open)))
+  const listingSection=document.getElementById('profile-category-listing')
+  fireEvent.click(listingSection.querySelector('summary'))
+  await waitFor(()=>assert.equal(listingSection.open,true))
+  assert.equal(screen.getByRole('checkbox',{name:'Complete: Review Listing'}).checked,true)
+  assert.equal(document.getElementById('profile-category-approval').open,false)
+  fireEvent.click(screen.getByRole('button',{name:'Expand all sections'}))
+  await waitFor(()=>assert.ok([...document.querySelectorAll('.profile-fold')].every(section=>section.open)))
+  assert.equal(screen.getByLabelText('Conversation status: Business story / questionnaire').value,'Not started')
 
   cleanup()
   const publishCalls=[];let publishSaved
