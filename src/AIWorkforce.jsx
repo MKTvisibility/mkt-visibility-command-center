@@ -23,7 +23,7 @@ const portraitUrls={
  Hunter:'https://i.pravatar.cc/300?img=12',
  Avery:'https://i.pravatar.cc/300?img=47',
  Quinn:'https://i.pravatar.cc/300?img=44',
- Willow:'https://i.pravatar.cc/300?img=49',
+ Willow:'./portraits/willow.jpg',
  Atlas:'https://i.pravatar.cc/300?img=60',
  Code:'https://i.pravatar.cc/300?img=11',
  Sterling:'https://i.pravatar.cc/300?img=48',
