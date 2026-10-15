@@ -116,6 +116,7 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   fireEvent.change(screen.getByRole('searchbox'),{target:{value:'UI Edited'}})
   assert.ok(screen.getByText('UI Edited Shop'))
   for(const site of ['Loving Longmont','MKT Colorado']){
+   if(!screen.queryByRole('button',{name:site,exact:true}))fireEvent.click(screen.getByRole('button',{name:'Websites',exact:true}))
    fireEvent.click(screen.getByRole('button',{name:site,exact:true}))
    fireEvent.click(screen.getByRole('button',{name:'Website Management',exact:true}))
    fireEvent.click(screen.getByRole('button',{name:'＋ Add listing'}))
