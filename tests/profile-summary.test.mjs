@@ -105,3 +105,23 @@ test('historical sent evidence removes an open storage record from the pending s
  data.tasks[0].notes=encodeMetadata(data.tasks[0],{evidenceCompletionIgnored:true})
  assert.equal(contactSummary(business,data,null).actions.length,1)
 })
+
+test('dashboard outreach reconciles confirmed campaign receipts and keeps future follow-ups out of due counts',()=>{
+ const data=emptyData(),business={id:'a',name:'Alpha'};data.businesses=[business]
+ for(const key of ['intro','story_request'])data.tasks.push({...workflowTask(business,data,key,key),id:key})
+ const sent=(key,id)=>({id,business_id:business.id,direction:'Outbound',status:'Sent',message_type:'Human',source_message_id:id,occurred_on:'2026-10-15',notes:JSON.stringify({format:'mkt-message-summary-v1',campaignKey:key})})
+ data.emails=[sent('welcome','welcome')]
+ let summary=portfolioProfileSummary(data,[])
+ assert.equal(summary.outreach.find(g=>g.key==='intro').count,0)
+ assert.equal(summary.outreach.find(g=>g.key==='story_request').count,1)
+ data.emails.push({...sent('story','story'),status:'Draft'})
+ assert.equal(portfolioProfileSummary(data,[]).contactDue,1)
+ data.emails[1].status='Sent'
+ data.tasks.push({id:'follow',business_id:business.id,type:'Follow-up',title:'Review reply / follow up',status:'Open',due_date:'2999-01-01'})
+ assert.equal(portfolioProfileSummary(data,[]).contactDue,0)
+ assert.match(contactSummary(business,data,null).label,/scheduled/)
+ data.tasks.at(-1).due_date='2000-01-01'
+ summary=portfolioProfileSummary(data,[])
+ assert.equal(summary.contactDue,1);assert.equal(summary.outreach.find(g=>g.key==='followup').count,1)
+ assert.equal(data.tasks[0].status,'Open')
+})

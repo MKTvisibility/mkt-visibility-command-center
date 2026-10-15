@@ -2,10 +2,11 @@ import {PLATFORMS} from './intelligence.js'
 import {profileTask,taskNotApplicable} from './profile-workflow.js'
 import {businessMessages,messageSummary,localDay} from './domain.js'
 import {metadata} from './portfolio.js'
-import {hydrateTask} from './task-evidence.js'
+import {hydrateTask,hydrateCampaignTask} from './task-evidence.js'
 
 export function pendingContactTasks(business,data) {
- const records={...data,tasks:data.tasks.filter(t=>t.business_id===business.id).map(hydrateTask)}
+ const mail=businessMessages(data,business.id)
+ const records={...data,tasks:data.tasks.filter(t=>t.business_id===business.id).map(t=>hydrateCampaignTask(t,mail))}
  const finished=key=>{const task=profileTask(records,business,key);return task?.status==='Done'&&!taskNotApplicable(task)}
  const prerequisites={report:'audit',followup_email_1:'report',followup_phone_2:'followup_email_1',followup_email_3:'followup_phone_2'}
  return records.tasks.filter(task=>{
@@ -54,11 +55,11 @@ export function contactSummary(business,data,profile,today=localDay()) {
 
 export function portfolioProfileSummary(data,profiles){
  const byId=new Map(profiles.map(p=>[p.business_id,p])),tasks=new Map(),emails=new Map()
- for(const [records,map] of [[data.tasks,tasks],[data.emails,emails]])for(const r of records){if(!map.has(r.business_id))map.set(r.business_id,[]);map.get(r.business_id).push(r)}
+ for(const [records,map] of [[data.tasks,tasks],[data.emails,emails]])for(const r of records)for(const id of new Set([r.business_id,...(map===emails?r.related_business_ids||[]:[])])){if(!map.has(id))map.set(id,[]);map.get(id).push(r)}
  let reviewed=0,partial=0;const ratings=[]
  const outreach=[['intro','First contact email'],['story_request','Business story request'],['offer','Visibility Check invitation'],['report','Visibility Check report'],['followup','Follow-up emails']].map(([key,label])=>({key,label,count:0,businesses:[]}))
  for(const b of data.businesses){
-  const records={...data,tasks:tasks.get(b.id)||[],emails:emails.get(b.id)||[]},p=byId.get(b.id),review=profileSummary(b,records,p)
+  const mail=emails.get(b.id)||[],records={...data,tasks:(tasks.get(b.id)||[]).map(t=>hydrateCampaignTask(t,mail)),emails:mail},p=byId.get(b.id),review=profileSummary(b,records,p)
   if(review.done===review.total)reviewed++;else if(review.done)partial++
   if(review.rating!==null)ratings.push(review.rating)
   if(b.status!=='Archived'&&!p?.crm?.do_not_contact){
