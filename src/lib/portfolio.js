@@ -37,7 +37,7 @@ export function brandOf(record, data) {
 export function scopedData(data, brand) {
   const listings = data.listings.filter(r => r.site === brand)
   const ids = new Set(listings.map(l => l.business_id))
-  const businesses = data.businesses.filter(b => brandOf(b,data) === brand || ids.has(b.id))
+  const businesses = ['Loving Longmont','MKT Colorado'].includes(brand) ? directoryBusinesses(data,brand) : data.businesses.filter(b => brandOf(b,data) === brand || ids.has(b.id))
   return {...data, businesses, listings, tasks:data.tasks.filter(t => brandOf(t,data) === brand && !isTownWork(t)), purchases:data.purchases.filter(p => brandOf(p,data) === brand), statistics:data.statistics.filter(s => s.brand === brand), tracking:data.tracking.filter(t => t.brand === brand)}
 }
 export const normalizeTown = name => String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()
@@ -52,3 +52,16 @@ export function townProfiles(data) {
 }
 export const townKey = town => normalizeTown(metadata(town).townName)
 export function townTasks(data,town) { return data.tasks.filter(t => !isTown(t) && normalizeTown(metadata(t).townKey) === townKey(town)) }
+
+// Longmont belongs to its own navigation section even when also listed on Colorado.
+export function directoryBusinesses(data,brand) {
+ const longmont=new Set(),colorado=new Set()
+ const isLongmont=city=>/^longmont(?:\s*,|\s+co(?:lorado)?\b|$)/i.test(String(city||'').trim())
+ for(const l of data.listings){if(l.site==='Loving Longmont'||isLongmont(l.city))longmont.add(l.business_id);if(l.site==='MKT Colorado')colorado.add(l.business_id)}
+ for(const b of data.businesses){if(isLongmont(b.city)||metadata(b).brand==='Loving Longmont')longmont.add(b.id);if(metadata(b).brand==='MKT Colorado')colorado.add(b.id)}
+ return data.businesses.filter(b=>b.kind!=='Partner-owned Business'&&!BRANDS.includes(b.name)&&(brand==='Loving Longmont'?longmont.has(b.id):colorado.has(b.id)&&!longmont.has(b.id)))
+}
+export function directoryEmails(data,brand){
+ const ids=new Set(directoryBusinesses(data,brand).map(b=>b.id))
+ return data.emails.filter(e=>ids.has(e.business_id)||!e.business_id&&metadata(e).brand===brand)
+}
