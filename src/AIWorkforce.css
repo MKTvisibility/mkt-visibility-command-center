@@ -59,3 +59,29 @@
 @media(min-width:1220px){.ai-directory{grid-template-columns:repeat(6,minmax(0,1fr))}.ai-team-photo{height:clamp(116px,10vw,165px)}}
 @media(min-width:1000px) and (max-width:1219px){.ai-directory{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(min-width:701px) and (max-width:999px){.ai-directory{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* Refined to the approved October AI Workforce visual mockup */
+.ai-workforce{background:#f5f8fc}
+.ai-workforce-heading{padding:0 2px;gap:12px}
+.ai-workforce-heading h1{font-size:clamp(30px,3vw,39px);font-weight:800;letter-spacing:-.035em}
+.ai-workforce-heading p{font-size:16px}
+.ai-top-buttons{gap:10px}
+.ai-top-buttons button{border-radius:9px;padding:11px 15px;font-weight:700;box-shadow:none}
+.ai-team-hero{min-height:170px;border:0;border-radius:10px;padding:22px 34px;background-image:linear-gradient(90deg,rgba(195,225,252,.96) 0%,rgba(201,226,248,.89) 26%,rgba(255,255,255,0) 57%,rgba(3,23,42,.5) 100%),url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=90');background-size:cover;background-position:center 45%}
+.ai-team-hero h2{font-size:35px;line-height:.98}
+.ai-team-hero p{font-size:15px;line-height:1.45;max-width:340px}
+.ai-hero-tagline em{font-size:31px}
+.ai-hero-tagline span{font-size:11px;font-weight:700;letter-spacing:.12em}
+.ai-directory{gap:12px}
+.ai-team-card{padding:5px 5px 8px;gap:4px;border:1px solid #e0e7ef;box-shadow:0 2px 8px rgba(15,44,78,.08);border-radius:9px}
+.ai-team-photo{height:clamp(128px,10vw,158px);object-fit:cover;object-position:center 24%;background:#dfe8f1}
+.ai-team-name{margin:3px 3px 0;gap:7px}
+.ai-team-name h3{font-size:17px}
+.ai-team-title{font-size:11px;margin:0 3px;font-weight:800;color:#004387}
+.ai-team-description{font-size:11px;margin:0 3px;line-height:1.3;min-height:43px;-webkit-line-clamp:3;line-clamp:3}
+.ai-team-skills{margin:1px 3px 0;gap:4px}
+.ai-team-skills li{font-size:11px}
+.ai-skill-symbol{background:#0b4e9d}
+.ai-team-chat{margin-top:auto;font-size:11px;border-radius:6px;min-height:34px}
+@media(min-width:1220px){.ai-directory{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media(max-width:700px){.ai-team-hero{padding:20px;min-height:165px}.ai-team-hero h2{font-size:30px}.ai-team-photo{height:160px}}
