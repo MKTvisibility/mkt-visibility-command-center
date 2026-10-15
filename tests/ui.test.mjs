@@ -203,7 +203,7 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   assert.equal(document.querySelectorAll('.message-timeline script').length,0)
   fireEvent.click(profile.getByRole('button',{name:'Add message summary'}))
   editor=within(screen.getByRole('dialog'))
-  assert.equal(editor.getByLabelText('Business').value,businessOption.value)
+  assert.equal(editor.getByRole('combobox',{name:'Search businesses'}).value,'UI Edited Shop')
   fireEvent.change(editor.getByLabelText('Subject *'),{target:{value:'UI client response'}})
   fireEvent.change(editor.getByLabelText('Direction'),{target:{value:'Inbound'}})
   fireEvent.change(editor.getByLabelText('Tracking status'),{target:{value:'Replied'}})
