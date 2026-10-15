@@ -14,7 +14,8 @@ Deno.serve(async(req)=>{
  const {data:{user},error:authError}=await caller.auth.getUser();
  if(authError||!user)return respond({error:"Unauthorized"},401);
  const db=createClient(url,service);
- const {data:member}=await db.from("cc_members").select("role").eq("workspace_id",WORKSPACE).eq("user_id",user.id).eq("enabled",true).maybeSingle();
+ const {data:member,error:memberError}=await db.from("cc_members").select("role").eq("workspace_id",WORKSPACE).eq("user_id",user.id).eq("enabled",true).maybeSingle();
+ if(memberError)return respond({error:"The server could not verify workspace access. Please retry."},503);
  if(!member||member.role==="viewer")return respond({error:"Editor access required"},403);
  let input:any;try{input=await req.json()}catch{return respond({error:"Invalid request"},400)}
  const id=input?.task_id;

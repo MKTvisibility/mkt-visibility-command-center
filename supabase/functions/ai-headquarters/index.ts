@@ -16,7 +16,8 @@ Deno.serve(async(req:Request)=>{
  const {data:{user},error:authError}=await caller.auth.getUser();
  if(authError||!user)return respond({error:'Your session expired. Please sign in again.'},401);
  const db=createClient(url,service);
- const {data:member}=await db.from('cc_members').select('role').eq('workspace_id',WORKSPACE).eq('user_id',user.id).eq('enabled',true).maybeSingle();
+ const {data:member,error:memberError}=await db.from('cc_members').select('role').eq('workspace_id',WORKSPACE).eq('user_id',user.id).eq('enabled',true).maybeSingle();
+ if(memberError)return respond({error:'The server could not verify workspace access. Please retry or contact the workspace owner.'},503);
  if(!member||!['owner','editor'].includes(member.role))return respond({error:'An approved partner account with editing access is required.'},403);
  let body:any;try{const raw=await req.text();if(raw.length>12000)return respond({error:'Message is too long.'},413);body=JSON.parse(raw)}catch{return respond({error:'Invalid request.'},400)}
  const key=Deno.env.get('OPENAI_API_KEY');

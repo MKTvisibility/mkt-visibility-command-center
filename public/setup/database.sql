@@ -1352,3 +1352,7 @@ drop policy if exists cc_ai_messages_read on public.cc_ai_messages;
 create policy cc_ai_messages_read on public.cc_ai_messages for select to authenticated using (
  public.cc_has_access(workspace_id,false) and exists(select 1 from public.cc_ai_threads t where t.id=cc_ai_messages.thread_id and t.workspace_id=cc_ai_messages.workspace_id)
 );
+
+-- Server-side AI handlers and reply RPCs verify current membership.
+-- This grants no new browser or user permissions and does not bypass membership checks.
+grant select on public.cc_members to service_role;
