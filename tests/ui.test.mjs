@@ -369,7 +369,7 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   assert.equal(screen.getAllByRole('tab').length,4)
   assert.ok(!screen.queryByText('Additional records & full checklist history'))
   fireEvent.click(screen.getByRole('tab',{name:'Work & correspondence'}))
-  fireEvent.change(screen.getByLabelText('Status: Send Free Listing Email (Your Site Was Added)'),{target:{value:'done'}})
+  fireEvent.click(screen.getByLabelText('Complete: Send Free Listing Email (Your Site Was Added)'))
   await waitFor(()=>assert.equal(pilotSaves.length,1))
   assert.equal(pilotSaves[0].value.status,'Done')
   fireEvent.click(screen.getByRole('tab',{name:'Messages & notes'}))
