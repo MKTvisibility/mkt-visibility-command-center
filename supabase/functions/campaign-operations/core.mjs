@@ -1,0 +1,26 @@
+import {MAILBOXES,rawMessage} from './gmail.mjs'
+export const SEND_COMMANDS=['run the approved email campaign now','run approved email campaign now','send all approved emails','send the approved emails','send all emails currently marked approved to send','run the email campaign now']
+export function isSendCommand(body){return SEND_COMMANDS.includes(String(body).trim().replace(/^nova[, ]+/i,'').replace(/[.!]+$/g,'').toLowerCase())}
+export async function rpc(db,name,args){const {data,error}=await db.rpc(name,args);if(error)throw Error(error.message);return data}
+export async function loadQueue(db,workspace){const {data,error}=await db.from('cc_email_approvals').select('id,business_id,recipient,sender,subject,brand,campaign_key,created_at,review_context').eq('workspace_id',workspace).eq('status','Approved').order('created_at').limit(50);if(error)throw Error('Cannot load the approved queue.');const rows=[];for(const a of data){const context=await rpc(db,'cc_email_review_context',{p_business_id:a.business_id});const reason=await rpc(db,'cc_email_send_block',{p_business:a.business_id,p_key:a.campaign_key,p_recipient:a.recipient});rows.push({id:a.id,recipient:a.recipient,subject:a.subject,brand:a.brand,sender:a.sender,needsReview:Boolean(reason)||JSON.stringify(context)!==JSON.stringify(a.review_context),reason:reason|| (JSON.stringify(context)!==JSON.stringify(a.review_context)?'Profile or correspondence changed.':'')})}return rows}
+export async function preflight(db,a,clients,workspace){
+ rawMessage(a)
+ const {data:records,error}=await db.from('cc_emails').select('source_message_id,direction,notes').eq('workspace_id',workspace).or(`business_id.eq.${a.business_id},related_business_ids.cs.{${a.business_id}}`)
+ if(error)throw Error('Cannot verify stored correspondence.')
+ const legacyNeeded=records.some(r=>String(r.notes||'').includes(MAILBOXES.legacy))
+ const scopes=[clients.primary];if(legacyNeeded){if(!clients.legacy)throw Error('Earlier correspondence used Loving Longmont Gmail; connect that mailbox read-only before sending this item.');scopes.push(clients.legacy)}
+ let discovered=0
+ for(const client of scopes){const history=await client.history(a.recipient);if(history.bouncePossible)throw Error('A possible delivery failure was found. Review mailbox history before sending.');for(const m of history.messages){if(m.draft||!(m.sent||m.from===a.recipient.toLowerCase()))continue;if(records.some(r=>[m.id,m.rfcId].includes(r.source_message_id)))continue;
+  const {error:insertError}=await db.from('cc_emails').insert({workspace_id:workspace,business_id:a.business_id,recipient:a.recipient,subject:m.subject,direction:m.sent?'Outbound':'Inbound',status:m.sent?'Sent':'Replied',occurred_on:m.date.slice(0,10),occurred_at:m.date,source_message_id:m.id,message_type:'Human',campaign:'Mailbox history — review classification',notes:JSON.stringify({format:'mkt-message-summary-v1',sender:m.from,mailbox:client.email,summary:'Previously unrecorded business correspondence found during Gmail preflight. Review the original message before outreach.',verification:'Unverified',response_status:m.sent?'Waiting for reply':'Needs our reply',campaignKey:'unclassified'})})
+  if(insertError)throw Error('Mailbox history could not be recorded. No email was sent.');discovered++
+ }}
+ if(discovered)throw Error('New correspondence was recorded. Review the business and approve an updated email before sending.')
+}
+export async function runCampaign(db,run,clients,workspace){const report={sent:[],skipped:[],needsReconciliation:[],limitedTo:10};
+ for(const id of run.approval_ids){let claimed=false,a
+  try{if(!await rpc(db,'cc_dispatch_actor_active',{p_run_id:run.id}))throw Error('The requesting partner no longer has dispatch access.');const loaded=await db.from('cc_email_approvals').select('*').eq('id',id).eq('workspace_id',workspace).single();if(loaded.error||!loaded.data||loaded.data.status!=='Approved')throw Error('Approval changed or is no longer approved.');a=loaded.data;await preflight(db,a,clients,workspace);a=await rpc(db,'cc_claim_email_approval',{p_id:id});claimed=true;const receipt=await clients.primary.send(a);await rpc(db,'cc_finish_email_approval',{p_id:id,p_source_message_id:receipt.id,p_sent_at:receipt.sentAt});report.sent.push({approvalId:id,recipient:a.recipient,subject:a.subject,messageId:receipt.id})
+  }catch(e){const reason=e.message||'Dispatch failed.';if(claimed){try{await rpc(db,'cc_hold_email_approval',{p_id:id,p_reason:reason})}catch{/* Keep Sending locked if reconciliation recording itself failed. */}report.needsReconciliation.push({approvalId:id,recipient:a?.recipient,reason:'A send may have occurred. Check Sent mail before any retry. '+reason})}else report.skipped.push({approvalId:id,recipient:a?.recipient,reason})}
+  const {error}=await db.from('cc_email_dispatch_runs').update({result:report}).eq('id',run.id);if(error)throw Error('Campaign progress could not be saved. Stop and reconcile before retrying.')
+ }
+ const {error}=await db.from('cc_email_dispatch_runs').update({status:report.needsReconciliation.length?'Needs attention':'Completed',result:report,finished_at:new Date().toISOString()}).eq('id',run.id);if(error)throw Error('Campaign outcome needs reconciliation. Do not repeat this run.');return report
+}

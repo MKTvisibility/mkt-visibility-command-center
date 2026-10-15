@@ -70,6 +70,12 @@ export function liveRepository(client) {
       if(error)throw error
       return data
     },
+    async emailOperations(action,details={}) {
+      const {data,error}=await client.functions.invoke('campaign-operations',{body:{action,...details}})
+      if(error){let message=error.message;try{message=(await error.context.json()).error||message}catch{/* No JSON on network failures. */}throw new Error(message)}
+      if(data?.error)throw new Error(data.error)
+      return data
+    },
     async runAITask(task_id) {
       const {data,error}=await client.functions.invoke('ai-task-runner',{body:{task_id}})
       if(error){let message=error.message;try{message=(await error.context.json()).error||message}catch{/* The function can return a non-JSON error. */}throw new Error(message)}

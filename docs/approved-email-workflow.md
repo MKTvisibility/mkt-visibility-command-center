@@ -1,6 +1,6 @@
 # Approved campaign email workflow
 
-The user visually reviews public business profiles, images, contacts and previous correspondence. They prepare an exact email and check Approved to Send. This stores one immutable approval in `public.cc_email_approvals`; no Gmail credential is stored in Command Center and no background sender runs.
+The user visually reviews public business profiles, images, contacts and previous correspondence. They prepare an exact email and check Approved to Send. This stores one immutable approval in `public.cc_email_approvals`; Gmail credentials are stored only in encrypted Supabase Vault after owner authorization, never in browser storage or AI prompts. No background sender runs.
 
 ## User workflow
 
@@ -24,3 +24,16 @@ The campaign dashboard has Approved to Send counts and an alphabetical approved 
 ## Permissions and verification
 
 Approved workspace editors can approve or revoke, viewers can read, anonymous users cannot read or change approvals. Dispatch RPCs are service-role/admin only. All approval changes use the existing provenance and audit triggers. Never expose a service key or Gmail credential to frontend code. Database tests exercise permissions, stale contexts, duplicate prevention, claims, immutable wording and atomic idempotent recording. UI tests exercise the actual approval/withdrawal flow with no email sent.
+
+
+## Command Center operational tools
+
+Nova and Avery can review the queue, inspect the connection, and check correspondence for approved recipients. To dispatch, the CURRENT saved human message must be exactly `Run the approved email campaign now.` (a short allowlist includes equivalent explicit commands). Questions, quotations, negative instructions and model-generated text do not authorize sending. Commands expire after ten minutes. Existing immutable approvals plus that send command authorize execution; an unchanged email does not need another approval.
+
+The server authenticates the partner, freezes up to ten Approved IDs, creates one durable dispatch record per human message, and rechecks partner access before each approval. Replaying a message returns its existing result. It never sends it again. Preflight reads at most fifty matching Gmail messages per mailbox and checks possible delivery failures. An incomplete history blocks the item. Previously unrecorded messages are recorded as Unverified correspondence and invalidate the approval, requiring review. Legacy Loving Longmont history requires the optional read-only legacy connection. New records contain message metadata, not message bodies or attachments. Bounces, stopped outreach, duplicate sends, stale contexts and uncertain delivery remain blocked by the existing lifecycle.
+
+Owner setup is in **AI Workforce → Email tools**. Enable Gmail API in Google Cloud, configure a Web OAuth client and consent screen, add the exact displayed callback URI, then enter the client ID/secret in the secure configuration form. They are stored in Supabase Vault. Connect `mktvisibility@gmail.com` with Gmail read-only and send scopes. The optional legacy mailbox receives read-only scope. Google may require verification or reconnection depending on app status, scopes and applicable exemptions; testing-mode authorizations can expire. No mailbox is connected by the implementation itself, and no setup/test step sends email.
+
+The callback uses expiring owner-bound state, PKCE, strict mailbox identity and scope validation. Browser clients cannot access credentials or OAuth state records. The server returns only connection booleans. OAuth configuration and connection changes are owner-only; enabled editors can run exact approved campaigns. No model tool accepts arbitrary recipients, message bodies, URLs, SQL, approval writes, website publishing, purchases or deletions.
+
+Nova, Sterling and Atlas also have scoped tools for saved statistics and the existing Google Analytics refresh endpoint for MKT Visibility, Loving Longmont and MKT Colorado. Personal ChatGPT data is not connected. Tool-assisted replies have at most three model responses and three tool calls, with a conservative $0.05 chat safety reservation under the existing $8.50 monthly safety allowance. Reservations are not provider charges. No OpenAI billing settings or subscriptions are changed.
