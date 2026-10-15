@@ -27,7 +27,7 @@ const portraitUrls={
  Atlas:'https://i.pravatar.cc/300?img=60',
  Code:'https://i.pravatar.cc/300?img=11',
  Sterling:'https://i.pravatar.cc/300?img=48',
- Morgan:'https://i.pravatar.cc/300?img=45',
+ Morgan:'https://i.pravatar.cc/300?img=16',
  Eden:'https://i.pravatar.cc/300?img=45',
  Aria:'https://i.pravatar.cc/300?img=32'
 }
