@@ -34,3 +34,15 @@ test('verified sent evidence wins over a duplicate from old all-profile bulk com
  assert.equal(tasks.filter(t=>metadata(t).businessChecklistKey==='story_request').length,1)
  assert.equal(tasks.find(t=>metadata(t).businessChecklistKey==='story_request').id,'verified')
 })
+
+test('confirmed campaign sends check only their matching action, leave drafts open and allow reopening',()=>{
+ const data=d()
+ data.emails=[{id:'mail',business_id:b.id,direction:'Outbound',status:'Sent',message_type:'Human',source_message_id:'gmail-1',occurred_on:'2026-10-15',notes:JSON.stringify({format:'mkt-message-summary-v1',campaignKey:'story'})}]
+ let tasks=canonicalProfileTasks(b,data),story=tasks.find(t=>metadata(t).businessChecklistKey==='story_request')
+ assert.equal(story.status,'Done');assert.equal(conversationStatus(b,data,'story',tasks),'Waiting for client')
+ assert.equal(tasks.find(t=>metadata(t).businessChecklistKey==='offer').status,'Open')
+ data.tasks=[changeTaskStatus(story,'open')]
+ assert.equal(canonicalProfileTasks(b,data).find(t=>metadata(t).businessChecklistKey==='story_request').status,'Open')
+ data.tasks=[];data.emails[0].status='Draft'
+ assert.equal(canonicalProfileTasks(b,data).find(t=>metadata(t).businessChecklistKey==='story_request').status,'Open')
+})
