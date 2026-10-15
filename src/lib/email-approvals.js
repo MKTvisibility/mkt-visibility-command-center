@@ -17,15 +17,17 @@ export function sameContext(a,b){return Boolean(a&&b)&&['business','emails','tas
 export function approvalState(a,b,data){return a.status==='Approved'&&!sameContext(a.review_context,reviewContext(b,data))?'Review again':a.status}
 export function contactPlan(b,data){
  const mail=businessMessages(data,b.id),sent=mail.filter(wasSent),replies=mail.filter(e=>human(e)&&e.direction==='Inbound'&&['Replied','Received'].includes(e.status)),report=campaignReport({...data,businesses:[{...b,kind:'Prospect'}]},null)
- const campaigns=CAMPAIGNS.map(c=>{const r=report.campaigns.find(x=>x.key===c.key).rows[0],messages=sent.filter(e=>classifyCampaign(e).key===c.key);return {...c,messages,contacted:r.contacted,firstDate:r.firstDate,replied:r.replied}})
+ const campaigns=CAMPAIGNS.map(c=>{const r=report.campaigns.find(x=>x.key===c.key).rows[0],messages=sent.filter(e=>classifyCampaign(e).key===c.key);return {...c,messages,removed:r.removed,contacted:r.contacted,firstDate:r.firstDate,replied:r.replied}})
  const unresolved=mail.some(e=>e.direction==='Inbound'&&human(e)&&messageSummary(e).response_status==='Needs our reply'),unclear=sent.some(e=>!classifyCampaign(e).key),restricted=inactiveBusiness(b)||['Stop outreach','Do not contact','No outreach','Not a match'].includes(metadata(b).outreachDecision),latest=sent[0]
  const reason=restricted?'Outreach is stopped or this business is inactive.':unclear?'Earlier sent email needs campaign classification. Review its purpose before approving a standard campaign.':unresolved?'A client message needs your reply. Prepare a custom response.':''
- const suggested=reason?'custom':replies.length||campaigns.slice(1).some(c=>c.contacted)||sent.some(e=>classifyCampaign(e).key==='custom')?'custom':campaigns[0].contacted?'story':'welcome'
+ let suggested=reason?'custom':replies.length||campaigns.slice(1).some(c=>c.contacted)||sent.some(e=>classifyCampaign(e).key==='custom')?'custom':campaigns[0].contacted?'story':'welcome'
+ if(campaigns.find(c=>c.key===suggested)?.removed)suggested='custom'
  return {mail,sent,replies,campaigns,unclear,unresolved,restricted,reason,suggested,latest}
 }
 export function campaignBlock(plan,key){
  if(plan.restricted)return plan.reason
  if(key==='custom')return ''
+ if(plan.campaigns.find(c=>c.key===key)?.removed)return 'Removed from this campaign. Add the business back before preparing an email.'
  if(plan.unclear||plan.unresolved)return plan.reason
  if(plan.campaigns.find(c=>c.key===key)?.contacted)return 'Already contacted for this campaign. Use a custom email for a deliberate follow-up.'
  if(key==='welcome'&&(plan.sent.length||plan.replies.length))return 'An existing conversation is recorded. Use the appropriate later campaign or a custom email.'

@@ -26,6 +26,11 @@ const replyEmail=e=>e.direction==='Inbound'&&['Replied','Received'].includes(e.s
 const subjectKey=e=>(e.subject||'').toLowerCase().replace(/^(?:(?:re|fw|fwd):\s*)+/,'').trim()
 const validDate=d=>/^\d{4}-\d{2}-\d{2}$/.test(d||'')
 export function campaignTask(b,data,key){const c=CAMPAIGNS.find(c=>c.key===key);return profileTask(data,b,c.taskKey)||workflowTask(b,data,c.taskKey,c.name+' contact')}
+export const campaignRemoved=(business,key)=>metadata(business).campaignExclusions?.[key]===true
+export function setCampaignParticipation(business,key,included){
+ if(!CAMPAIGNS.some(c=>c.key===key))throw Error('Choose a known campaign.')
+ return {...business,notes:encodeMetadata(business,{campaignExclusions:{...metadata(business).campaignExclusions,[key]:!included}})}
+}
 export function recordCampaign(task,changes){
  const old=metadata(task).campaignTracking||{},next={...old,...changes,outcomes:{...old.outcomes,...changes.outcomes}}
  if(next.sent&&!validDate(next.date))throw Error('Record the actual contact date.')
@@ -64,10 +69,11 @@ export function campaignReport(data,brand){
    const servicesOrdered=Boolean(outcomes.servicesOrdered||linkedSales.some(p=>metadata(p).saleType==='MKT Visibility services'))
    const notApplicable=taskNotApplicable(task)||task.status==='Cancelled'||['Closed','N/A','Done / Completed'].includes(legacy.conversationState)&&!contacted
    const priorStory=local.tasks.some(t=>metadata(t).campaignTracking?.outcomes?.storySubmitted),checkStatus=metadata(profileTask(local,b,'request')||{}).visibilityCheckStatus,alreadyUpgraded=purchases.some(p=>p.status==='Paid'&&metadata(p).saleType==='Upgraded listing')
-   const eligible=!blocked(b)&&!inactiveBusiness(b)&&!notApplicable&&!contacted&&!(c.key==='story'&&priorStory)&&!(c.key==='visibility'&&['Requested','Declined'].includes(checkStatus))&&!(c.key==='upgrade'&&alreadyUpgraded)&&!(c.key==='story'&&!result.find(g=>g.key==='welcome')?.rows.find(r=>r.business.id===b.id)?.contacted)
+   const removed=campaignRemoved(b,c.key)
+   const eligible=!removed&&!blocked(b)&&!inactiveBusiness(b)&&!notApplicable&&!contacted&&!(c.key==='story'&&priorStory)&&!(c.key==='visibility'&&['Requested','Declined'].includes(checkStatus))&&!(c.key==='upgrade'&&alreadyUpgraded)&&!(c.key==='story'&&!result.find(g=>g.key==='welcome')?.rows.find(r=>r.business.id===b.id)?.contacted)
    const review=mail.some(e=>sentEmail(e)&&!classifyCampaign(e).key)||humanReplies.some(e=>!campaignKey(messageSummary(e).campaignKey)&&!mail.some(s=>sentEmail(s)&&classifyCampaign(s).key&&subjectKey(e)&&subjectKey(e)===subjectKey(s)&&s.occurred_on&&e.occurred_on>=s.occurred_on))
    if(review)reviews.set(b.id,b)
-   const row={business:b,task,tracking,contacted,emailCount,callCount,replied,storySubmitted,checkRequested,listingOrdered,servicesOrdered,needed:eligible,firstDate:first||'',review}
+   const row={business:b,task,tracking,removed,contacted,emailCount,callCount,replied,storySubmitted,checkRequested,listingOrdered,servicesOrdered,needed:eligible,firstDate:first||'',review}
    c.rows.push(row);for(const e of contacts)c.emailRecords.add(e.source_message_id||e.id||e);c.emails+=manualExtra&&(tracking.channel||'Email')==='Email'?1:0;c.calls+=callCount
    const variants=new Set(contacts.map(e=>messageSummary(e).campaignVariant||'Original / unlabelled'))
    if(manualExtra)variants.add(tracking.variant||'Original / unlabelled')

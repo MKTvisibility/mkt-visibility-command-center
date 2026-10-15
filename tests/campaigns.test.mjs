@@ -28,3 +28,23 @@ test('variant cohorts are compared separately; repeated records with the same so
 test('Visibility Check report delivery and form acknowledgments are not invitation sends',()=>{
  const report={subject:'Your Free Visibility Check – Sample Studio',notes:JSON.stringify({format:'mkt-message-summary-v1',summary:'Sent its completed Free Visibility Check report and offered a call.'})},receipt={subject:'We Received Your Free Visibility Check',notes:JSON.stringify({format:'mkt-message-summary-v1',summary:'Acknowledged their submission.'})};assert.equal(classifyCampaign(report).key,'');assert.equal(classifyCampaign(receipt).key,'');assert.equal(classifyCampaign({subject:'A free Visibility Check for your business',notes:JSON.stringify({format:'mkt-message-summary-v1',summary:'Invited the owner to request a free check.'})}).key,'visibility')
 })
+
+test('removal is campaign-specific, reversible, and preserves correspondence and results',async()=>{
+ const {setCampaignParticipation}=await import('../src/lib/campaigns.js')
+ const {contactPlan,campaignBlock}=await import('../src/lib/email-approvals.js')
+ const d=setup(1),original=d.businesses[0]
+ d.businesses=[setCampaignParticipation(original,'welcome',false)]
+ let report=campaignReport(d,'Loving Longmont')
+ assert.equal(report.campaigns[0].groups.needed.length,0)
+ assert.equal(report.campaigns[0].rows[0].removed,true)
+ assert.equal(report.campaigns[2].groups.needed.length,1)
+ assert.match(campaignBlock(contactPlan(d.businesses[0],d),'welcome'),/Removed/)
+ d.businesses=[setCampaignParticipation(d.businesses[0],'welcome',true)]
+ assert.equal(campaignReport(d,'Loving Longmont').campaigns[0].groups.needed.length,1)
+ d.emails=[mail('sent','b0','welcome')]
+ d.businesses=[setCampaignParticipation(d.businesses[0],'welcome',false)]
+ report=campaignReport(d,'Loving Longmont')
+ assert.equal(report.campaigns[0].groups.contacted.length,1)
+ assert.equal(report.campaigns[0].emails,1)
+ assert.equal(d.emails.length,1)
+})
