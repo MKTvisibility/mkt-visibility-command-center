@@ -1,0 +1,18 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {JSDOM} from 'jsdom'
+import {transformWithOxc} from 'vite'
+import {mkdtempSync,readFileSync,writeFileSync,rmSync} from 'node:fs'
+import {join} from 'node:path'
+import {pathToFileURL} from 'node:url'
+import React from 'react'
+test('one Send saves a human message, requests a reply, retries without duplicate posting, and reopens employee history',async()=>{
+ const dom=new JSDOM('<!doctype html><html><body></body></html>',{url:'https://localhost/'});for(const k of ['window','document','HTMLElement','Node','MutationObserver','getComputedStyle'])Object.defineProperty(globalThis,k,{value:dom.window[k],configurable:true});Object.defineProperty(globalThis,'navigator',{value:dom.window.navigator,configurable:true});globalThis.IS_REACT_ACT_ENVIRONMENT=true
+ const {render,screen,fireEvent,waitFor,cleanup}=await import('@testing-library/react'),dir=mkdtempSync(join(process.cwd(),'.ui-test-'))
+ let source=readFileSync('src/AIWorkforce.jsx','utf8').replace("import './AIWorkforce.css'",'').replace("import {PartnerMessages} from './PartnerMessages.jsx'",'const PartnerMessages=()=>null')
+ writeFileSync(join(dir,'AI.mjs'),(await transformWithOxc(source,'AIWorkforce.jsx',{jsx:{runtime:'automatic'}})).code)
+ const threads=[],messages=[];let posts=0,calls=0,fail=true,created=0
+ const repository={loadAIHeadquarters:async()=>({tasks:[],threads:[...threads],messages:[...messages]}),createAIThread:async(title,participants)=>{const t={id:'thread-'+(++created),title,participants,status:'Open'};threads.unshift(t);return t},postAIMessage:async(thread_id,body)=>{posts++;const m={id:'human-'+posts,thread_id,body,author_type:'human',author_id:'michelle',created_at:new Date().toISOString()};messages.push(m);return m},askAISpecialist:async(thread,agent,prompt,id)=>{calls++;assert.equal(id,'human-1');assert.equal(prompt,'Help me write a follow-up');if(fail)throw Error('Connection interrupted.');const m={id:'answer',thread_id:thread,agent,body:'Here is your follow-up draft.',author_type:'agent',created_at:new Date().toISOString()};messages.push(m);return m}}
+ try{const {default:AI}=await import(pathToFileURL(join(dir,'AI.mjs')).href);render(React.createElement(AI,{repository,member:{user_id:'michelle',display_name:'Michelle'},writable:true}));await waitFor(()=>assert.ok(!screen.queryByText('Loading conversations…')));assert.ok(screen.getByRole('region',{name:'Chat with Nova'}));assert.equal(screen.getAllByRole('textbox').length,1);fireEvent.change(screen.getByLabelText('Message Nova'),{target:{value:'Help me write a follow-up'}});fireEvent.click(screen.getByRole('button',{name:'Send',exact:true}));await screen.findByRole('alert');assert.equal(posts,1);assert.equal(calls,1);assert.equal(screen.getAllByText('Help me write a follow-up',{selector:'p'}).length,1);fail=false;fireEvent.click(screen.getByRole('button',{name:'Retry reply'}));await screen.findByText('Here is your follow-up draft.');assert.equal(posts,1);assert.equal(calls,2);fireEvent.change(screen.getByLabelText('AI employee'),{target:{value:'Willow'}});assert.ok(screen.getByRole('region',{name:'Chat with Willow'}));fireEvent.change(screen.getByLabelText('AI employee'),{target:{value:'Nova'}});assert.ok(screen.getByText('Here is your follow-up draft.'));assert.equal(created,1);assert.equal(screen.queryByRole('button',{name:'Request AI reply'}),null)
+ }finally{cleanup();rmSync(dir,{recursive:true,force:true});dom.window.close()}
+})

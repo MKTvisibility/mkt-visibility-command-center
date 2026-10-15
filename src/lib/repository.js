@@ -76,8 +76,8 @@ export function liveRepository(client) {
       if(data?.error)throw new Error(data.error)
       return data.task
     },
-    async askAISpecialist(thread_id,agent,prompt) {
-      const {data,error}=await client.functions.invoke('ai-headquarters',{body:{thread_id,agent,prompt}})
+    async askAISpecialist(thread_id,agent,prompt,message_id) {
+      const {data,error}=await client.functions.invoke('ai-headquarters',{body:{thread_id,agent,prompt,message_id}})
       if(error){let message=error.message;try{message=(await error.context.json()).error||message}catch{/* The function may return a non-JSON error. */}throw new Error(message)}
       if(data?.error)throw new Error(data.error)
       return data.message
