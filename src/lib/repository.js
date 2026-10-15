@@ -70,6 +70,30 @@ export function liveRepository(client) {
       if(error)throw error
       return data
     },
+    async loadAIHeadquarters() {
+      const [tasks,threads,messages]=await Promise.all(['cc_ai_tasks','cc_ai_threads','cc_ai_messages'].map(table=>readAll(client,table)))
+      return {tasks,threads,messages}
+    },
+    async createAITask(agent,title,details='') {
+      const {data,error}=await client.from('cc_ai_tasks').insert({workspace_id:WORKSPACE_ID,agent,title,details}).select().single()
+      if(error)throw error;return data
+    },
+    async updateAITask(id,status) {
+      const {data,error}=await client.from('cc_ai_tasks').update({status,updated_at:new Date().toISOString()}).eq('workspace_id',WORKSPACE_ID).eq('id',id).select().single()
+      if(error)throw error;return data
+    },
+    async createAIThread(title,participants) {
+      const {data,error}=await client.from('cc_ai_threads').insert({workspace_id:WORKSPACE_ID,title,participants}).select().single()
+      if(error)throw error;return data
+    },
+    async updateAIThread(id,status) {
+      const {data,error}=await client.from('cc_ai_threads').update({status}).eq('workspace_id',WORKSPACE_ID).eq('id',id).select().single()
+      if(error)throw error;return data
+    },
+    async postAIMessage(thread_id,body) {
+      const {data,error}=await client.from('cc_ai_messages').insert({workspace_id:WORKSPACE_ID,thread_id,body}).select().single()
+      if(error)throw error;return data
+    },
     async loadPartnerMessages() {
       const [messages,reactions] = await Promise.all([readAll(client,'cc_partner_messages'),readAll(client,'cc_partner_reactions')])
       return {messages,reactions}
