@@ -19,7 +19,7 @@ const staff=[
 // Approved portraits for the owners and Nova; photo-style portraits for AI personas.
 // AI persona photos are illustrative and do not represent real employees.
 const portraitUrls={
- Michelle:'/portraits/michelle.jpg',Tim:'/portraits/tim.jpg',Nova:'/portraits/nova.jpg',
+ Michelle:'./portraits/michelle.jpg',Tim:'./portraits/tim.jpg',Nova:'./portraits/nova.jpg',
  Hunter:'https://i.pravatar.cc/300?img=12',
  Avery:'https://i.pravatar.cc/300?img=47',
  Quinn:'https://i.pravatar.cc/300?img=44',
