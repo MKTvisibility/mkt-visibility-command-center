@@ -1,3 +1,4 @@
+import {awaitingDiscoveryReview} from './discovery.js'
 import {validPageFilename} from './page-filename.js'
 import {businessMessages,messageSummary} from './domain.js'
 import {CAMPAIGNS,classifyCampaign,campaignReport} from './campaigns.js'
@@ -18,8 +19,8 @@ export function approvalState(a,b,data){return a.status==='Approved'&&!sameConte
 export function contactPlan(b,data){
  const mail=businessMessages(data,b.id),sent=mail.filter(wasSent),replies=mail.filter(e=>human(e)&&e.direction==='Inbound'&&['Replied','Received'].includes(e.status)),report=campaignReport({...data,businesses:[{...b,kind:'Prospect'}]},null)
  const campaigns=CAMPAIGNS.map(c=>{const r=report.campaigns.find(x=>x.key===c.key).rows[0],messages=sent.filter(e=>classifyCampaign(e).key===c.key);return {...c,messages,removed:r.removed,contacted:r.contacted,firstDate:r.firstDate,replied:r.replied}})
- const unresolved=mail.some(e=>e.direction==='Inbound'&&human(e)&&messageSummary(e).response_status==='Needs our reply'),unclear=sent.some(e=>!classifyCampaign(e).key),restricted=inactiveBusiness(b)||['Stop outreach','Do not contact','No outreach','Not a match'].includes(metadata(b).outreachDecision),latest=sent[0]
- const reason=restricted?'Outreach is stopped or this business is inactive.':unclear?'Earlier sent email needs campaign classification. Review its purpose before approving a standard campaign.':unresolved?'A client message needs your reply. Prepare a custom response.':''
+ const unresolved=mail.some(e=>e.direction==='Inbound'&&human(e)&&messageSummary(e).response_status==='Needs our reply'),unclear=sent.some(e=>!classifyCampaign(e).key),restricted=awaitingDiscoveryReview(b)||inactiveBusiness(b)||['Stop outreach','Do not contact','No outreach','Not a match'].includes(metadata(b).outreachDecision),latest=sent[0]
+ const reason=awaitingDiscoveryReview(b)?'Michelle or Tim must review this newly researched business first.':restricted?'Outreach is stopped or this business is inactive.':unclear?'Earlier sent email needs campaign classification. Review its purpose before approving a standard campaign.':unresolved?'A client message needs your reply. Prepare a custom response.':''
  let suggested=reason?'custom':replies.length||campaigns.slice(1).some(c=>c.contacted)||sent.some(e=>classifyCampaign(e).key==='custom')?'custom':campaigns[0].contacted?'story':'welcome'
  if(campaigns.find(c=>c.key===suggested)?.removed)suggested='custom'
  return {mail,sent,replies,campaigns,unclear,unresolved,restricted,reason,suggested,latest}
