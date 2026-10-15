@@ -47,6 +47,7 @@ export function messageSummary(record) {
       follow_up_on: typeof value.follow_up_on === 'string' ? value.follow_up_on : '',
       response_status: typeof value.response_status === 'string' ? value.response_status : 'No action',
       verification: value.verification === 'Reviewed' ? 'Reviewed' : 'Unverified',
+      ...(['Loving Longmont','MKT Colorado'].includes(value.directoryBrand)?{directoryBrand:value.directoryBrand}:{}),
     }
   } catch { /* Original notes are plain text. */ }
   return { sender: '', summary: record.notes || '', next_action: '', follow_up_on: '', response_status: 'No action', verification: 'Unverified' }
@@ -129,6 +130,8 @@ export function cleanPayload(kind, draft) {
     if (!['No action', 'Needs our reply', 'Waiting for reply', 'Follow up', 'Closed'].includes(detail.response_status)) throw new Error('Choose a valid response status.')
     if (!['Reviewed', 'Unverified'].includes(detail.verification)) throw new Error('Choose a valid verification status.')
     if (detail.follow_up_on && !validDay(detail.follow_up_on)) throw new Error('Choose a valid follow-up date.')
+    const directoryBrand=draft.directoryBrand||messageSummary(draft).directoryBrand
+    if(['Loving Longmont','MKT Colorado'].includes(directoryBrand))detail.directoryBrand=directoryBrand
     const encoded = JSON.stringify(detail)
     if (Array.from(encoded).length > 4000) throw new Error('Shorten the summary or next action to fit this record.')
     payload.notes = encoded

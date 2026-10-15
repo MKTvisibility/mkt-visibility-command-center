@@ -1,4 +1,4 @@
-import { BRANDS } from './domain.js'
+import { BRANDS, messageSummary } from './domain.js'
 export const CHECKLIST = ['Create town page', 'Research and publish town history', 'Research and add business listings', 'Create postcard and header images', 'Create mug wrap artwork', 'Publish mug in pop-up shop', 'Publish mug in Etsy store', 'Add mug links to town page', 'Add pop-up mug link to town page', 'Add Etsy mug link to town page', 'Add Google Map', 'Review SEO, sources and mobile layout']
 const metadataCache = new WeakMap()
 export function metadata(record) {
@@ -63,5 +63,5 @@ export function directoryBusinesses(data,brand) {
 }
 export function directoryEmails(data,brand){
  const ids=new Set(directoryBusinesses(data,brand).map(b=>b.id))
- return data.emails.filter(e=>ids.has(e.business_id)||!e.business_id&&metadata(e).brand===brand)
+ return data.emails.filter(e=>ids.has(e.business_id)||!e.business_id&&(messageSummary(e).directoryBrand===brand||metadata(e).brand===brand))
 }
