@@ -50,14 +50,14 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
  const appointmentRaw=readFileSync(new URL('../src/AppointmentManager.jsx',import.meta.url),'utf8').replace("import './AppointmentManager.css'",'').replace("from './BusinessPicker.jsx'","from '"+pathToFileURL(pickerFile).href+"'").replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
  const appointment=await transformWithOxc(appointmentRaw,'AppointmentManager.jsx',{jsx:{runtime:'automatic'}})
  const appointmentFile=join(directory,'AppointmentManager.mjs');writeFileSync(appointmentFile,appointment.code)
- const raw=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8').replace('function Records(', 'export function Records(').replace('function Pipeline(', 'export function Pipeline(').replace('function BusinessProfile(', 'export function BusinessProfile(').replace("import './profile-hub.css'",'').replace("import './App.css'",'').replace("from './AnalyticsSync.jsx'","from '"+pathToFileURL(analyticsFile).href+"'").replace("from './LiveBusinessPage.jsx'","from '"+pathToFileURL(liveFile).href+"'").replace("from './PartnerMessages.jsx'","from '"+pathToFileURL(messagesFile).href+"'").replace("from './BusinessPublishing.jsx'","from '"+pathToFileURL(publishingFile).href+"'").replace("from './BusinessChecklist.jsx'","from '"+pathToFileURL(checklistFile).href+"'").replace("from './Portfolio.jsx'","from '"+pathToFileURL(portfolioFile).href+"'").replace("from './BusinessReports.jsx'","from '"+pathToFileURL(biModules.BusinessReports).href+"'").replace("from './DashboardReports.jsx'","from '"+pathToFileURL(biModules.DashboardReports).href+"'").replace("from './CategoryProfile.jsx'","from '"+pathToFileURL(biModules.CategoryProfile).href+"'").replace("from './PilotProfile.jsx'","from '"+pathToFileURL(biModules.PilotProfile).href+"'").replace("from './ProfileCompletion.jsx'","from '"+pathToFileURL(biModules.ProfileCompletion).href+"'").replace("from './ProfileAtAGlance.jsx'","from '"+pathToFileURL(biModules.ProfileAtAGlance).href+"'").replace("from './ProfileRatings.jsx'","from '"+pathToFileURL(biModules.ProfileRatings).href+"'").replace("from './BusinessBasics.jsx'","from '"+pathToFileURL(biModules.BusinessBasics).href+"'").replace("from './Intelligence.jsx'","from '"+pathToFileURL(biModules.Intelligence).href+"'").replace("from './MasterTasks.jsx'","from '"+pathToFileURL(biModules.MasterTasks).href+"'").replace("from './TaskCalendar.jsx'","from '"+pathToFileURL(biModules.TaskCalendar).href+"'").replace("from './AppointmentManager.jsx'","from '"+pathToFileURL(appointmentFile).href+"'").replace("from './BusinessPicker.jsx'","from '"+pathToFileURL(pickerFile).href+"'").replace("from './OutreachWorkflow.jsx'","from '"+pathToFileURL(biModules.OutreachWorkflow).href+"'").replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
+ const raw=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8').replace('function Performance(', 'export function Performance(').replace('function Records(', 'export function Records(').replace('function Pipeline(', 'export function Pipeline(').replace('function BusinessProfile(', 'export function BusinessProfile(').replace("import './profile-hub.css'",'').replace("import './App.css'",'').replace("from './AnalyticsSync.jsx'","from '"+pathToFileURL(analyticsFile).href+"'").replace("from './LiveBusinessPage.jsx'","from '"+pathToFileURL(liveFile).href+"'").replace("from './PartnerMessages.jsx'","from '"+pathToFileURL(messagesFile).href+"'").replace("from './BusinessPublishing.jsx'","from '"+pathToFileURL(publishingFile).href+"'").replace("from './BusinessChecklist.jsx'","from '"+pathToFileURL(checklistFile).href+"'").replace("from './Portfolio.jsx'","from '"+pathToFileURL(portfolioFile).href+"'").replace("from './BusinessReports.jsx'","from '"+pathToFileURL(biModules.BusinessReports).href+"'").replace("from './DashboardReports.jsx'","from '"+pathToFileURL(biModules.DashboardReports).href+"'").replace("from './CategoryProfile.jsx'","from '"+pathToFileURL(biModules.CategoryProfile).href+"'").replace("from './PilotProfile.jsx'","from '"+pathToFileURL(biModules.PilotProfile).href+"'").replace("from './ProfileCompletion.jsx'","from '"+pathToFileURL(biModules.ProfileCompletion).href+"'").replace("from './ProfileAtAGlance.jsx'","from '"+pathToFileURL(biModules.ProfileAtAGlance).href+"'").replace("from './ProfileRatings.jsx'","from '"+pathToFileURL(biModules.ProfileRatings).href+"'").replace("from './BusinessBasics.jsx'","from '"+pathToFileURL(biModules.BusinessBasics).href+"'").replace("from './Intelligence.jsx'","from '"+pathToFileURL(biModules.Intelligence).href+"'").replace("from './MasterTasks.jsx'","from '"+pathToFileURL(biModules.MasterTasks).href+"'").replace("from './TaskCalendar.jsx'","from '"+pathToFileURL(biModules.TaskCalendar).href+"'").replace("from './AppointmentManager.jsx'","from '"+pathToFileURL(appointmentFile).href+"'").replace("from './BusinessPicker.jsx'","from '"+pathToFileURL(pickerFile).href+"'").replace("from './OutreachWorkflow.jsx'","from '"+pathToFileURL(biModules.OutreachWorkflow).href+"'").replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
  const transformed=await transformWithOxc(raw,'App.jsx',{jsx:{runtime:'automatic'}})
  const filename=join(directory,'App.mjs');writeFileSync(filename,transformed.code)
  let networkCalls=0
  const originalConsoleError=console.error,duplicateKeyWarnings=[];console.error=(...args)=>{if(String(args[0]).includes('same key'))duplicateKeyWarnings.push(args);else originalConsoleError(...args)};
  const oldFetch=globalThis.fetch;globalThis.fetch=()=>{networkCalls++;throw new Error('Practice must not use the network')}
  try{
-  const {default:App,Records,Pipeline,BusinessProfile}=await import(pathToFileURL(filename).href)
+  const {default:App,Records,Pipeline,BusinessProfile,Performance}=await import(pathToFileURL(filename).href)
   const {default:Publishing}=await import(pathToFileURL(publishingFile).href)
   render(React.createElement(App))
   assert.ok(screen.getByText('Connect your Command Center'))
@@ -99,8 +99,8 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   fireEvent.change(editor.getByLabelText('Reported value *'),{target:{value:'0'}})
   fireEvent.click(editor.getByRole('button',{name:'Save record'}))
   await waitFor(()=>assert.ok(!screen.queryByRole('dialog')))
-  assert.ok(screen.getByText('Report history'))
-  fireEvent.change(screen.getByLabelText('Brand'),{target:{value:'Open Theory Cove'}})
+  assert.ok(screen.getByText(/Social statistics and import history/))
+  fireEvent.change(screen.getByLabelText('Website', {exact:true}),{target:{value:'Open Theory Cove'}})
   assert.ok(screen.getByText('No matching statistics yet.'))
   fireEvent.click(screen.getByRole('button',{name:'Clients & Prospects',exact:true}))
   assert.ok(screen.getByText('UI Test Shop'))
@@ -492,6 +492,22 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   assert.equal(savedPublic.publicationOptions.tier,'Paid');assert.equal(savedPublic.publicationOptions.fields.phone,false)
   assert.equal(savedPublic.publicationOptions.fields.email,true);assert.equal(savedPublic.listingGalleryUrls.length,2)
   assert.equal(savedPublic.text,'Private research');assert.equal(duplicateKeyWarnings.length,0,'Updating a client must not duplicate editor or notes panels')
+
+
+  cleanup()
+  const stat=(metric,value,start,end)=>({id:metric+start,brand:'Loving Longmont',channel:'Website',source:'Google Analytics',metric,value,period_start:start,period_end:end,updated_at:'2026-10-15',automated:true})
+  const analyticsData={statistics:[stat('Visitors',30,'2026-10-07','2026-10-13'),stat('Page views',495,'2026-10-07','2026-10-13'),stat('Sessions',40,'2026-10-07','2026-10-13'),stat('Visitors',9,'2026-10-13','2026-10-13'),stat('Page views',21,'2026-10-13','2026-10-13')],tracking:[]}
+  let refreshBrand='',reloaded=0
+  const analyticsRepository={analyticsStatus:async()=>({configured:true,states:[{brand:'Loving Longmont',status:'success',last_success_at:'2026-10-15T03:00:00Z',period_start:'2026-10-07',period_end:'2026-10-13',sources:[],locations:[]}]}),refreshAnalytics:async brand=>{refreshBrand=brand;return {results:[{success:true}]}}}
+  render(React.createElement(Performance,{initialBrand:'Loving Longmont',data:analyticsData,repository:analyticsRepository,writable:true,onAnalyticsRefresh:async()=>{reloaded++}}))
+  await screen.findByText('Connected · daily reports enabled.')
+  assert.equal(screen.getByText(/Social statistics and import history/).closest('details').open,false)
+  assert.ok(screen.getByText('12.4'))
+  assert.ok(screen.getByRole('img',{name:'2026-10-13: 21 page views'}))
+  fireEvent.click(screen.getByRole('button',{name:'Refresh now'}))
+  await waitFor(()=>assert.equal(reloaded,1));assert.equal(refreshBrand,'Loving Longmont')
+  fireEvent.change(screen.getByLabelText('Reporting period'),{target:{value:'day'}})
+  assert.equal(screen.getByRole('heading',{name:'Visitors',exact:true}).parentElement.querySelector('strong').textContent,'9')
 
  }finally{console.error=originalConsoleError;cleanup();globalThis.fetch=oldFetch;rmSync(directory,{recursive:true,force:true});dom.window.close()}
 })
