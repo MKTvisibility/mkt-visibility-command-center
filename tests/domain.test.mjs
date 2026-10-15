@@ -48,7 +48,7 @@ test('live repository pages beyond the default API cap and surfaces database err
  let calls=0
  const client={from(){const query={select(){return this},eq(){return this},order(){return this},async range(from){calls++;return {data:Array.from({length:from===0?500:3},(_,i)=>({id:from+i})),error:null}}};return query}}
  const data=await liveRepository(client).load()
- assert.equal(data.businesses.length,503);assert.equal(data.tasks.length,503);assert.equal(calls,16)
+ assert.equal(data.businesses.length,503);assert.equal(data.tasks.length,503);assert.equal(calls,18)
  const broken={from(){return {select(){return this},eq(){return this},order(){return this},async range(){return {error:new Error('RLS failure')}}}}}
  await assert.rejects(()=>liveRepository(broken).load(),/RLS failure/)
 })

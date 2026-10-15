@@ -5,9 +5,9 @@ export const BRANDS = ['MKT Visibility', 'MKT Colorado', 'Loving Longmont', 'Ope
 export const CHANNELS = ['Website', 'Google Search', 'Facebook', 'Instagram', 'LinkedIn', 'YouTube', 'TikTok', 'Pinterest', 'Etsy']
 export const METRICS = ['Visitors', 'Page views', 'Sessions', 'Search clicks', 'Search impressions', 'Followers', 'Content views', 'Interactions', 'Posts published', 'Link clicks', 'Inquiries', 'Orders', 'Revenue']
 export const SOURCES = ['Manual report', 'Google Analytics', 'Google Search Console', 'Metricool', 'Platform report']
-export const TABLES = { businesses: 'cc_businesses', listings: 'cc_listings', emails: 'cc_emails', tasks: 'cc_tasks', purchases: 'cc_purchases', statistics: 'cc_statistics', tracking: 'cc_tracking_setup', notes: 'cc_notes' }
+export const TABLES = { businesses: 'cc_businesses', listings: 'cc_listings', emails: 'cc_emails', tasks: 'cc_tasks', purchases: 'cc_purchases', statistics: 'cc_statistics', tracking: 'cc_tracking_setup', notes: 'cc_notes', approvals: 'cc_email_approvals' }
 export const STAGES = ['New', 'Contacted', 'Discovery', 'Proposal', 'Won', 'Lost']
-export const emptyData = () => ({ businesses: [], listings: [], emails: [], tasks: [], purchases: [], statistics: [], tracking: [], notes: [] })
+export const emptyData = () => ({ businesses: [], listings: [], emails: [], tasks: [], purchases: [], statistics: [], tracking: [], notes: [], approvals: [] })
 export const currency = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(value) || 0)
 export function localDay(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`

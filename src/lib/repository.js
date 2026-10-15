@@ -1,3 +1,4 @@
+import {validateApproval,contactPlan,reviewContext,sameContext} from './email-approvals.js'
 import { hydrateTask, prepareTask } from './task-evidence.js'
 import { encodeMetadata } from './portfolio.js'
 import { validPageFilename } from './page-filename.js'
@@ -107,6 +108,9 @@ export function liveRepository(client) {
       return Object.fromEntries(entries)
     },
     async save(kind, draft) {
+      if(kind==='approvals'){
+        const {data,error}=await client.rpc(draft.action==='revoke'?'cc_revoke_email_approval':'cc_approve_campaign_email',draft.action==='revoke'?{p_id:draft.id}:{p_input:draft});if(error)throw error;return data
+      }
       const payload = { ...cleanPayload(kind, kind === 'tasks' ? prepareTask(draft) : draft), workspace_id: WORKSPACE_ID }
       const table = client.from(kind === 'business_notes' ? 'cc_businesses' : TABLES[kind])
       const query = draft.id ? table.update(payload).eq('id', draft.id).eq('workspace_id', WORKSPACE_ID) : table.insert(payload)
@@ -145,6 +149,11 @@ export function demoRepository(initial = sampleData()) {
     async membership() { return { role: 'owner', display_name: 'Practice workspace', user_id: 'practice-user' } },
     async load() { return {...structuredClone(data),tasks:structuredClone(data.tasks).map(hydrateTask)} },
     async save(kind, draft) {
+      if(kind==='approvals'){
+        data.approvals ||= []
+        if(draft.action==='revoke'){const a=data.approvals.find(a=>a.id===draft.id);if(!a||a.status!=='Approved')throw Error('Approval cannot be withdrawn.');a.status='Revoked';return structuredClone(a)}
+        const b=data.businesses.find(b=>b.id===draft.business_id);validateApproval(draft,contactPlan(b,data));if(!sameContext(draft.review_context,reviewContext(b,data)))throw Error('History changed. Reload and review again.');if(data.approvals.some(a=>a.business_id===b.id&&['Approved','Sending','Needs reconciliation'].includes(a.status)))throw Error('This business already has a queued email.');const a={...draft,id:crypto.randomUUID(),status:'Approved',created_at:new Date().toISOString(),approved_by_name:'Practice workspace'};data.approvals.unshift(a);return structuredClone(a)
+      }
       const payload = cleanPayload(kind, kind === 'tasks' ? prepareTask(draft) : draft)
       if (kind === 'business_notes') {
         const business = data.businesses.find(b => b.id === draft.id)
