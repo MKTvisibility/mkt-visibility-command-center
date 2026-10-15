@@ -33,6 +33,7 @@ export async function handle(req:Request){
   const operation=input.action==='remove'||input.intent==='remove'?'remove':'publish'
   const b=publicBusiness(operation==='remove'?{id:raw.id,name:raw.name}:raw);const listings=await read('cc_listings',`workspace_id=eq.${WORKSPACE}&business_id=eq.${input.businessId}&status=neq.Archived&select=site,url,title`)
   let notes={};try{notes=JSON.parse(raw.notes||'{}')||{}}catch{/* legacy plain notes */}
+  if(operation==='publish'&&(notes as any).discovery?.status==='Pending review')throw Error('Michelle or Tim must review this researched business before publishing.')
   const plans=[]
   for(const site of input.sites){
    const config=SITES[site];const token=Deno.env.get(config.secret)||''

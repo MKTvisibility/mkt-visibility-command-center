@@ -18,3 +18,5 @@ test('discovery counts exclude existing and imported profiles and sort by name',
  assert.throws(()=>discoveryReview(b,'Published','Tim'))
  assert.throws(()=>discoveryReview(b,'Reviewed',''))
 })
+
+test('Hunter drafts appear alongside Nova research and require the same review',()=>{const hunter={...b,id:'hunter',notes:encodeMetadata(b,{discovery:{...metadata(b).discovery,source:'Hunter research'}})};assert.equal(discoveredBusinesses({businesses:[hunter]}).length,1);assert.equal(blocked(hunter),true)})
