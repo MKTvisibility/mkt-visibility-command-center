@@ -12,7 +12,8 @@ const staff=[
  ['Quinn','Editorial Director','Quinn writes and edits business stories, newsletters, blogs, and polished public-facing content.'],
  ['Atlas','Research & Business Intelligence','Atlas evaluates search visibility, competitors, local markets, and evidence-backed opportunities.'],
  ['Sterling','Finance & Performance Analyst','Sterling reviews pricing, margins, performance indicators, and financial opportunities with careful data handling.'],
- ['Morgan','Operations Manager','Morgan tracks deadlines, identifies stalled work, organizes peer reviews, and maintains accountability.']
+ ['Morgan','Operations Manager','Morgan tracks deadlines, identifies stalled work, organizes peer reviews, and maintains accountability.'],
+ ['Willow','Creative Design Artist','Free-spirited, nature-loving artist with a colorful bohemian style. Willow designs original artwork, Colorado souvenir mugs, printables, social graphics, website banners, and imaginative brand visuals. She collaborates with Aria on creative direction and Code on production-ready assets; all publishing requires human approval.']
 ]
 const humans=[['Michelle','Co-owner & Business Strategy','MKT Visibility co-owner. Leads strategy, community projects, creative direction, customer relationships, and final business approvals.'],['Tim','Co-owner & Business Partner','MKT Visibility co-owner. Collaborates on strategy, operational priorities, business growth, and decisions requiring human oversight.']]
 const states=['Queued','In progress','Needs review','Completed','Blocked']
