@@ -38,7 +38,7 @@ export default function AIWorkforce({repository,member,writable}){
  const [details,setDetails]=useState('')
  const [tab,setTab]=useState('Team')
  const [filter,setFilter]=useState('All')
- function save(next){setTasks(next);try{localStorage.setItem(key,JSON.stringify(next))}catch{}}
+ function save(next){setTasks(next);try{localStorage.setItem(key,JSON.stringify(next))}catch{/* Local storage can be unavailable in private browsing. */}}
  async function add(e){e.preventDefault();if(!title.trim()||busy||!writable)return;setBusy(true);setError('');try{if(shared){const task=await repository.createAITask(person,title.trim(),details.trim());setTasks(t=>[task,...t])}else save([{id:crypto.randomUUID(),person,title:title.trim(),details:details.trim(),status:'Queued',created:new Date().toISOString()},...tasks]);setTitle('');setDetails('');setTab('Assignments')}catch(e){setError(e.message)}finally{setBusy(false)}}
  async function change(id,status){if(!writable)return;setError('');try{if(shared){const task=await repository.updateAITask(id,status);setTasks(t=>t.map(x=>x.id===id?task:x))}else save(tasks.map(t=>t.id===id?{...t,status}:t))}catch(e){setError(e.message)}}
  async function createThread(e){e.preventDefault();if(!shared||!writable||!threadTitle.trim()||busy)return;setBusy(true);setError('');try{const t=await repository.createAIThread(threadTitle.trim(),threadParticipants);setThreads(v=>[t,...v]);setSelectedThread(t.id);setThreadTitle('');setTab('Team discussions')}catch(e){setError(e.message)}finally{setBusy(false)}}
