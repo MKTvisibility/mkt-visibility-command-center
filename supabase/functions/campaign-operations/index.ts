@@ -32,7 +32,13 @@ Deno.serve(async(req:Request)=>{
  const {data:member,error:memberError}=await db.from('cc_members').select('role').eq('workspace_id',WORKSPACE).eq('user_id',user.id).eq('enabled',true).maybeSingle();if(memberError)return respond({error:'Workspace access could not be verified.'},503);if(!member||!['owner','editor'].includes(member.role))return respond({error:'Approved partner editing access is required.'},403);
  let body:any;try{const raw=await req.text();if(raw.length>16000)return respond({error:'Request too large.'},413);body=JSON.parse(raw)}catch{return respond({error:'Invalid request.'},400)}
  try{
-  if(body.action==='status')return respond({...await connectionStatus(db),owner:member.role==='owner',redirectUri:redirect});
+  if(body.action==='status'||body.action==='history'){
+   const {data:runs,error}=await db.from('cc_email_dispatch_runs').select('id,status,result,created_at,finished_at,requested_by').eq('workspace_id',WORKSPACE).order('created_at',{ascending:false}).limit(5);if(error)throw Error('Campaign history could not be loaded.');
+   const {data:partners}=await db.from('cc_members').select('user_id,display_name').eq('workspace_id',WORKSPACE);
+   const history=(runs||[]).map(({requested_by,...run}:any)=>({...run,requestedBy:partners?.find((p:any)=>p.user_id===requested_by)?.display_name||'Business partner'}));
+   if(body.action==='history')return respond({runs:history});
+   return respond({...await connectionStatus(db),owner:member.role==='owner',redirectUri:redirect,recentRuns:history});
+  }
   if(body.action==='configure'){
    if(member.role!=='owner')return respond({error:'Only the workspace owner can configure Gmail.'},403);
    if(!/^[a-zA-Z0-9_.-]+\.apps\.googleusercontent\.com$/.test(body.client_id||'')||typeof body.client_secret!=='string'||body.client_secret.length<10||body.client_secret.length>500)return respond({error:'Enter a valid Google web OAuth client ID and client secret.'},400);
@@ -49,7 +55,7 @@ Deno.serve(async(req:Request)=>{
   }
   if(body.action==='disconnect'){
    if(member.role!=='owner')return respond({error:'Only the workspace owner can disconnect Gmail.'},403);
-   const slot=body.slot==='legacy'?'legacy':'primary',old=await secret(db,slot);if(old.refresh_token){const revoke=await fetch('https://oauth2.googleapis.com/revoke',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({token:old.refresh_token}),signal:AbortSignal.timeout(15000)});if(!revoke.ok)throw Error('Google did not confirm revocation; disconnect was not completed.');}await secret(db,slot,'set',{});return respond({disconnected:true});
+   const slot=body.slot==='legacy'?'legacy':'primary',old=await secret(db,slot);if(old.refresh_token){const revoke=await fetch('https://oauth2.googleapis.com/revoke',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({token:old.refresh_token}),signal:AbortSignal.timeout(15000)});if(!revoke.ok&&revoke.status!==400)throw Error('Google did not confirm revocation; disconnect was not completed.');}await secret(db,slot,'set',{});return respond({disconnected:true});
   }
   if(body.action==='queue')return respond({queue:await loadQueue(db,WORKSPACE),connection:await connectionStatus(db)});
   if(body.action==='check'){

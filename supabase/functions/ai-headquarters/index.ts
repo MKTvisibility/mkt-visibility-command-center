@@ -52,7 +52,7 @@ Deno.serve(async(req:Request)=>{
    if(!requested.length){text=(result.output||[]).flatMap((o:any)=>o.content||[]).filter((c:any)=>c.type==='output_text').map((c:any)=>c.text).join('\n').trim();break}
    if(round===2||calls+requested.length>3)return await fail('The tool limit was reached. Check the saved campaign results before sending another command.');
    input.push(...result.output);
-   for(const call of requested){let value;try{const args=JSON.parse(call.arguments);value=await executeTool(call.name,args,{agent,caller,workspace:WORKSPACE,messageId,url,anon,authorization,fetcher:fetch})}catch{value={error:'Tool arguments were invalid; no operation was performed.'}}input.push({type:'function_call_output',call_id:call.call_id,output:JSON.stringify(value).slice(0,12000)});calls++;usage.tool_calls++}
+   for(const call of requested){let value;try{const args=JSON.parse(call.arguments);value=await executeTool(call.name,args,{agent,caller,workspace:WORKSPACE,messageId,url,anon,authorization,fetcher:fetch})}catch{value={error:'Tool arguments were invalid; no operation was performed.'}}input.push({type:'function_call_output',call_id:call.call_id,output:JSON.stringify(value).length>12000?JSON.stringify({partial:true,notice:'Result exceeded the display limit. Read campaign history for saved outcomes; do not assume this preview is complete.',preview:JSON.stringify(value).slice(0,10000)}):JSON.stringify(value)});calls++;usage.tool_calls++}
   }
   if(!text)return await fail('No complete reply was returned. Check operation results before retrying.');
   const {data:saved,error:saveError}=await db.rpc('cc_finish_ai_reply',{p_message_id:messageId,p_lease:claim.lease,p_body:text.slice(0,10000),p_usage:usage});
