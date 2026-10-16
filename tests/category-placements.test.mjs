@@ -5,7 +5,7 @@ import {loadCategoryDirectory} from '../public/live/category-directory.mjs';
 const fallback=(id,name,pages=['arts-crafts-makers.html'])=>({business_id:id,name,description:'Already public',route:'existing.html',source:'businesses.html',pages});
 const live=(id,name,pages,extra={})=>({business_id:id,route:'named-page.html',active:true,sites:['Loving Longmont'],public_content:{name,description:'Published'},site_placements:{'Loving Longmont':pages},...extra});
 test('category directory sorts names, deduplicates old cards and honors per-site removals and unpublishing',async()=>{
- const dom=new JSDOM('<header>Header</header><main><div class="resource-grid"><article><h3>Zulu Studio</h3></article><article><h3>Beta Studio</h3></article></div><section data-category-directory></section></main><footer>Footer</footer>',{url:'https://lovinglongmont.com/arts-crafts-makers.html'});
+ const dom=new JSDOM('<header>Header</header><main><div class="resource-grid"><article><h3>Zulu Studio</h3></article><article><h3>Beta Studio</h3></article><article><h3>Zulu Studio</h3></article></div><section data-category-directory></section></main><footer>Footer</footer>',{url:'https://lovinglongmont.com/arts-crafts-makers.html'});
  const catalog=[fallback('old','Zulu Studio'),fallback('one','Alpha Studio'),fallback('hidden','Hidden Studio'),fallback('other-site','Wrong Website'),fallback('moved','Moved Studio')];
  const rows=[live('one','Alpha Studio',['arts-crafts-makers.html']),live('hidden','Hidden Studio',[],{active:false}),live('other-site','Wrong Website',['arts-crafts-makers.html'],{sites:['MKT Colorado']}),live('moved','Moved Studio',[])];
  const fetcher=async url=>({ok:true,json:async()=>String(url).includes('category-listings.json')?catalog:rows});

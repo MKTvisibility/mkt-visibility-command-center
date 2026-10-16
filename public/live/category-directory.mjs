@@ -22,12 +22,13 @@ export async function loadCategoryDirectory(doc=document,fetcher=fetch){
  // Bring older guide cards into the same compact presentation without changing their surrounding guide text.
  const lookup=new Map(catalog.map(item=>[normalize(item.name),item]));
  for(const row of publications)if(row.active&&(row.sites||['Loving Longmont']).includes('Loving Longmont'))lookup.set(normalize(row.public_content.name),row);
- const converted=new Set();
+ const converted=new Set(),seenListings=new Set();
  for(const title of [...doc.querySelectorAll('.grid h3,.resource-grid h3,.business-grid h3,.ll-connected-grid h3,.history-grid h3,.places-grid h3')]){
   if(root.contains(title))continue;
   const item=lookup.get(normalize(title.textContent.trim()));if(!item)continue;
   const card=title.closest('article')||title.closest('.resource-card,.business-card,.history-card,.ll-connected-card');
   if(!card||converted.has(card))continue;converted.add(card);
+  if(seenListings.has(item.business_id)){card.remove();continue;}seenListings.add(item.business_id);
   const row=item.public_content?item:{...item,pageRoute:item.route||item.source,public_content:{name:item.name,description:item.description,gallery:item.gallery||[]}};
   const replacement=renderBusinessCard(doc,row,'spotlight');if(card.id)replacement.id=card.id;card.replaceWith(replacement);
  }
