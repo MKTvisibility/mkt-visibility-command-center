@@ -43,3 +43,10 @@ test('directory cards use the first visible main photo, never the logo, and fall
  card.querySelector('img').dispatchEvent(new dom.window.Event('error'));assert.equal(card.querySelector('.ll-card-name-art').hidden,false);assert.equal(card.querySelector('.ll-card-name-art').textContent,'Photo Studio');
  const noPhoto=renderBusinessCard(dom.window.document,{...row,public_content:{...row.public_content,gallery:[]}});assert.equal(noPhoto.querySelector('img'),null);assert.equal(noPhoto.querySelector('.ll-card-name-art').textContent,'Photo Studio');assert.equal(noPhoto.querySelector('.ll-card-image').tagName,'DIV');dom.window.close();
 });
+test('older profiles reuse their public main photo, match shortened titles by page route, and honor later unpublishing',async()=>{
+ const dom=new JSDOM('<div class="resource-grid"><article><h3><a href="sunflower-farm.html">Sunflower</a></h3><img src="https://example.com/old-logo.png"></article></div><section data-category-directory></section>',{url:'https://lovinglongmont.com/animals.html'});
+ const catalog=[{business_id:'farm',name:'Sunflower Farm',route:'sunflower-farm.html',source:'animals.html',description:'Meet the farm animals.',pages:['animals.html'],gallery:[{url:'https://example.com/farm-main.jpg',enabled:true}]}];let publications=[];
+ const fetcher=async url=>({ok:true,json:async()=>String(url).includes('category-listings.json')?catalog:publications});
+ await loadCategoryDirectory(dom.window.document,fetcher);assert.equal(dom.window.document.querySelectorAll('.ll-compact-card').length,1);assert.equal(dom.window.document.querySelector('.ll-compact-card img').getAttribute('src'),'https://example.com/farm-main.jpg');
+ publications=[{business_id:'farm',active:false,sites:['Loving Longmont'],public_content:{name:'Sunflower Farm'},site_placements:{'Loving Longmont':[]}}];await loadCategoryDirectory(dom.window.document,fetcher);assert.equal(dom.window.document.querySelectorAll('.ll-compact-card').length,0);dom.window.close();
+});

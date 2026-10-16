@@ -23,7 +23,7 @@
   {
     "business_id": "2e0287ad-e3c9-5296-8b68-96d9a5f80e16",
     "name": "Adorn Home & Gift Gallery",
-    "description": "A longtime downtown gift shop filled with home décor, jewelry,\n                accessories and unusual gifts. Adorn is a good place to browse\n                when you know you need a gift but don't yet know exactly what\n                you're looking for.",
+    "description": "A longtime downtown gift shop filled with home d\u00e9cor, jewelry,\n                accessories and unusual gifts. Adorn is a good place to browse\n                when you know you need a gift but don't yet know exactly what\n                you're looking for.",
     "route": "adorn-home-gift-gallery.html",
     "source": "businesses.html",
     "pages": [
@@ -230,7 +230,7 @@
   {
     "business_id": "aa55ece3-b7f6-5047-ae3e-e13d866d6839",
     "name": "Connecting Colorado",
-    "description": "Colorado's official public workforce job system.\nCreate or upload a résumé, search jobs, explore career\npaths, discover training and receive job-match information.",
+    "description": "Colorado's official public workforce job system.\nCreate or upload a r\u00e9sum\u00e9, search jobs, explore career\npaths, discover training and receive job-match information.",
     "route": "",
     "source": "jobs.html",
     "pages": [
@@ -366,7 +366,7 @@
   {
     "business_id": "409d1bb5-e183-5849-8652-3a55ba2dda90",
     "name": "Firehouse Art Center",
-    "description": "Longmont’s nonprofit contemporary art center presents rotating\n              exhibitions, education programs and community events in the\n              Creative District.",
+    "description": "Longmont\u2019s nonprofit contemporary art center presents rotating\n              exhibitions, education programs and community events in the\n              Creative District.",
     "route": "firehouse-art-center.html",
     "source": "things-to-do.html",
     "pages": [
@@ -411,6 +411,14 @@
       "outdoor-recreation-adventure.html",
       "sports-fitness-equipment.html",
       "things-to-do.html"
+    ],
+    "gallery": [
+      {
+        "url": "https://longmontcolorado.gov/wp-content/uploads/2024/07/Garden-Acres.jpg",
+        "alt": "Garden Acres Community Park in Longmont",
+        "caption": "",
+        "enabled": true
+      }
     ]
   },
   {
@@ -433,6 +441,14 @@
     "pages": [
       "outdoor-recreation-adventure.html",
       "things-to-do.html"
+    ],
+    "gallery": [
+      {
+        "url": "https://assets.simpleviewinc.com/simpleview/image/upload/c_fill,f_jpg,h_639,q_80,w_1000/v1/clients/longmontco-redesign/Things_to_Do_Outdoors_Lakes_and_Rivers_Golden_Ponds_da15ee49-8111-4bf7-8128-f3d7f4fd503e.png",
+        "alt": "Golden Ponds Nature Area in Longmont Colorado",
+        "caption": "",
+        "enabled": true
+      }
     ]
   },
   {
@@ -471,7 +487,7 @@
   {
     "business_id": "e45a8c4e-b19f-586e-b200-c9be8ee30979",
     "name": "Historic Hoverhome",
-    "description": "The 1913–14 home of Charles Lewis Hover and Katherine Baird\n                Hover anchors a preserved historic district connected to one of\n                Longmont’s influential early families.",
+    "description": "The 1913\u201314 home of Charles Lewis Hover and Katherine Baird\n                Hover anchors a preserved historic district connected to one of\n                Longmont\u2019s influential early families.",
     "route": "historic-hoverhome.html",
     "source": "history.html",
     "pages": [
@@ -481,7 +497,7 @@
   {
     "business_id": "4292ee88-5606-5e4d-a86b-3ea5be32d19a",
     "name": "Hover Farmstead",
-    "description": "The remaining farm buildings preserve the working side of the\n                Hover family property and help tell Longmont’s agricultural\n                story beyond the walls of Hoverhome.",
+    "description": "The remaining farm buildings preserve the working side of the\n                Hover family property and help tell Longmont\u2019s agricultural\n                story beyond the walls of Hoverhome.",
     "route": "hover-farmstead.html",
     "source": "history.html",
     "pages": [
@@ -668,6 +684,14 @@
       "outdoor-recreation-adventure.html",
       "sports-fitness-equipment.html",
       "things-to-do.html"
+    ],
+    "gallery": [
+      {
+        "url": "https://assets.simpleviewinc.com/simpleview/image/fetch/c_fill,f_jpg,h_650,q_80,w_1000/https%3A%2F%2Fassets.simpleviewinc.com%2Fsimpleview%2Fimage%2Fupload%2Fcrm%2Flongmontco%2FIce-Skating--Sherri-O-Hara-15--77456a7d5056b36_77456f49-5056-b365-ab975084db923379.jpg",
+        "alt": "Ice skating in Longmont Colorado",
+        "caption": "",
+        "enabled": true
+      }
     ]
   },
   {
@@ -702,6 +726,14 @@
       "classes-learning.html",
       "history.html",
       "things-to-do.html"
+    ],
+    "gallery": [
+      {
+        "url": "https://longmontcolorado.gov/wp-content/uploads/2025/01/Museum-exterior-s1ke73.tmp_.jpg",
+        "alt": "Longmont Museum",
+        "caption": "",
+        "enabled": true
+      }
     ]
   },
   {
@@ -866,8 +898,8 @@
   },
   {
     "business_id": "9ca4674b-7a75-5525-99f1-7e719ba37c54",
-    "name": "Old St. Stephen’s Church",
-    "description": "Built in 1881 and long known as the “Little White Church,” this\n                downtown landmark is among Longmont’s oldest surviving church\n                buildings and now serves community and preservation uses.",
+    "name": "Old St. Stephen\u2019s Church",
+    "description": "Built in 1881 and long known as the \u201cLittle White Church,\u201d this\n                downtown landmark is among Longmont\u2019s oldest surviving church\n                buildings and now serves community and preservation uses.",
     "route": "old-st-stephens-church.html",
     "source": "history.html",
     "pages": [
@@ -930,7 +962,7 @@
   },
   {
     "business_id": "7195c87c-394b-5efb-8f1b-ccc0682006a4",
-    "name": "Quarter’s Bar + Arcade",
+    "name": "Quarter\u2019s Bar + Arcade",
     "description": "A locally founded downtown arcade with classic games, pinball, self-serve drinks and private party options.",
     "route": "quarters-bar-arcade.html",
     "source": "businesses.html",
@@ -942,7 +974,7 @@
   },
   {
     "business_id": "05bc90f7-67fb-5f29-94a3-28b1a822bc0c",
-    "name": "Recovery Café Longmont",
+    "name": "Recovery Caf\u00e9 Longmont",
     "description": "A community-centered recovery organization\ncreating a welcoming space\nfor people rebuilding their lives.\n\nVolunteer opportunities include cooking,\nhospitality,\nteaching classes\nand helping with support activities.",
     "route": "recovery-cafe-longmont.html",
     "source": "community.html",
@@ -1017,6 +1049,14 @@
       "classes-learning.html",
       "history.html",
       "things-to-do.html"
+    ],
+    "gallery": [
+      {
+        "url": "https://assets.simpleviewinc.com/simpleview/image/upload/c_limit,q_85,w_1200/v1/crm/longmontco/37055267433_27facbf459_o0-13c8168a5056b36_13c819d5-5056-b365-ab0503c5ce51a7c1.jpg",
+        "alt": "Sandstone Ranch in Longmont Colorado",
+        "caption": "",
+        "enabled": true
+      }
     ]
   },
   {
@@ -1086,6 +1126,14 @@
       "community.html",
       "faith-spirituality.html",
       "food-assistance-basic-needs.html"
+    ],
+    "gallery": [
+      {
+        "url": "https://mktvisibility.github.io/LovingLongmont/assets/official/c98f1073ac26ba.webp",
+        "alt": "St. John the Baptist Catholic Church",
+        "caption": "",
+        "enabled": true
+      }
     ]
   },
   {
@@ -1097,6 +1145,14 @@
     "pages": [
       "community.html",
       "food-assistance-basic-needs.html"
+    ],
+    "gallery": [
+      {
+        "url": "https://mktvisibility.github.io/LovingLongmont/assets/official/c98f1073ac26ba.webp",
+        "alt": "St. John the Baptist Food Bank",
+        "caption": "",
+        "enabled": true
+      }
     ]
   },
   {
@@ -1111,6 +1167,14 @@
       "farms-local-essentials.html",
       "outdoor-recreation-adventure.html",
       "things-to-do.html"
+    ],
+    "gallery": [
+      {
+        "url": "https://mktvisibility.github.io/LovingLongmont/sunflowerfarm.png",
+        "alt": "Sunflower Farm",
+        "caption": "",
+        "enabled": true
+      }
     ]
   },
   {
@@ -1137,7 +1201,7 @@
   {
     "business_id": "ab70f6a2-9597-56ce-a256-162c17eb9fb2",
     "name": "The Bee Hugger Farm",
-    "description": "A welcoming six-acre Longmont farm where visitors can meet and\n                feed animals, explore vintage farm features, shop for local\n                honey and enjoy seasonal experiences such as U-pick sunflowers,\n                a pumpkin patch, pony rides, hayrides, Christmas trees and\n                special events. Check the farm’s website or social pages for\n                current hours, seasonal activities and group requirements before\n                visiting.",
+    "description": "A welcoming six-acre Longmont farm where visitors can meet and\n                feed animals, explore vintage farm features, shop for local\n                honey and enjoy seasonal experiences such as U-pick sunflowers,\n                a pumpkin patch, pony rides, hayrides, Christmas trees and\n                special events. Check the farm\u2019s website or social pages for\n                current hours, seasonal activities and group requirements before\n                visiting.",
     "route": "the-bee-hugger-farm.html",
     "source": "businesses.html",
     "pages": [
@@ -1173,7 +1237,7 @@
   {
     "business_id": "5b44dadc-9511-5688-ba72-23f589ba5524",
     "name": "The Flower Bin",
-    "description": "A family-owned Longmont garden center operating since 1971, with\n                five acres of plants, indoor growing space, gardening supplies,\n                gifts and home décor.",
+    "description": "A family-owned Longmont garden center operating since 1971, with\n                five acres of plants, indoor growing space, gardening supplies,\n                gifts and home d\u00e9cor.",
     "route": "the-flower-bin.html",
     "source": "businesses.html",
     "pages": [
@@ -1375,7 +1439,7 @@
   },
   {
     "business_id": "b1f715a3-8051-5da2-a7d9-fdbfd6c41508",
-    "name": "Wren’s Nest Art Studio",
+    "name": "Wren\u2019s Nest Art Studio",
     "description": "Art classes, camps, open studio sessions and creative gatherings for children and adults.",
     "route": "wrens-nest-art-studio.html",
     "source": "businesses.html",

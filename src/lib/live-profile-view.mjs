@@ -6,7 +6,7 @@ function photo(make,parent,url,alt,cls=''){url=safeWebUrl(url);if(!url)return;co
 export function renderProfile(root,b){const make=builder(root);root.replaceChildren();if(!b){root.append(make('h1','','Business page unavailable'),make('p','','This business page is not currently published.'));return}
  const article=make('article','bp-profile'),identity=make('div','bp-identity'),heading=make('div','bp-heading');
  const gallery=(b.gallery||[]).filter(p=>p.enabled!==false&&safeWebUrl(p.url));
- if(gallery.length){const media=make('figure','bp-primary-image');photo(make,media,gallery[0].url,gallery[0].alt||b.name);if(gallery[0].caption)media.append(make('figcaption','',gallery[0].caption));identity.append(media)}else identity.classList.add('bp-no-feature');
+ if(gallery.length){const media=make('figure','bp-primary-image');const mainPhoto=photo(make,media,gallery[0].url,gallery[0].alt||b.name);if(mainPhoto)mainPhoto.addEventListener('error',()=>media.replaceChildren(make('span','bp-name-placeholder',b.name)),{once:true});if(gallery[0].caption)media.append(make('figcaption','',gallery[0].caption));identity.append(media)}else identity.classList.add('bp-no-feature');
  if(safeWebUrl(b.image_url)){const logo=make('div','bp-logo');photo(make,logo,b.image_url,b.name+' logo');heading.append(logo)}
  if(b.categories?.length)heading.append(make('p','bp-eyebrow',b.categories.join(' · ')));
  heading.append(make('h1','',b.name));if(b.tagline)heading.append(make('p','bp-tagline',b.tagline));if(b.description)heading.append(make('p','bp-intro',b.description));
