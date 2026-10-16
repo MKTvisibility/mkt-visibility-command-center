@@ -1,0 +1,164 @@
+{
+  "Loving Longmont": {
+    "animals.html": [
+      {
+        "id": "help-animals",
+        "label": "Help Animals & Wildlife"
+      },
+      {
+        "id": "visit-animals",
+        "label": "Places to See Animals"
+      },
+      {
+        "id": "veterinarians",
+        "label": "Longmont Veterinarians"
+      },
+      {
+        "id": "pet-supplies",
+        "label": "Independent & Local Pet Supplies"
+      },
+      {
+        "id": "pet-care",
+        "label": "Pet Sitting, Walking & Boarding"
+      }
+    ],
+    "businesses.html": [
+      {
+        "id": "makers",
+        "label": "Longmont Shops Worth Exploring"
+      },
+      {
+        "id": "local-experiences",
+        "label": "More Local Experiences & Specialty Finds"
+      },
+      {
+        "id": "more-local-finds",
+        "label": "More Longmont Hidden Gems"
+      }
+    ],
+    "community.html": [
+      {
+        "id": "farms",
+        "label": "Visit Longmont Farms & Farm Stands"
+      },
+      {
+        "id": "food-help",
+        "label": "Food & Basic Needs"
+      },
+      {
+        "id": "faith",
+        "label": "Local Faith & Spiritual Communities"
+      },
+      {
+        "id": "mindfulness",
+        "label": "Meditation, Mindfulness & Yoga"
+      },
+      {
+        "id": "community-help",
+        "label": "Community Resources & Volunteering"
+      }
+    ],
+    "events.html": [
+      {
+        "id": "october",
+        "label": "October in Longmont"
+      },
+      {
+        "id": "november",
+        "label": "November in Longmont"
+      },
+      {
+        "id": "december",
+        "label": "December in Longmont"
+      }
+    ],
+    "jobs.html": [
+      {
+        "id": "job-search",
+        "label": "Longmont Job Resources"
+      },
+      {
+        "id": "temp-work",
+        "label": "Longmont Staffing & Temp Agencies"
+      },
+      {
+        "id": "remote",
+        "label": "Job Search Websites"
+      },
+      {
+        "id": "side-gigs",
+        "label": "Side Gigs & Flexible Work"
+      },
+      {
+        "id": "training",
+        "label": "Training & Career Development"
+      }
+    ]
+  },
+  "MKT Colorado": {
+    "events.html": [
+      {
+        "id": "western",
+        "label": "🤠 Western Heritage & Fairs"
+      },
+      {
+        "id": "music",
+        "label": "🎵 Music & Arts"
+      },
+      {
+        "id": "food",
+        "label": "🌶️ Food & Drink"
+      },
+      {
+        "id": "winter",
+        "label": "❄️ Winter & Mountain Traditions"
+      },
+      {
+        "id": "community",
+        "label": "🎈 Community & Colorado Traditions"
+      },
+      {
+        "id": "local-resources",
+        "label": "📅 Local Annual Event Resources"
+      }
+    ],
+    "things-to-do.html": [
+      {
+        "id": "attractions",
+        "label": "🎡 Attractions & Destinations"
+      },
+      {
+        "id": "history",
+        "label": "🏛️ Museums & History"
+      },
+      {
+        "id": "parks",
+        "label": "🌲 Parks & Trails"
+      },
+      {
+        "id": "scenic",
+        "label": "🏔️ Scenic Places"
+      },
+      {
+        "id": "create",
+        "label": "🎨 Make & Create"
+      },
+      {
+        "id": "farm",
+        "label": "🐐 Farms & Animals"
+      },
+      {
+        "id": "food",
+        "label": "🍳 Food & Drink Experiences"
+      },
+      {
+        "id": "learn",
+        "label": "🔎 Tours & Learning"
+      },
+      {
+        "id": "outdoor",
+        "label": "🚲 Outdoor Experiences"
+      }
+    ]
+  }
+}
