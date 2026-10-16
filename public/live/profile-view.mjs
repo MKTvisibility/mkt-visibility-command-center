@@ -24,9 +24,17 @@ export function renderProfile(root,b){const make=builder(root);root.replaceChild
  if(gallery.length>1){const section=make('section','bp-gallery');section.append(make('p','bp-eyebrow','A LOOK AT THE WORK'),make('h2','','Gallery'));const photos=make('div','bp-gallery-grid');gallery.slice(1).forEach(p=>{const f=make('figure');photo(make,f,p.url,p.alt||b.name);if(p.caption)f.append(make('figcaption','',p.caption));photos.append(f)});section.append(photos);article.append(section)}
  const bottom=make('div','bp-bottom');addLink(make,bottom,'businesses.html','← Browse local businesses');article.append(bottom);root.append(article);return article;
 }
-export function renderBusinessCard(document,row,variant='directory'){const root=document.createElement('article'),make=builder(root),b=row.public_content;root.className=variant==='staffing'?'ll-staffing-card':variant==='spotlight'?'ll-connected-card':'business-card';root.dataset.ccBusiness=row.business_id;root.dataset.llLiveBusiness=row.business_id;const route=row.pageRoute||((row.route.startsWith('business-')||document.documentElement.dataset.businessSite==='MKT Colorado'||row.route==='7-anubis-farms.html')?'business.html#id='+encodeURIComponent(row.business_id):row.route);
- if(safeWebUrl(b.image_url)){const image=make('div',variant==='staffing'?'ll-staffing-image':variant==='spotlight'?'ll-connected-image':'business-image'),a=make('a');a.href=route;a.setAttribute('aria-label',b.name);photo(make,a,b.image_url,b.name);image.append(a);root.append(image)}
- const body=make('div','business-body');if(b.categories?.length)body.append(make('div','business-category',b.categories.join(' · ')));const title=make('h3');addLink(make,title,route,b.name);body.append(title);if(b.description)body.append(make('p','business-description',b.description));
- const details=make('div','business-details');for(const [label,value,url] of [['Address',b.address,''],['Phone',b.phone,b.phone?'tel:'+b.phone.replace(/[^+\d]/g,''):''],['Email',b.email,b.email?'mailto:'+encodeURIComponent(b.email):'']]){if(value){const item=make('div','business-detail');if(url)addLink(make,item,url,value);else item.textContent=value;details.append(item)}}if(details.childNodes.length&&variant!=='staffing')body.append(details);
- const links=make('div','business-links');addLink(make,links,route,'View Business Page →','business-button');if(variant!=='staffing')addLink(make,links,safeWebUrl(b.website),'Visit Website ↗','business-button');body.append(links);root.append(body);return root;
+export function directoryPhoto(content){return (content.gallery||[]).find(p=>p.enabled!==false&&safeWebUrl(p.url))||null}
+export function renderBusinessCard(document,row,variant='directory'){
+ const root=document.createElement('article'),make=builder(root),b=row.public_content||{};
+ root.className=(variant==='staffing'?'ll-staffing-card':variant==='spotlight'?'ll-connected-card':'business-card')+' ll-compact-card';
+ root.dataset.ccBusiness=row.business_id||'';root.dataset.llLiveBusiness=row.business_id||'';root.dataset.llVisualCard='';root.dataset.businessCategory=(b.categories||[]).join(' · ');
+ const filename=row.route||'',route=row.pageRoute||((filename.startsWith('business-')||document.documentElement.dataset.businessSite==='MKT Colorado'||filename==='7-anubis-farms.html')?'business.html#id='+encodeURIComponent(row.business_id):filename);
+ const frame=make('div','ll-card-image'),link=make('a');link.href=route;link.setAttribute('aria-label',b.name||'Business page');
+ const placeholder=make('span','ll-card-name-art',b.name||'Local business');placeholder.setAttribute('aria-hidden','true');link.append(placeholder);
+ const selected=directoryPhoto(b);if(selected){const img=photo(make,link,selected.url,selected.alt||b.name);img.width=400;img.height=250;img.decoding='async';placeholder.hidden=true;img.addEventListener('error',()=>{placeholder.hidden=false});}
+ frame.append(link);root.append(frame);
+ const body=make('div','business-body'),title=make('h3');addLink(make,title,route,b.name);body.append(title);
+ const intro=make('p','business-description',String(b.description||b.tagline||'Meet this business and discover what it offers.').replace(/\s+/g,' ').trim());body.append(intro);
+ const links=make('div','business-links');addLink(make,links,route,'Read more →','business-button');body.append(links);root.append(body);return root;
 }

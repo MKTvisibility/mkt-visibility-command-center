@@ -1,4 +1,4 @@
-import {renderBusinessCard} from './profile-view.mjs?v=20261013-profile-layout';
+import {renderBusinessCard} from './profile-view.mjs?v=20261016-compact-cards';
 export const alphabetical=(a,b)=>String(a.public_content?.name||a.name||'').localeCompare(String(b.public_content?.name||b.name||''),'en',{sensitivity:'base',numeric:true})||String(a.business_id||'').localeCompare(String(b.business_id||''));
 const normalize=s=>s.toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]/g,'');
 export async function loadCategoryDirectory(doc=document,fetcher=fetch){
@@ -14,19 +14,30 @@ export async function loadCategoryDirectory(doc=document,fetcher=fetch){
  const publications=results[1].status==='fulfilled'?results[1].value:[];
  const published=new Map(publications.map(r=>[r.business_id,r]));
  const entries=new Map();
- for(const item of catalog){if(published.has(item.business_id)||!item.pages.includes(page))continue;entries.set(item.business_id,{...item,public_content:{name:item.name,description:item.description},pageRoute:item.route||item.source});}
+ for(const item of catalog){if(published.has(item.business_id)||!item.pages.includes(page))continue;entries.set(item.business_id,{...item,public_content:{name:item.name,description:item.description,gallery:item.gallery||[]},pageRoute:item.route||item.source});}
  for(const row of publications){
   const pages=row.site_placements?.['Loving Longmont']||row.spotlight_pages||[];
   if(row.active&&(row.sites||['Loving Longmont']).includes('Loving Longmont')&&pages.includes(page))entries.set(row.business_id,row);
  }
- // Existing guides keep their original text and cards. Add only missing listings.
+ // Bring older guide cards into the same compact presentation without changing their surrounding guide text.
+ const lookup=new Map(catalog.map(item=>[normalize(item.name),item]));
+ for(const row of publications)if(row.active&&(row.sites||['Loving Longmont']).includes('Loving Longmont'))lookup.set(normalize(row.public_content.name),row);
+ const converted=new Set();
+ for(const title of [...doc.querySelectorAll('.grid h3,.resource-grid h3,.business-grid h3,.ll-connected-grid h3,.history-grid h3,.places-grid h3')]){
+  if(root.contains(title))continue;
+  const item=lookup.get(normalize(title.textContent.trim()));if(!item)continue;
+  const card=title.closest('article')||title.closest('.resource-card,.business-card,.history-card,.ll-connected-card');
+  if(!card||converted.has(card))continue;converted.add(card);
+  const row=item.public_content?item:{...item,pageRoute:item.route||item.source,public_content:{name:item.name,description:item.description,gallery:item.gallery||[]}};
+  const replacement=renderBusinessCard(doc,row,'spotlight');if(card.id)replacement.id=card.id;card.replaceWith(replacement);
+ }
  const existing=new Set([...doc.querySelectorAll('main h2,main h3,main h4,section h2,section h3,section h4')].filter(h=>!root.contains(h)).map(h=>normalize(h.textContent.trim())));
  root.replaceChildren();
  const rows=[...entries.values()].filter(r=>!existing.has(normalize(r.public_content.name))).sort(alphabetical);
- if(rows.length){const grid=doc.createElement('div');grid.className='ll-connected-grid';for(const row of rows){
+ if(rows.length){const grid=doc.createElement('div');grid.className='ll-connected-grid ll-compact-grid';grid.dataset.llPreserveLayout='';for(const row of rows){
   const card=renderBusinessCard(doc,row,'spotlight');
   // Static listings without a profile link back to their existing guide.
-  if(row.source&&!row.route)for(const a of card.querySelectorAll('a'))if(a.getAttribute('href')===row.source)a.textContent=a.closest('h3')?row.name:'View listing →';
+  if(row.source&&!row.route)for(const a of card.querySelectorAll('a'))if(a.getAttribute('href')===row.source)a.textContent=a.closest('h3')?row.name:'Read more →';
   grid.append(card);
  }root.append(grid);}
  // Sort within existing sections, preserving headings and other guide content.

@@ -36,3 +36,10 @@ test('new category validator accepts every Loving Longmont category and rejects 
  await assert.rejects(db.query('select public.cc_ll_validate_settings($1::jsonb)',[JSON.stringify({...settings,spotlight_pages:['unknown-page.html']})]),/eligible spotlight/);
  }finally{await db.close()}
 });
+test('directory cards use the first visible main photo, never the logo, and fall back to decorative business text',async()=>{
+ const {renderBusinessCard}=await import('../src/lib/live-profile-view.mjs');const dom=new JSDOM('<main></main>');
+ const row={business_id:'photo',route:'photo-studio.html',public_content:{name:'Photo Studio',description:'A concise introduction to the business.',image_url:'https://example.com/logo.png',gallery:[{url:'https://example.com/hidden.jpg',enabled:false},{url:'https://example.com/main.jpg',alt:'The selected main photo'},{url:'https://example.com/extra.jpg'}]}};
+ const card=renderBusinessCard(dom.window.document,row,'spotlight');assert.equal(card.querySelector('img').getAttribute('src'),'https://example.com/main.jpg');assert.equal(card.querySelector('.ll-card-name-art').hidden,true);assert.equal(card.querySelector('.business-button').textContent,'Read more →');assert.equal(card.querySelector('.business-button').getAttribute('href'),'photo-studio.html');assert.equal(card.querySelectorAll('img').length,1);
+ card.querySelector('img').dispatchEvent(new dom.window.Event('error'));assert.equal(card.querySelector('.ll-card-name-art').hidden,false);assert.equal(card.querySelector('.ll-card-name-art').textContent,'Photo Studio');
+ const noPhoto=renderBusinessCard(dom.window.document,{...row,public_content:{...row.public_content,gallery:[]}});assert.equal(noPhoto.querySelector('img'),null);assert.equal(noPhoto.querySelector('.ll-card-name-art').textContent,'Photo Studio');assert.equal(noPhoto.querySelector('.ll-card-image').tagName,'DIV');dom.window.close();
+});

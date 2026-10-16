@@ -1,4 +1,4 @@
-import {renderProfile,renderBusinessCard} from './profile-view.mjs?v=20261013-publishing';
+import {renderProfile,renderBusinessCard} from './profile-view.mjs?v=20261016-compact-cards';
 const BASE='https://gvmwkltwrlqwbqegieum.supabase.co',KEY='sb_publishable_SFIrQ_kqkLQJdBNMnaRr3g_w6XWKaBJ';
 const page=location.pathname.split('/').pop()||'index.html';
 async function load(){const response=await fetch(BASE+'/rest/v1/cc_ll_live_publications?select=business_id,route,public_content,directory,spotlight_pages,spotlight_order,active,revision,published_at,sites',{headers:{apikey:KEY},cache:'no-store'});if(!response.ok)throw Error('Business updates unavailable');const rows=(await response.json()).filter(r=>r.active&&(r.sites||['Loving Longmont']).includes(document.documentElement.dataset.businessSite||'Loving Longmont'));
