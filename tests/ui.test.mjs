@@ -36,7 +36,7 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
  const aiRaw=readFileSync(new URL('../src/AIWorkforce.jsx',import.meta.url),'utf8').replace("import './AIWorkforce.css'",'') .replace("from './PartnerMessages.jsx'","from '"+pathToFileURL(messagesFile).href+"'")
  const aiCompiled=await transformWithOxc(aiRaw,'AIWorkforce.jsx',{jsx:{runtime:'automatic'}})
  const aiFile=join(directory,'AIWorkforce.mjs');writeFileSync(aiFile,aiCompiled.code)
- const liveRaw=readFileSync(new URL('../src/LiveBusinessPage.jsx',import.meta.url),'utf8').replace("import './live-profile.css'",'').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
+ const liveRaw=readFileSync(new URL('../src/LiveBusinessPage.jsx',import.meta.url),'utf8').replace(/import ['"][^'"]+\.css['"]/g,'').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
  const live=await transformWithOxc(liveRaw,'LiveBusinessPage.jsx',{jsx:{runtime:'automatic'}})
  const liveFile=join(directory,'LiveBusinessPage.mjs');writeFileSync(liveFile,live.code)
  const biModules={}
@@ -552,3 +552,4 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
 
  }finally{console.error=originalConsoleError;cleanup();globalThis.fetch=oldFetch;rmSync(directory,{recursive:true,force:true});dom.window.close()}
 })
+
