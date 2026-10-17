@@ -40,6 +40,16 @@ export function liveRepository(client) {
       if(error){let message=error.message;try{message=(await error.context.json()).error||message}catch{ /* No response body on network failures. */ }throw new Error(message)}
       return data
     },
+    async businessListingDate(businessId) {
+      const response=await fetch('https://raw.githubusercontent.com/MKTvisibility/LovingLongmont/main/assets/reporting/listing-dates.json',{cache:'no-store'})
+      if(!response.ok)throw new Error('The saved listing date could not load. Enter a verified start date to continue.')
+      return (await response.json()).businesses?.[businessId]||null
+    },
+    async businessTrafficReport(businessId,start,end) {
+      const {data,error}=await client.functions.invoke('business-traffic-report',{body:{businessId,start,end}})
+      if(error){let message=error.message;try{message=(await error.context.json()).error||message}catch{/* Network failures have no response body. */}throw new Error(message)}
+      return data
+    },
     async membership() {
       const { data: auth, error: authError } = await client.auth.getUser()
       if (authError) throw authError

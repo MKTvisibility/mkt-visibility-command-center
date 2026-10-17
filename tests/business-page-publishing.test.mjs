@@ -21,9 +21,10 @@ test('named-page publishing uses approved records, protects existing pages and r
   assert.equal((await handler(request(false))).status,401)
   mode='viewer';assert.equal((await handler(request())).status,403);assert.equal(writes.length,0)
   mode='collision';const collision=await (await handler(request())).json();assert.equal(collision.results[0].success,false);assert.match(collision.results[0].error,/already belongs/);assert.equal(writes.length,0)
-  mode='success';const success=await (await handler(request())).json();assert.equal(success.results[0].success,true);assert.ok(success.results[0].url.startsWith('https://mktvisibility.github.io/LovingLongmont/'));assert.ok(writes.every(w=>w.url.includes('/MKTvisibility/LovingLongmont/')));assert.equal(success.results[0].deploymentPending,true);assert.equal(success.results[0].url,'https://mktvisibility.github.io/LovingLongmont/recovery-cafe-longmont.html');assert.equal(writes.length,2)
+  mode='success';const success=await (await handler(request())).json();assert.equal(success.results[0].success,true);assert.ok(success.results[0].url.startsWith('https://mktvisibility.github.io/LovingLongmont/'));assert.ok(writes.every(w=>w.url.includes('/MKTvisibility/LovingLongmont/')));assert.equal(success.results[0].deploymentPending,true);assert.equal(success.results[0].url,'https://mktvisibility.github.io/LovingLongmont/recovery-cafe-longmont.html');assert.equal(writes.length,3)
   const html=Buffer.from(writes[0].body.content,'base64').toString();assert.match(html,new RegExp('data-ll-profile="'+id+'"'));assert.match(html,/Recovery Café Longmont/);assert.ok(!html.includes('NEVER PUBLIC'))
   assert.equal(JSON.parse(Buffer.from(writes[1].body.content,'base64').toString())[id],'recovery-cafe-longmont.html')
+  const dates=JSON.parse(Buffer.from(writes[2].body.content,'base64').toString());assert.ok(dates.businesses[id].first_listed_at);assert.equal(dates.businesses[id].source,'first_recorded_page_publication')
   delete env.CO_GITHUB_TOKEN;writes=[];const unavailable=await (await handler(request())).json();assert.equal(unavailable.results[0].success,false);assert.match(unavailable.results[0].error,/secure GitHub/);assert.equal(writes.length,0)
  }finally{globalThis.fetch=originalFetch;if(originalDeno===undefined)delete globalThis.Deno;else globalThis.Deno=originalDeno}
 })

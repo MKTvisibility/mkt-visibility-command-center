@@ -50,6 +50,18 @@ Deno.serve(async(req:Request)=>{
     html=html.replace('data-ll-profile=""',marker).replace(/<title>[\s\S]*?<\/title>/,`<title>${escapeHtml(row.public_content.name)} | ${escapeHtml(site)}</title>`)
     const result=existing&&decode64(existing.content)===html?{commit:{sha:'unchanged'}}:await git('contents/'+encodeURIComponent(route),'PUT',{message:`Command Center: create page for ${row.public_content.name}`,content:encode64(html),...(existing?{sha:existing.sha}:{}),branch:'main'})
     if(routes[businessId]!==route){routes[businessId]=route;await git('contents/assets/live/business-routes.json','PUT',{message:`Command Center: link named page for ${row.public_content.name}`,content:encode64(JSON.stringify(routes,null,2)),...(mapFile?{sha:mapFile.sha}:{}),branch:'main'})}
+    if(site==='Loving Longmont'){
+     // Preserve the first known listing date separately from republishing timestamps.
+     // A reporting-file failure must not hide a successful page publication.
+     try{
+      const datePath='contents/assets/reporting/listing-dates.json';const file=await git(datePath+'?ref=main');
+      const registry=file?JSON.parse(decode64(file.content)):{version:1,businesses:{}};
+      if(!registry.businesses[businessId]){
+       registry.businesses[businessId]={name:row.public_content.name,first_listed_at:new Date().toISOString(),source:'first_recorded_page_publication',evidence:'Recorded by Command Center page publisher; earlier unrecorded listing history may be unknown.'};
+       await git(datePath,'PUT',{message:`Record first known listing date for ${row.public_content.name}`,content:encode64(JSON.stringify(registry,null,2)+'\n'),...(file?{sha:file.sha}:{}),branch:'main'});
+      }
+     }catch{console.warn('Page published; listing-date registry needs retry for business',businessId)}
+    }
     results.push({site,success:true,url:config.url+route,commit:result.commit.sha,deploymentPending:true})
    }catch(e){results.push({site,success:false,error:(e as Error).message})}
   }
