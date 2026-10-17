@@ -1,15 +1,12 @@
-# Home-page stories
+# Story highlight previews
 
-In a Longmont business or professional profile, open **Edit & publish the live business page → Home-page business or professional story**.
+In a Longmont business or professional profile, open **Edit & publish the live business page → Business or professional story highlights**.
 
-1. Add the text in **Business story**.
-2. Enable **Spotlight story on Loving Longmont home page**.
-3. Choose the logo, left image, third image, any combination, or none. The left image is the first visible gallery photo; the third image is the second visible gallery photo (the additional photo after the left image). Thumbnails show the actual selections. Reordering or hiding profile photos changes these positions.
-4. Preview the live business page and review **Home-page story highlight**.
-5. Publish. To remove a highlight, uncheck it, preview, and publish again.
+1. Enter the full text in **Business story**.
+2. Enable **Enable story highlights** and choose any of the navigation pages in **Pages for this story highlight**.
+3. Select logo, left image, third image, any combination, or no images. Thumbnails show the actual selections.
+4. Preview the story card and publish. To remove a placement, uncheck its page, preview, and publish. Disable highlights to remove all story cards.
 
-The home article uses the full published story and only the chosen images. Address, contact information, descriptions, and services are not included in the article. Selected images must also be visible in the published profile. The article links to the individual profile for full business details.
+Each selected page displays story cards three across on desktop, two on medium screens, and one on phones. Cards show the first paragraph (up to 420 characters), selected images, and a **Read more** button to the full individual profile. Contact details and services stay on the profile. The full story is never shortened in stored data or on the individual profile.
 
-Highlights are optional and default off. Draft edits never change live posts until publication. The existing signed-preview, optimistic version checks, workspace access, and public-field selection remain in force. `home_story` is part of the public snapshot, so no private settings endpoint is queried by the public home page. Existing publications are not automatically highlighted.
-
-Public rendering lives in `src/lib/home-stories.mjs`, copied to `public/live/home-stories.mjs` during builds and mirrored to Loving Longmont. The home page contains `#home-business-stories`; the existing publication loader renders that section and prevents a duplicate regular listing for the same highlighted profile. Other page placements are unaffected. New professional profiles using this editor have the same story option.
+Existing highlights without a pages setting continue to appear only on Home. Every other placement is opt-in. These choices use the existing private draft, signed preview, published snapshot, workspace access, and public-image visibility checks. No existing story is automatically added to another page.

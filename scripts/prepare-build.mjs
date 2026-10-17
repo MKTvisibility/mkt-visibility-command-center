@@ -16,3 +16,5 @@ copyFileSync('src/business-events.css','public/live/business-events.css')
 
 copyFileSync('src/lib/home-stories.mjs','public/live/home-stories.mjs')
 copyFileSync('src/home-stories.css','public/live/home-stories.css')
+
+copyFileSync('src/lib/story-pages.mjs','public/live/story-pages.mjs')
