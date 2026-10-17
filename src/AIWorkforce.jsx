@@ -53,7 +53,7 @@ function mergeMessages(previous,incoming){return [...new Map([...previous,...inc
 export default function AIWorkforce({repository,member,writable,onWorkSaved}){
  const shared=typeof repository.loadAIHeadquarters==='function'
  const [tasks,setTasks]=useState([]),[threads,setThreads]=useState([]),[messages,setMessages]=useState([])
- const [tab,setTab]=useState('Chat'),[agent,setAgent]=useState('Nova'),[threadId,setThreadId]=useState(null)
+ const [tab,setTab]=useState('Team'),[agent,setAgent]=useState('Nova'),[threadId,setThreadId]=useState(null)
  const [draft,setDraft]=useState(''),[error,setError]=useState(''),[loading,setLoading]=useState(shared),[busy,setBusy]=useState(false)
  const [retry,setRetry]=useState(null),[taskForm,setTaskForm]=useState(false),[taskTitle,setTaskTitle]=useState(''),[taskDetails,setTaskDetails]=useState('')
  const [taskAgent,setTaskAgent]=useState('Nova'),[taskFilter,setTaskFilter]=useState('All')
