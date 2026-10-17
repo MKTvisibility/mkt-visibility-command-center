@@ -1,3 +1,4 @@
+import {CAMPAIGNS,campaignKey} from './campaign-types.js'
 import {PLATFORMS} from './intelligence.js'
 import {profileTask,taskNotApplicable} from './profile-workflow.js'
 import {businessMessages,messageSummary,localDay} from './domain.js'
@@ -96,4 +97,25 @@ export function siteReviewGroups(data,profiles){
   groups.push({key:site,label:site,businesses,total:businesses.length,reviewed:reviewed.length},{key:site+':reviewed',label:site+' — reviewed',businesses:reviewed},{key:site+':remaining',label:site+' — needs review',businesses:remaining})
  }
  return groups
+}
+
+// Progress is separate from due-now counts: scheduled and prerequisite-blocked
+// steps remain visible as unsent, without claiming they are ready to dispatch.
+export function outreachProgressGroups(data,profiles){
+ const byId=new Map(profiles.map(p=>[p.business_id,p]))
+ const groups=[['intro','First contact email'],['story_request','Business story request'],['offer','Visibility Check invitation'],['report','Visibility Check report'],['followup','Follow-up emails']].map(([key,label])=>({key,label,sent:[],remaining:[]}))
+ for(const business of data.businesses){
+  if(business.status==='Archived'||byId.get(business.id)?.crm?.do_not_contact)continue
+  const mail=businessMessages(data,business.id),records={...data,tasks:data.tasks.filter(t=>t.business_id===business.id).map(t=>hydrateCampaignTask(t,mail))}
+  for(const group of groups){
+   const tasks=group.key==='followup'?records.tasks.filter(t=>(t.type==='Follow-up'||/follow.up.*email/i.test(t.title||''))&&!/phone|call/i.test(t.title||'')):[profileTask(records,business,group.key)].filter(Boolean)
+   const applicable=tasks.filter(t=>t.status!=='Cancelled'&&!taskNotApplicable(t))
+   if(tasks.length&&!applicable.length||!tasks.length&&['report','followup'].includes(group.key))continue
+   const receipt=mail.some(e=>e.direction==='Outbound'&&['Sent','Replied'].includes(e.status)&&e.message_type!=='Automatic'&&e.source_message_id&&CAMPAIGNS.some(c=>c.taskKey===group.key&&c.key===campaignKey(messageSummary(e).campaignKey||e.campaign)))
+   const sent=receipt||applicable.length>0&&applicable.every(t=>t.status==='Done'&&!metadata(t).categoryCompletion)
+   const dates=applicable.map(t=>metadata(t).evidenceCompletion?.date||t.completed_at?.slice(0,10)).filter(Boolean).sort()
+   group[sent?'sent':'remaining'].push({business,nextAction:sent?`${group.label} sent${dates.length?` · ${dates.at(-1)}`:''}`:`${group.label} still to send`})
+  }
+ }
+ return groups.map(group=>({...group,total:group.sent.length+group.remaining.length,sent:group.sent.sort((a,b)=>a.business.name.localeCompare(b.business.name)),remaining:group.remaining.sort((a,b)=>a.business.name.localeCompare(b.business.name))}))
 }

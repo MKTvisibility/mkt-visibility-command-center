@@ -1,7 +1,7 @@
 import {encodeMetadata} from '../src/lib/portfolio.js'
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {profileSummary,contactSummary,isProfilePilot,portfolioProfileSummary,businessRatingGroups,siteReviewGroups} from '../src/lib/profile-summary.js'
+import {outreachProgressGroups,profileSummary,contactSummary,isProfilePilot,portfolioProfileSummary,businessRatingGroups,siteReviewGroups} from '../src/lib/profile-summary.js'
 import {workflowTask} from '../src/lib/profile-workflow.js'
 import {emptyData} from '../src/lib/domain.js'
 
@@ -124,4 +124,19 @@ test('dashboard outreach reconciles confirmed campaign receipts and keeps future
  summary=portfolioProfileSummary(data,[])
  assert.equal(summary.contactDue,1);assert.equal(summary.outreach.find(g=>g.key==='followup').count,1)
  assert.equal(data.tasks[0].status,'Open')
+})
+
+
+test('outreach progress separates completed sends from future and blocked steps, excluding N/A and stopped contacts',()=>{
+ const data=emptyData();data.businesses=['sent','future','blocked','na','stopped'].map(id=>({id,name:id,status:'Active'}))
+ for(const b of data.businesses)data.tasks.push({...workflowTask(b,data,'intro','First contact email'),status:b.id==='sent'?'Done':b.id==='blocked'?'Blocked':'Open',due_date:b.id==='future'?'2099-01-01':''})
+ const na=data.tasks.find(t=>t.business_id==='na');na.notes=encodeMetadata(na,{notApplicable:true})
+ const groups=outreachProgressGroups(data,[{business_id:'stopped',crm:{do_not_contact:true}}]),intro=groups.find(g=>g.key==='intro')
+ assert.equal(intro.sent.length,1)
+ assert.equal(intro.total,3)
+ assert.ok(!intro.remaining.some(r=>r.business.id==='na'))
+ assert.ok(intro.remaining.some(r=>r.business.id==='future'))
+ assert.ok(intro.remaining.some(r=>r.business.id==='blocked'))
+ assert.ok(!intro.remaining.some(r=>r.business.id==='stopped'))
+ assert.equal(intro.total,intro.sent.length+intro.remaining.length)
 })
