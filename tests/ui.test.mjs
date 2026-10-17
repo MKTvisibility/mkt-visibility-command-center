@@ -80,7 +80,7 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   fireEvent.change(screen.getByLabelText('Leave a message for your partners'),{target:{value:'Partner test update'}})
   fireEvent.click(screen.getByRole('button',{name:'Post message'}))
   await screen.findByText('Partner test update')
-  fireEvent.click(screen.getByRole('button',{name:'👍 Like · 0'}))
+  fireEvent.click(await screen.findByRole('button',{name:'👍 Like · 0'}))
   await screen.findByRole('button',{name:'👍 Like · 1',pressed:true})
   fireEvent.click(screen.getByRole('button',{name:'Reply · 0'}))
   fireEvent.change(screen.getByLabelText('Reply to Practice workspace'),{target:{value:'Partner test reply'}})

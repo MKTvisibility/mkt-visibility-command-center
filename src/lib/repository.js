@@ -17,6 +17,19 @@ async function readAll(client, table) {
 export function liveRepository(client) {
   return {
     intelligence: intelligenceRepository(client),
+    async loadBusinessEvents(businessId) {
+      const {data,error}=await client.from('cc_business_event_drafts').select('*').eq('business_id',businessId).eq('workspace_id',WORKSPACE_ID).maybeSingle();if(error)throw error
+      return data||{events:[],version:0}
+    },
+    async saveBusinessEvents(businessId,events,version) {
+      const {data,error}=await client.rpc('cc_save_business_events',{p_business_id:businessId,p_events:events,p_version:version});if(error)throw error;return data
+    },
+    async previewBusinessEvents(businessId) {
+      const {data,error}=await client.rpc('cc_preview_business_events',{p_business_id:businessId});if(error)throw error;return data
+    },
+    async publishBusinessEvents(businessId,signature) {
+      const {data,error}=await client.rpc('cc_publish_business_events',{p_business_id:businessId,p_signature:signature});if(error)throw error;return data
+    },
     async analyticsStatus() {
       const {data,error}=await client.functions.invoke('sync-google-analytics',{body:{action:'status'}})
       if(error)throw error

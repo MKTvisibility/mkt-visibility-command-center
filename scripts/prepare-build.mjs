@@ -8,3 +8,7 @@ copyFileSync('docs/SETUP.md', 'public/setup/README.md')
 mkdirSync('public/live', {recursive:true})
 copyFileSync('src/lib/live-profile-view.mjs','public/live/profile-view.mjs')
 copyFileSync('src/live-profile.css','public/live/business-profile.css')
+
+copyFileSync('src/lib/business-events.mjs','public/live/business-events.mjs')
+copyFileSync('src/lib/business-events-loader.mjs','public/live/business-events-loader.mjs')
+copyFileSync('src/business-events.css','public/live/business-events.css')
