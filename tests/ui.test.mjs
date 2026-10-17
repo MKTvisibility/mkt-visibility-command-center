@@ -33,7 +33,7 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
  const messagesRaw=readFileSync(new URL('../src/PartnerMessages.jsx',import.meta.url),'utf8')
  const messages=await transformWithOxc(messagesRaw,'PartnerMessages.jsx',{jsx:{runtime:'automatic'}})
  const messagesFile=join(directory,'PartnerMessages.mjs');writeFileSync(messagesFile,messages.code)
- const aiRaw=readFileSync(new URL('../src/AIWorkforce.jsx',import.meta.url),'utf8').replace("import './AIWorkforce.css'",'') .replace("from './PartnerMessages.jsx'","from '"+pathToFileURL(messagesFile).href+"'")
+ const aiRaw=readFileSync(new URL('../src/AIWorkforce.jsx',import.meta.url),'utf8').replace("import './AIWorkforce.css'",'').replace("from './lib/campaign-types.js'", "from '"+pathToFileURL(join(process.cwd(),'src/lib/campaign-types.js')).href+"'") .replace("from './PartnerMessages.jsx'","from '"+pathToFileURL(messagesFile).href+"'")
  const aiCompiled=await transformWithOxc(aiRaw,'AIWorkforce.jsx',{jsx:{runtime:'automatic'}})
  const aiFile=join(directory,'AIWorkforce.mjs');writeFileSync(aiFile,aiCompiled.code)
  const liveRaw=readFileSync(new URL('../src/LiveBusinessPage.jsx',import.meta.url),'utf8').replace(/import ['"][^'"]+\.css['"]/g,'').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
