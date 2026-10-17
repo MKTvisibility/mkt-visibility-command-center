@@ -91,3 +91,18 @@
 /* Keep the composer visible while the conversation itself scrolls. */
 .hq-chat{display:flex;flex-direction:column;height:clamp(510px,calc(100dvh - 300px),900px)}.hq-chat-header,.hq-composer{flex:none}.hq-messages{height:auto;min-height:120px;flex:1}.hq-composer textarea{min-height:70px}.hq-welcome{padding:0 5px}.hq-welcome h3{font-size:20px;margin:0 0 8px}.hq-starters{margin-top:18px;gap:7px}.hq-starters button{padding:10px}@media(max-width:760px){.hq-chat{height:620px}.hq-history-list{max-height:80px}}
 .hq-email-tools{font-size:13px;line-height:1.6}.hq-email-tools form{max-width:760px}.hq-email-tools label{display:block;margin:12px 0}.hq-email-tools .actions{margin:14px 0}.hq-redirect{display:block;background:#eef4f7;padding:12px;border-radius:8px;overflow-wrap:anywhere;user-select:all}
+
+/* Shared, categorized command reference. */
+.hq-heading nav{flex-wrap:wrap}
+.hq-prompts{display:grid;gap:20px}
+.hq-prompts h3{margin:0 0 10px}
+.hq-prompt-filters{display:flex;flex-wrap:wrap;gap:16px;margin-top:18px}
+.hq-prompt-filters label{flex:1;min-width:180px}
+.hq-prompt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.hq-prompt-card{display:flex;flex-direction:column;align-items:stretch;gap:12px;min-width:0}
+.hq-prompt-card h4{margin:0;font-size:17px;color:#153951}
+.hq-prompt-effect{align-self:flex-start;padding:4px 9px;border-radius:12px;background:#edf4f6;color:#36596c;font-size:12px}
+.hq-prompt-send{background:#fff0d8;color:#795000;font-weight:700}
+.hq-prompt-command{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;margin:0;background:#f5f8fb;padding:14px;border-left:3px solid #82a9ba;border-radius:5px;flex:1;user-select:text}
+.hq-prompt-card .actions{flex-wrap:wrap}
+@media(max-width:700px){.hq-prompt-grid{grid-template-columns:1fr}}
