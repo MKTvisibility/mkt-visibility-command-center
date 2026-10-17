@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
-import {renderHomeStories,renderHomeStory,storyImages} from '../src/lib/home-stories.mjs';
+import {renderHomeStories,renderHomeStory,storyImages,storyExcerpt} from '../src/lib/home-stories.mjs';
 import {STORY_PAGES} from '../src/lib/story-pages.mjs';
 const content={name:'Local Professional',story:'First paragraph.\n\nSecond paragraph.',description:'SHOULD NOT DISPLAY',phone:'PRIVATE PHONE',services:['DO NOT DISPLAY'],image_url:'https://example.com/logo.png',gallery:[{url:'https://example.com/left.jpg'},{url:'https://example.com/third.jpg'}],home_story:{enabled:true,images:[]}};
 test('all eight image combinations show only the chosen assets and one-paragraph preview',()=>{
@@ -37,3 +37,5 @@ test('home feed requires an explicitly enabled published story, preserves other 
  assert.deepEqual([...renderHomeStories(doc,[row,...excluded],'index.html')],['a']);assert.equal(doc.querySelectorAll('.ll-home-story').length,1);assert.equal(doc.querySelector('footer').textContent,'Keep');
  renderHomeStories(doc,[],'index.html');assert.equal(doc.querySelector('#home-business-stories').hidden,true);assert.equal(doc.querySelectorAll('.ll-home-story').length,0);dom.window.close();
 });
+
+test('preview skips a standalone article title and uses the opening paragraph',()=>{assert.equal(storyExcerpt('Brickscape Café: A Place to Build\n\nBrickscape began as a small pop-up bringing people together through creative play.\n\nLater details.'),'Brickscape began as a small pop-up bringing people together through creative play.');assert.equal(storyExcerpt('First paragraph.\n\nLonger second paragraph.'),'First paragraph.')});

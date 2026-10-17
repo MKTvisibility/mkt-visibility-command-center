@@ -7,7 +7,7 @@ export function storyImages(content){
  const options={logo:{url:content.image_url,alt:content.name+' logo'},left:gallery[0],photo3:gallery[1]};
  return imageKeys.filter(key=>selected.has(key)&&imageURL(options[key]?.url)).map(key=>({...options[key],url:imageURL(options[key].url),key}));
 }
-export function storyExcerpt(story,limit=420){const paragraph=String(story||'').trim().split(/\n\s*\n/).filter(Boolean)[0]||'';const text=paragraph.replace(/\s+/g,' ').trim();return text.length>limit?text.slice(0,limit-1).replace(/\s+\S*$/,'')+'…':text}
+export function storyExcerpt(story,limit=420){const parts=String(story||'').trim().split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);const first=parts[0]||'';const paragraph=parts.length>1&&first.length<120&&!/[.!?]$/.test(first)&&parts[1].length>first.length?parts[1]:first;const text=paragraph.replace(/\s+/g,' ').trim();return text.length>limit?text.slice(0,limit-1).replace(/\s+\S*$/,'')+'…':text}
 export function storyEligible(row,site='Loving Longmont',page='index.html'){
  return site==='Loving Longmont'&&row.active!==false&&(row.sites||['Loving Longmont']).includes(site)&&row.public_content?.home_story?.enabled===true&&Boolean(row.public_content.story?.trim())&&storyPages(row.public_content.home_story).includes(page);
 }
