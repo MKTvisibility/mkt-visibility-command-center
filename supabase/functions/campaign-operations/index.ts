@@ -57,6 +57,10 @@ Deno.serve(async(req:Request)=>{
    if(member.role!=='owner')return respond({error:'Only the workspace owner can disconnect Gmail.'},403);
    const slot=body.slot==='legacy'?'legacy':'primary',old=await secret(db,slot);if(old.refresh_token){const revoke=await fetch('https://oauth2.googleapis.com/revoke',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({token:old.refresh_token}),signal:AbortSignal.timeout(15000)});if(!revoke.ok&&revoke.status!==400)throw Error('Google did not confirm revocation; disconnect was not completed.');}await secret(db,slot,'set',{});return respond({disconnected:true});
   }
+  if(body.action==='search_mailbox'||body.action==='read_mailbox_message'){
+   const primary=await gmailClient(db,'primary');
+   return respond(body.action==='search_mailbox'?await primary.search({query:body.query,page_token:body.page_token}):{mailbox:MAILBOXES.primary,message:await primary.read(body.message_id),readOnly:true});
+  }
   if(body.action==='queue')return respond({queue:await loadQueue(db,WORKSPACE),connection:await connectionStatus(db)});
   if(body.action==='check'){
    const primary=await gmailClient(db,'primary'),status=await connectionStatus(db),legacy=status.legacyConnected?await gmailClient(db,'legacy'):null;
