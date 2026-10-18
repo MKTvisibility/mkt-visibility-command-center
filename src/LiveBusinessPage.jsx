@@ -14,6 +14,14 @@ const FIELDS=[['description','Description'],['image_url','Logo above business na
 const SITES=['Loving Longmont','MKT Colorado']
 const DIRECTORY_BASES={'Loving Longmont':'https://mktvisibility.github.io/LovingLongmont/','MKT Colorado':'https://mktcolorado.com/'}
 const ROWS=[
+ ["Museums & Historic Sites", "museums-historic-sites.html", null],
+ ["Kids, Family Activities & Camps", "kids-family-activities.html", null],
+ ["Event Venues & Group Experiences", "event-venues-group-experiences.html", null],
+ ["Farm Visits & Seasonal Fun", "farm-visits-seasonal-fun.html", null],
+ ["Recovery & Peer Support", "recovery-peer-support.html", null],
+ ["Senior Services", "senior-services.html", null],
+ ["Bakeries & Cottage Food", "bakeries-cottage-food.html", null],
+ ["Vintage, Secondhand & Creative Reuse", "vintage-secondhand-creative-reuse.html", null],
  [
   "Animals & Pets",
   "animals.html",
@@ -120,7 +128,7 @@ const ROWS=[
   null
  ],
  [
-  "Sports, Fitness & Equipment",
+  "Sports, Fitness & Recreation",
   "sports-fitness-equipment.html",
   null
  ],

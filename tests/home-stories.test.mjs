@@ -19,11 +19,11 @@ test('page selections insert three-card grid after the introduction and do not l
  const row={business_id:'a',active:true,sites:['Loving Longmont'],public_content:{...content,home_story:{enabled:true,images:['photo3'],pages:['events.html','community.html']}}};
  assert.equal(renderHomeStories(doc,[row],'index.html').size,0);assert.equal(doc.querySelector('#home-business-stories'),null);
  renderHomeStories(doc,[row,{...row,business_id:'b'},{...row,business_id:'c'}],'events.html');assert.equal(doc.querySelector('.intro').nextElementSibling.id,'home-business-stories');assert.equal(doc.querySelectorAll('.ll-story-preview-grid>.ll-home-story').length,3);assert.equal(doc.querySelectorAll('.ll-home-story-text p').length,3);assert.equal(doc.querySelector('#existing').textContent,'Keep');
- renderHomeStories(doc,[],'events.html');assert.equal(doc.querySelector('#home-business-stories').hidden,true);assert.equal(renderHomeStories(doc,[row],'business.html').size,0);assert.equal(STORY_PAGES.length,35);dom.window.close();
+ renderHomeStories(doc,[],'events.html');assert.equal(doc.querySelector('#home-business-stories').hidden,true);assert.equal(renderHomeStories(doc,[row],'business.html').size,0);assert.equal(STORY_PAGES.length,42);dom.window.close();
 });
 test('navigation selections validate all supported pages and reject individual profiles',async()=>{
  const {PGlite}=await import('@electric-sql/pglite');const {readFileSync}=await import('node:fs');const db=new PGlite();try{
- await db.exec(readFileSync(new URL('../supabase/migrations/20261017075620_story_previews_navigation_pages.sql',import.meta.url),'utf8'));
+ await db.exec(readFileSync(new URL('../supabase/migrations/20261018041435_directory_navigation_categories.sql',import.meta.url),'utf8'));
  const check=pages=>db.query('select cc_ll_validate_settings($1) as valid',[{home_story:{enabled:true,images:['photo3'],pages}}]);
  assert.equal((await check(STORY_PAGES.map(([page])=>page))).rows[0].valid,true);
  for(const pages of [['business.html'],['index.html','index.html'],[],['events.html#october']])await assert.rejects(check(pages));
