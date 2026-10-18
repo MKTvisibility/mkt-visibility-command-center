@@ -15,6 +15,8 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
  const [tab,setTab]=useState('Overview'),[profile,setProfile]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[undo,setUndo]=useState(null),[notice,setNotice]=useState('')
  const [closed,setClosed]=useState({})
  const [seo,setSeo]=useState(null),[seoBusy,setSeoBusy]=useState(false),[seoError,setSeoError]=useState('')
+ const [reportOpen,setReportOpen]=useState(false),[reportPayload,setReportPayload]=useState(null)
+ const reportFrame=useRef(null)
  const foldIds=['approval','campaigns','work','status','details','appointments','recent','correspondence','scheduled','timeline','notes',...WORK_CATEGORIES.map(([key])=>key)]
  const fold=(id,title,className='pilot-panel',summary)=>({id:`profile-category-${id}`,title,className,summary,open:!closed[id],onToggle:e=>{const isClosed=!e.currentTarget.open;setClosed(current=>Boolean(current[id])===isClosed?current:{...current,[id]:isClosed})}})
  function toggleAll(collapse){setClosed(Object.fromEntries(foldIds.map(id=>[id,collapse])))}
@@ -31,25 +33,7 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
   finally{setSeoBusy(false)}
  }
  async function openCurrentVisibilityReport(){
-  const url=new URL(`${import.meta.env.BASE_URL}business-visibility-report.html`,window.location.origin).href
-  // Open the real report URL: writing into about:blank breaks the report's
-  // origin-based data handshake and can leave the user on an empty screen.
-  const popup=window.open('about:blank','_blank')
-  if(!popup){setError('Please allow pop-ups for Command Center to open the report.');return}
-  popup.document.title='Loading visibility report'
-  popup.document.body.innerHTML='<div style="font:16px Arial,sans-serif;padding:32px;max-width:680px"><h2>Preparing visibility report</h2><p>Checking the published report template. Please wait…</p></div>'
-  setBusy(true);setError('');setNotice('Opening business-specific visibility report…')
-  try{
-   const response=await fetch(url,{cache:'no-store'})
-   if(!response.ok)throw new Error('Published report template returned HTTP '+response.status)
-   const html=await response.text()
-   if(!html.includes('mkt-business-visibility-ready')||!html.includes('CHANNEL RESULTS'))throw new Error('The published URL did not return the visibility report template.')
-   popup.location.replace(url)
-  }catch(e){
-   const message=String(e?.message||e)
-   popup.document.body.innerHTML='<div style="font:16px Arial,sans-serif;padding:32px;max-width:680px"><h2>Report unavailable</h2><p>'+message.replaceAll('&','&amp;').replaceAll('<','&lt;')+'</p><p>The report has not been published correctly yet. Your client profile remains unchanged.</p></div>'
-   setError('Report could not open: '+message);setBusy(false);return
-  }
+  setError('');setNotice('');setReportOpen(true)
   let payload={business:{id:business.id,name:business.name,city:business.city,website:business.website},assessment:{platforms:{}},reviewed:{},traffic:null,seo:seo}
   try{
    const saved=repository?.intelligence?await repository.intelligence.profile(business.id):profile
@@ -77,18 +61,9 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
    }
   }catch(e){setError('Unable to load all saved visibility details: '+e.message)}
   finally{setBusy(false)}
-  const target=window.location.origin
-  let delivered=false
-  let timeout
-  const listener=e=>{
-   if(e.origin!==target||e.source!==popup||e.data?.type!=='mkt-business-visibility-ready')return
-   try{popup.postMessage({type:'mkt-business-visibility-payload',payload},target)}catch{setError('The report opened, but the business details could not be transferred.')}
-   if(!delivered){delivered=true;clearTimeout(timeout);setNotice('Business-specific report opened. Select services and print or save the PDF there.')}
-  }
-  window.addEventListener('message',listener)
-  timeout=setTimeout(()=>{window.removeEventListener('message',listener);if(!delivered&&!popup.closed)setError('The report page did not load. Try opening the report directly: '+url)},20000)
-
+  setReportPayload(payload)
  }
+ function deliverReport(){if(reportPayload&&reportFrame.current?.contentWindow)reportFrame.current.contentWindow.postMessage({type:'mkt-business-visibility-payload',payload:reportPayload},window.location.origin)}
  async function change(rows,choice,label){
   const snapshots=[];setUndo(null);setNotice('')
   try{for(const t of rows){const saved=await onSave('tasks',changeTaskStatus(t,choice));snapshots.push({before:t,after:saved})}}
@@ -124,5 +99,6 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
   {emailLayoutPilot&&<div role="tabpanel" id="profile-panel-5" aria-labelledby="profile-tab-5" hidden={tab!=='Visibility Check'}><section className="pilot-panel" style={{padding:'16px'}}><h3>Visibility Check · Report Preview</h3><p className="fine">Review and save verified ratings below. Approve the visibility check internally before sending a client report.</p><button className="secondary" type="button" disabled={busy} onClick={openCurrentVisibilityReport}>Open business-specific report & estimate ↗</button><p className="fine">Client access tracking is not yet connected. Do not send an unapproved report to clients.</p></section>{tab==='Visibility Check'&&ratingsSection}{tab==='Visibility Check'&&<section className="pilot-panel" style={{padding:'16px',marginTop:12}}><h3>Website SEO · Technical & Content Audit</h3><p className="fine">Scan the business website and up to two internal pages for titles, meta descriptions, headings, canonical tags, structured data, image alt text, indexing signals, and visible content depth. The scores are preliminary HTML checks, not search rankings.</p><p><strong>Website:</strong> {safeUrl(business.website)?<a href={safeUrl(business.website)} target="_blank" rel="noreferrer">{business.website}</a>:'Not provided'}</p><button type="button" className="secondary" disabled={seoBusy||!safeUrl(business.website)} onClick={runSeoAudit}>{seoBusy?'Scanning website…':'Run Website SEO Audit'}</button>{seoError&&<p className="error" role="alert">{seoError}</p>}{seo&&<div style={{marginTop:12}}><p><strong>Technical SEO:</strong> {seo.technical_score}/100 · <strong>Content depth:</strong> {seo.content_score}/100 · <strong>Pages scanned:</strong> {seo.pages?.length||0}</p>{(seo.pages||[]).map(page=><details key={page.url}><summary>{page.title||page.url} · {page.score}/100</summary><p className="fine">{page.url}</p><p>{page.words} visible words · {page.h1} H1 headings · {page.images} images · {page.missingAlt} missing alt text</p><ul>{(page.checks||[]).map(check=><li key={check.name}>{check.pass?'✓':'Needs attention:'} <strong>{check.name}</strong> — {check.detail}</li>)}</ul></details>)}<p className="fine">{seo.limitations}</p><p className="fine">Reopen the report and estimate after running the scan to include these findings. This scan is session-based; it does not automatically approve a client report.</p></div>}</section>}</div>}
   {emailLayoutPilot&&<div role="tabpanel" id="profile-panel-6" aria-labelledby="profile-tab-6" hidden={tab!=='Sales & payments'}>{tab==='Sales & payments'&&groups.filter(g=>g.key==='services').map(workSection)}{tab==='Sales & payments'&&salesSection}</div>}
 
+ {reportOpen&&<div role="dialog" aria-modal="true" aria-label="Business visibility report" style={{position:'fixed',inset:0,zIndex:9999,background:'#1b252bd9',display:'flex',flexDirection:'column',padding:12,gap:8}}><div style={{background:'white',padding:12,display:'flex',justifyContent:'space-between',alignItems:'center',borderRadius:8}}><strong>Visibility Report — {business.name}</strong><button type="button" onClick={()=>setReportOpen(false)}>Close report ✕</button></div><iframe ref={reportFrame} title="Client visibility report and estimate" src={`${import.meta.env.BASE_URL}business-visibility-report.html`} onLoad={deliverReport} style={{flex:1,width:'100%',border:0,borderRadius:8,background:'white'}}/></div>}
  </section>
 }
