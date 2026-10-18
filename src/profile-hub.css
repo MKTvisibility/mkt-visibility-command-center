@@ -61,3 +61,5 @@
 
 .profile-fold>summary h3{margin:0;font-size:1rem}
 .dashboard-outreach-types li>div{width:100%;min-width:0}.dashboard-outreach-types .review-task-links{display:flex;margin:4px 0 0;gap:6px}.dashboard-outreach-types .review-task-links button{width:auto;flex:1;display:block;font-size:11px;line-height:1.4}
+
+.appointment-tabs{grid-template-columns:repeat(5,minmax(0,1fr))}@media(max-width:850px){.appointment-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
