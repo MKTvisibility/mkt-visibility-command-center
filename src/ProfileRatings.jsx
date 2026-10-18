@@ -52,7 +52,7 @@ export default function ProfileRatings({business,data,repository,writable,onSave
   setChanged([]);setNotice('Ratings saved. Lead reports now use these ratings.')
  }catch(e){setError(e.message)}finally{setBusy(false)}}
  async function check(name,checked){setBusy(true);setError('');try{const key=`rating:${name}`,t=profileTask(data,business,key)||workflowTask(business,data,key,`Review ${name}`);await onSave('tasks',{...t,status:checked?'Done':'Open'})}catch(e){setError(e.message)}finally{setBusy(false)}}
- const pilot=business.name?.trim().toLowerCase()==="a pet's place animal hospital"
+ const pilot=true
  const [aiSelections,setAiSelections]=useState({})
  const [submittedQueue,setSubmittedQueue]=useState({})
  const platformQueueFingerprint=name=>{const p=platforms[name]||{};return JSON.stringify({url:platformUrl(name,business,p),notes:p.explanation||'',score:p.score??null,state:p.state||'',reviewed:profileTask(data,business,`rating:${name}`)?.status==='Done'})}
