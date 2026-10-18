@@ -31,5 +31,26 @@ test('profile shows historical welcome, prepares story or custom, requires revie
  view.rerender(React.createElement(EmailApproval,{...props,business:restored.businesses.find(row=>row.id==='b'),data:restored,repository:{verifyBusinessPage:async()=> 'https://mktvisibility.github.io/LovingLongmont/sample-studio.html'}}))
  fireEvent.click(screen.getByRole('button',{name:'Prepare Business Story'}));await waitFor(()=>assert.match(screen.getByLabelText('Email text').value,/sample-studio\.html/));assert.equal((await repo.load()).emails.length,before)
 
+
+ // The compact campaign controls are restricted to the named test profile.
+ assert.equal(screen.queryByRole('checkbox',{name:'Email manually sent: Listing Welcome'}),null)
+ const pilot={...b,name:"A Pet's Place Animal Hospital"}
+ const {campaignTask}=await import('../src/lib/campaigns.js')
+ const task=campaignTask(pilot,data,'visibility')
+ const pilotData={...data,tasks:[{...task,notes:JSON.stringify({...JSON.parse(task.notes),format:'mkt-portfolio-v1',campaignTracking:{sent:false,channel:'Email',replied:true,outcomes:{checkRequested:true}}})}]}
+ let manualSave
+ view.rerender(React.createElement(EmailApproval,{...props,business:pilot,data:pilotData,onSave:async(kind,row)=>{manualSave={kind,row};return row}}))
+ assert.equal(screen.getAllByRole('checkbox',{name:/^Email manually sent:/}).length,4)
+ fireEvent.click(screen.getByRole('checkbox',{name:'Email manually sent: Visibility Check'}))
+ await waitFor(()=>assert.ok(manualSave))
+ assert.equal(manualSave.kind,'tasks')
+ const tracking=JSON.parse(manualSave.row.notes).campaignTracking
+ assert.equal(tracking.sent,true)
+ assert.equal(tracking.channel,'Email')
+ assert.equal(tracking.replied,true)
+ assert.equal(tracking.outcomes.checkRequested,true)
+ assert.match(tracking.date,/^\d{4}-\d{2}-\d{2}$/)
+ assert.equal((await repo.load()).emails.length,before)
+
  }finally{cleanup();rmSync(dir,{recursive:true,force:true});dom.window.close()}
 })
