@@ -1,5 +1,5 @@
 import EmailApproval from './EmailApproval.jsx'
-import {useRef,useState} from 'react'
+import {useEffect,useRef,useState} from 'react'
 import {metadata,encodeMetadata} from './lib/portfolio.js'
 import {businessMessages,messageSummary,safeUrl,localDay,currency} from './lib/domain.js'
 import {taskNotApplicable} from './lib/profile-workflow.js'
@@ -17,6 +17,7 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
  const [seo,setSeo]=useState(null),[seoBusy,setSeoBusy]=useState(false),[seoError,setSeoError]=useState('')
  const [reportOpen,setReportOpen]=useState(false),[reportPayload,setReportPayload]=useState(null)
  const reportFrame=useRef(null)
+ useEffect(()=>{if(reportOpen&&reportPayload&&reportFrame.current?.contentWindow)reportFrame.current.contentWindow.postMessage({type:'mkt-business-visibility-payload',payload:reportPayload},window.location.origin)},[reportOpen,reportPayload])
  const foldIds=['approval','campaigns','work','status','details','appointments','recent','correspondence','scheduled','timeline','notes',...WORK_CATEGORIES.map(([key])=>key)]
  const fold=(id,title,className='pilot-panel',summary)=>({id:`profile-category-${id}`,title,className,summary,open:!closed[id],onToggle:e=>{const isClosed=!e.currentTarget.open;setClosed(current=>Boolean(current[id])===isClosed?current:{...current,[id]:isClosed})}})
  function toggleAll(collapse){setClosed(Object.fromEntries(foldIds.map(id=>[id,collapse])))}
@@ -33,7 +34,7 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
   finally{setSeoBusy(false)}
  }
  async function openCurrentVisibilityReport(){
-  setError('');setNotice('');setReportOpen(true)
+  setError('');setNotice('');setReportPayload(null);setReportOpen(true)
   let payload={business:{id:business.id,name:business.name,city:business.city,website:business.website},assessment:{platforms:{}},reviewed:{},traffic:null,seo:seo}
   try{
    const saved=repository?.intelligence?await repository.intelligence.profile(business.id):profile
