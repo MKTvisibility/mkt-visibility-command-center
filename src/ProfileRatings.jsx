@@ -38,6 +38,8 @@ export function SimpleProfileChecklist({business,data,writable,onSave}){
 const platformUrl=(name,business,p={})=>p.url||(name==='Website'?business.website:business.social_urls?.find(url=>{const host=safeUrl(url)&&new URL(url).hostname;return host&&({Facebook:'facebook.com',Instagram:'instagram.com',TikTok:'tiktok.com',LinkedIn:'linkedin.com',YouTube:'youtube.com',Pinterest:'pinterest.com'}[name]&&host.includes({Facebook:'facebook.com',Instagram:'instagram.com',TikTok:'tiktok.com',LinkedIn:'linkedin.com',YouTube:'youtube.com',Pinterest:'pinterest.com'}[name]))}))||''
 export default function ProfileRatings({business,data,repository,writable,onSave,member,onProfileLoaded}){
  const initialAssessment=useRef(emptyAssessment(business))
+ const [aiSelections,setAiSelections]=useState({})
+ const [submittedQueue,setSubmittedQueue]=useState({})
  const [loaded,setLoaded]=useState(!repository?.intelligence),[profile,setProfile]=useState(null),[assessment,setAssessment]=useState(()=>repository?.intelligence?null:emptyAssessment(business)),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[changed,setChanged]=useState([])
  useEffect(()=>{let active=true;if(!repository?.intelligence)return;repository.intelligence.profile(business.id).then(p=>{if(!active)return;setProfile(p);onProfileLoaded?.(p);setAssessment(p?.approved_at?structuredClone(p.approved):initialAssessment.current);setLoaded(true)}).catch(e=>{if(active){setError(e.message);setLoaded(true)}});return()=>{active=false}},[business.id,repository,onProfileLoaded])
  if(!loaded)return <p>Loading saved ratings…</p>
@@ -53,8 +55,7 @@ export default function ProfileRatings({business,data,repository,writable,onSave
  }catch(e){setError(e.message)}finally{setBusy(false)}}
  async function check(name,checked){setBusy(true);setError('');try{const key=`rating:${name}`,t=profileTask(data,business,key)||workflowTask(business,data,key,`Review ${name}`);await onSave('tasks',{...t,status:checked?'Done':'Open'})}catch(e){setError(e.message)}finally{setBusy(false)}}
  const pilot=true
- const [aiSelections,setAiSelections]=useState({})
- const [submittedQueue,setSubmittedQueue]=useState({})
+
  const platformQueueFingerprint=name=>{const p=platforms[name]||{};return JSON.stringify({url:platformUrl(name,business,p),notes:p.explanation||'',score:p.score??null,state:p.state||'',reviewed:profileTask(data,business,`rating:${name}`)?.status==='Done'})}
  const selectedForQueue=names.filter(name=>(aiSelections[name]??Boolean(metadata(profileTask(data,business,`visibility-ai:${name}`)||{}).aiVisibilityRequested))&&platforms[name]?.state!=='Not Applicable'&&profileTask(data,business,`rating:${name}`)?.status!=='Done')
  const queueButtonDisabled=busy||!selectedForQueue.length||selectedForQueue.every(name=>{const t=profileTask(data,business,`visibility-ai:${name}`),m=metadata(t||{}),fingerprint=platformQueueFingerprint(name);return submittedQueue[name]===fingerprint||(m.aiVisibilityRequested&&m.aiVisibilityFingerprint===fingerprint)})
