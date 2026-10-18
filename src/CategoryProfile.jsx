@@ -32,9 +32,11 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
  }
  async function openCurrentVisibilityReport(){
   const url=`${import.meta.env?.BASE_URL || '/mkt-visibility-command-center/'}business-visibility-report.html`
-  const popup=window.open(url,'_blank')
+  const popup=window.open('about:blank','_blank')
   if(!popup){setError('Please allow pop-ups to open the report.');return}
+  popup.document.title='Preparing business visibility report';popup.document.body.innerHTML='<p style="font:16px Arial;padding:30px">Preparing your business visibility report…</p>'
   setBusy(true);setError('');setNotice('Loading the business-specific visibility report…')
+  try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)throw new Error('The report template is not published yet (HTTP '+response.status+').');const html=await response.text();if(!html.includes('mkt-business-visibility-ready'))throw new Error('The report template is incomplete.');popup.document.open();popup.document.write(html);popup.document.close()}catch(e){popup.document.body.innerHTML='<div style="font:16px Arial;padding:30px"><h2>Report could not open</h2><p>'+String(e.message).replaceAll('<','&lt;')+'</p><p>Please try again after Command Center finishes publishing.</p></div>';setError('Report could not open: '+e.message);setBusy(false);return}
   let payload={business:{id:business.id,name:business.name,city:business.city,website:business.website},assessment:{platforms:{}},reviewed:{},traffic:null,seo:seo}
   try{
    const saved=repository?.intelligence?await repository.intelligence.profile(business.id):profile
@@ -64,7 +66,8 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
   finally{setBusy(false)}
   const target=new URL(url,window.location.href).origin
   let delivered=false
-  const send=()=>{if(delivered||popup.closed)return;popup.postMessage({type:'mkt-business-visibility-payload',payload},target);delivered=true;window.removeEventListener('message',listener);setNotice('Business-specific report opened. Select services and print or save the PDF there.')}
+  const timeout=setTimeout(()=>{if(!delivered&&!popup.closed){setError('Report did not finish loading. Please retry.');setNotice('The report window opened but did not confirm readiness.')}},12000)
+  const send=()=>{if(delivered||popup.closed)return;popup.postMessage({type:'mkt-business-visibility-payload',payload},target);delivered=true;window.removeEventListener('message',listener);clearTimeout(timeout);setNotice('Business-specific report opened. Select services and print or save the PDF there.')}
   const listener=e=>{if(e.origin===target&&e.source===popup&&e.data?.type==='mkt-business-visibility-ready')send()}
   window.addEventListener('message',listener)
  }
