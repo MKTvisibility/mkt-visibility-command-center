@@ -21,6 +21,27 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
  const groups=WORK_CATEGORIES.map(([key,label])=>({key,label,...categorySummary(tasks,key)})),core=groups.filter(g=>['research','listing'].includes(g.key)),workDone=core.every(g=>g.complete)
  const topics=TOPICS.map(([key,label,keys])=>({key,label,keys,state:conversationStatus(business,data,key,tasks)})),waiting=topics.filter(t=>t.state==='Waiting for client'),owed=topics.filter(t=>t.state==='We need to respond')
  async function run(fn){if(lock.current)return;lock.current=true;setBusy(true);setError('');try{await fn()}catch(e){setError(e.message)}finally{lock.current=false;setBusy(false)}}
+ async function openCurrentVisibilityReport(){
+  const url=`${import.meta.env?.BASE_URL || '/mkt-visibility-command-center/'}pets-place-report-preview.html`
+  const popup=window.open(url,'_blank')
+  if(!popup){setError('Please allow pop-ups to open the report.');return}
+  setBusy(true);setError('');setNotice('Loading the latest available business traffic report…')
+  try{
+   if(!repository?.businessTrafficReport)throw Error('Business traffic reporting is unavailable.')
+   const listing=await repository.businessListingDate?.(business.id)
+   const start=listing?.first_listed_at?.slice(0,10)||'2026-10-11'
+   const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Denver',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+   const end=new Date(new Date(today+'T12:00:00Z').getTime()-86400000).toISOString().slice(0,10)
+   const report=await repository.businessTrafficReport(business.id,start,end)
+   const target=new URL(url,window.location.href).origin
+   let sent=false
+   const send=()=>{if(sent||popup.closed)return;popup.postMessage({type:'mkt-visibility-traffic-report',businessId:business.id,report},target);sent=true;setNotice('Latest business traffic report loaded into the new tab.')}
+   const listener=e=>{if(e.origin===target&&e.source===popup&&e.data?.type==='mkt-visibility-report-ready'){window.removeEventListener('message',listener);send()}}
+   window.addEventListener('message',listener)
+   // The child announces readiness after its report script has installed the receiver.
+   popup.addEventListener('load',()=>{if(!sent)send()},{once:true})
+  }catch(e){setError('Live report could not load: '+e.message);setNotice('The report page remains available with its last verified snapshot.')}finally{setBusy(false)}
+ }
  async function change(rows,choice,label){
   const snapshots=[];setUndo(null);setNotice('')
   try{for(const t of rows){const saved=await onSave('tasks',changeTaskStatus(t,choice));snapshots.push({before:t,after:saved})}}
@@ -53,7 +74,7 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
    <ProfileSection {...fold('maintenance','Follow-ups & maintenance')}><p className="fine">Existing dates, notes and statuses are preserved. Open a scheduled email or phone call above to edit it.</p>{groups.find(g=>g.key==='maintenance')?.rows.filter(t=>t.type!=='Follow-up'&&!metadata(t).appointmentManager).map(taskRow)}{writable&&<details><summary>Schedule by correspondence topic</summary>{topics.map(topic=><div className="actions" key={topic.key}><strong>{topic.label}</strong><button className="secondary" onClick={()=>onAdd('tasks',{business_id:business.id,type:'Follow-up',title:`${topic.label} follow-up`,notes:JSON.stringify({format:'mkt-portfolio-v1',outreachStage:topic.keys[0],text:'Check for a client reply before contacting.'}),contactChannel:'Email'})}>Schedule email / phone call</button></div>)}</details>}</ProfileSection>
   </div>}
 
-  {emailLayoutPilot&&<div role="tabpanel" id="profile-panel-5" aria-labelledby="profile-tab-5" hidden={tab!=='Visibility Check'}><section className="pilot-panel" style={{padding:'16px'}}><h3>Visibility Check · Report Preview</h3><p className="fine">Review and save verified ratings below. This pilot report is a sample until findings have been approved for client sharing.</p><a className="secondary" href={`${(import.meta.env?.BASE_URL || '/mkt-visibility-command-center/')}pets-place-report-preview.html`} target="_blank" rel="noreferrer">Open webpage report and PDF preview ↗</a><p className="fine">Client access tracking is not yet connected. Do not send the sample report to clients.</p></section>{ratingsSection}</div>}
+  {emailLayoutPilot&&<div role="tabpanel" id="profile-panel-5" aria-labelledby="profile-tab-5" hidden={tab!=='Visibility Check'}><section className="pilot-panel" style={{padding:'16px'}}><h3>Visibility Check · Report Preview</h3><p className="fine">Review and save verified ratings below. This pilot report is a sample until findings have been approved for client sharing.</p><button className="secondary" type="button" disabled={busy} onClick={openCurrentVisibilityReport}>Open current report and PDF preview ↗</button><p className="fine">Client access tracking is not yet connected. Do not send the sample report to clients.</p></section>{ratingsSection}</div>}
   {emailLayoutPilot&&<div role="tabpanel" id="profile-panel-6" aria-labelledby="profile-tab-6" hidden={tab!=='Sales & payments'}>{groups.filter(g=>g.key==='services').map(workSection)}{salesSection}</div>}
 
  </section>
