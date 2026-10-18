@@ -34,9 +34,22 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
   const url=new URL(`${import.meta.env.BASE_URL}business-visibility-report.html`,window.location.origin).href
   // Open the real report URL: writing into about:blank breaks the report's
   // origin-based data handshake and can leave the user on an empty screen.
-  const popup=window.open(url,'_blank')
+  const popup=window.open('about:blank','_blank')
   if(!popup){setError('Please allow pop-ups for Command Center to open the report.');return}
+  popup.document.title='Loading visibility report'
+  popup.document.body.innerHTML='<div style="font:16px Arial,sans-serif;padding:32px;max-width:680px"><h2>Preparing visibility report</h2><p>Checking the published report template. Please wait…</p></div>'
   setBusy(true);setError('');setNotice('Opening business-specific visibility report…')
+  try{
+   const response=await fetch(url,{cache:'no-store'})
+   if(!response.ok)throw new Error('Published report template returned HTTP '+response.status)
+   const html=await response.text()
+   if(!html.includes('mkt-business-visibility-ready')||!html.includes('CHANNEL RESULTS'))throw new Error('The published URL did not return the visibility report template.')
+   popup.location.replace(url)
+  }catch(e){
+   const message=String(e?.message||e)
+   popup.document.body.innerHTML='<div style="font:16px Arial,sans-serif;padding:32px;max-width:680px"><h2>Report unavailable</h2><p>'+message.replaceAll('&','&amp;').replaceAll('<','&lt;')+'</p><p>The report has not been published correctly yet. Your client profile remains unchanged.</p></div>'
+   setError('Report could not open: '+message);setBusy(false);return
+  }
   let payload={business:{id:business.id,name:business.name,city:business.city,website:business.website},assessment:{platforms:{}},reviewed:{},traffic:null,seo:seo}
   try{
    const saved=repository?.intelligence?await repository.intelligence.profile(business.id):profile
@@ -69,7 +82,7 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
   let timeout
   const listener=e=>{
    if(e.origin!==target||e.source!==popup||e.data?.type!=='mkt-business-visibility-ready')return
-   popup.postMessage({type:'mkt-business-visibility-payload',payload},target)
+   try{popup.postMessage({type:'mkt-business-visibility-payload',payload},target)}catch{setError('The report opened, but the business details could not be transferred.')}
    if(!delivered){delivered=true;clearTimeout(timeout);setNotice('Business-specific report opened. Select services and print or save the PDF there.')}
   }
   window.addEventListener('message',listener)
