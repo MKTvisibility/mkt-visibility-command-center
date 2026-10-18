@@ -45,6 +45,12 @@ export function liveRepository(client) {
       if(!response.ok)throw new Error('The saved listing date could not load. Enter a verified start date to continue.')
       return (await response.json()).businesses?.[businessId]||null
     },
+    async seoAudit(website) {
+      const {data,error}=await client.functions.invoke('website-seo-audit',{body:{website}})
+      if(error){let message=error.message;try{message=(await error.context.json()).error||message}catch{/* Response body unavailable */}throw new Error(message)}
+      if(data?.error)throw new Error(data.error)
+      return data
+    },
     async businessTrafficReport(businessId,start,end) {
       const {data,error}=await client.functions.invoke('business-traffic-report',{body:{businessId,start,end}})
       if(error){let message=error.message;try{message=(await error.context.json()).error||message}catch{/* Network failures have no response body. */}throw new Error(message)}
