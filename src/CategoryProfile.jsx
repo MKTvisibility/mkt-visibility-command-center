@@ -11,7 +11,8 @@ function ProfileSection({title,children,className='',id,open,onToggle,summary}){
 
 export default function CategoryProfile({business,data,member,writable,onClose,onEdit,onAdd,onSave,repository,onBusinessSaved,onSchedule,components}){
  const {BusinessBasics,ProfileRatings,LiveBusinessPage,OutreachDecision,InternalNotes}=components
- const emailLayoutPilot=business.name?.trim().toLowerCase()==="a pet's place animal hospital"
+ const emailLayoutPilot=true
+ const petsPlaceReport=business.name?.trim().toLowerCase()==="a pet's place animal hospital"
  const [tab,setTab]=useState('Overview'),[profile,setProfile]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[undo,setUndo]=useState(null),[notice,setNotice]=useState('')
  const [closed,setClosed]=useState({})
  const foldIds=['approval','campaigns','work','status','details','appointments','recent','correspondence','scheduled','timeline','notes',...WORK_CATEGORIES.map(([key])=>key)]
@@ -74,7 +75,7 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
    <ProfileSection {...fold('maintenance','Follow-ups & maintenance')}><p className="fine">Existing dates, notes and statuses are preserved. Open a scheduled email or phone call above to edit it.</p>{groups.find(g=>g.key==='maintenance')?.rows.filter(t=>t.type!=='Follow-up'&&!metadata(t).appointmentManager).map(taskRow)}{writable&&<details><summary>Schedule by correspondence topic</summary>{topics.map(topic=><div className="actions" key={topic.key}><strong>{topic.label}</strong><button className="secondary" onClick={()=>onAdd('tasks',{business_id:business.id,type:'Follow-up',title:`${topic.label} follow-up`,notes:JSON.stringify({format:'mkt-portfolio-v1',outreachStage:topic.keys[0],text:'Check for a client reply before contacting.'}),contactChannel:'Email'})}>Schedule email / phone call</button></div>)}</details>}</ProfileSection>
   </div>}
 
-  {emailLayoutPilot&&<div role="tabpanel" id="profile-panel-5" aria-labelledby="profile-tab-5" hidden={tab!=='Visibility Check'}><section className="pilot-panel" style={{padding:'16px'}}><h3>Visibility Check · Report Preview</h3><p className="fine">Review and save verified ratings below. This pilot report is a sample until findings have been approved for client sharing.</p><button className="secondary" type="button" disabled={busy} onClick={openCurrentVisibilityReport}>Open current report and PDF preview ↗</button><p className="fine">Client access tracking is not yet connected. Do not send the sample report to clients.</p></section>{ratingsSection}</div>}
+  {emailLayoutPilot&&<div role="tabpanel" id="profile-panel-5" aria-labelledby="profile-tab-5" hidden={tab!=='Visibility Check'}><section className="pilot-panel" style={{padding:'16px'}}><h3>Visibility Check · Report Preview</h3><p className="fine">Review and save verified ratings below. Approve the visibility check internally before sending a client report.</p>{petsPlaceReport?<button className="secondary" type="button" disabled={busy} onClick={openCurrentVisibilityReport}>Open current report and PDF preview ↗</button>:<p className="fine">Visibility ratings and approval are available below. A customized client report and pricing estimate are not yet generated for this business.</p>}<p className="fine">Client access tracking is not yet connected. Do not send an unapproved report to clients.</p></section>{ratingsSection}</div>}
   {emailLayoutPilot&&<div role="tabpanel" id="profile-panel-6" aria-labelledby="profile-tab-6" hidden={tab!=='Sales & payments'}>{groups.filter(g=>g.key==='services').map(workSection)}{salesSection}</div>}
 
  </section>
