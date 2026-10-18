@@ -12,7 +12,7 @@ try{
  const {data:tasks,error}=await client.from('cc_tasks').select('id,title,status,notes,business_id').eq('workspace_id',workspace).in('business_id',approved.map(b=>b.id)).not('status','in','(Done,Cancelled)').limit(1000);
  if(error)throw error;
  const selected=tasks.filter(t=>{try{return ['qa','research','description','image'].includes(JSON.parse(t.notes||'{}').businessChecklistKey)}catch{return false}});
- ids=selected.map(t=>t.id);
+ const extra=await client.from('cc_tasks').select('id,title,status').eq('workspace_id',workspace).contains('details',{review_batch:'loving-longmont-approved-20261018',approved_completion:true}).not('status','in','(Done,Cancelled)');if(extra.error)throw extra.error;selected.push(...extra.data);ids=selected.map(t=>t.id);
  state.textContent=ids.length+' reviewed tasks are ready to mark Done across '+approved.length+' approved business records. Callahan House has no business record and is tracked separately.';
  result.textContent=selected.map(t=>(approved.find(b=>b.id===t.business_id)?.name||'')+' — '+t.title).join('\n');button.disabled=ids.length===0;
 }catch(e){state.textContent=e.message;}
