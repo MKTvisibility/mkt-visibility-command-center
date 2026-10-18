@@ -32,8 +32,8 @@ test('profile shows historical welcome, prepares story or custom, requires revie
  fireEvent.click(screen.getByRole('button',{name:'Prepare Business Story'}));await waitFor(()=>assert.match(screen.getByLabelText('Email text').value,/sample-studio\.html/));assert.equal((await repo.load()).emails.length,before)
 
 
- // The compact campaign controls are restricted to the named test profile.
- assert.equal(screen.queryByRole('checkbox',{name:'Email manually sent: Listing Welcome'}),null)
+ // Every business profile gets the compact controls and preserves campaign outcomes.
+ assert.ok(screen.getByRole('checkbox',{name:'Email manually sent: Listing Welcome'}))
  const pilot={...b,name:"A Pet's Place Animal Hospital"}
  const {campaignTask}=await import('../src/lib/campaigns.js')
  const task=campaignTask(pilot,data,'visibility')
