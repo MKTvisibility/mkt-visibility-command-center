@@ -80,6 +80,18 @@ export function liveRepository(client) {
     async previewLivePage(businessId) {
       const {data,error}=await client.rpc('cc_preview_ll_live_profile',{p_business_id:businessId});if(error)throw error;return data
     },
+    async verifyBusinessPage(businessId,site) {
+      const {data,error}=await client.functions.invoke('publish-business-page',{body:{businessId,site,action:'verify'}})
+      if(error){let message=error.message;try{message=(await error.context.json()).error||message}catch{/* No response on network failure. */}throw new Error(message)}
+      if(!data?.verified||!data.url)throw new Error(data?.error||'The public business page could not be verified. Publish it before preparing the email.')
+      return data.url
+    },
+    async ensureBusinessPage(businessId) {
+      const {data,error}=await client.functions.invoke('publish-business-page',{body:{businessId}})
+      if(error)throw error
+      if(data?.error)throw new Error(data.error)
+      return data
+    },
     async publishLivePage(businessId,signature) {
       const {data,error}=await client.rpc('cc_publish_ll_live_profile',{p_business_id:businessId,p_signature:signature});if(error)throw error;if(!data.active)return data;try{const result=await client.functions.invoke('publish-business-page',{body:{businessId}});return {...data,pageCreation:result.error?{results:[{site:'Business page',success:false,error:result.error.message}]}:result.data}}catch(e){return {...data,pageCreation:{results:[{site:'Business page',success:false,error:e.message}]}}}
     },

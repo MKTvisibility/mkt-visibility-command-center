@@ -26,5 +26,10 @@ test('profile shows historical welcome, prepares story or custom, requires revie
  view.rerender(React.createElement(EmailApproval,{...props,business:restored.businesses.find(row=>row.id==='b'),data:restored}))
  assert.equal(screen.getByRole('button',{name:'Prepare Business Story'}).disabled,false)
  assert.equal(restored.emails.length,before)
+ view.rerender(React.createElement(EmailApproval,{...props,business:restored.businesses.find(row=>row.id==='b'),data:restored,repository:{verifyBusinessPage:async()=>{throw Error('The named business page is not live yet.')}}}))
+ fireEvent.click(screen.getByRole('button',{name:'Prepare Business Story'}));await screen.findByText('The named business page is not live yet.');assert.equal(screen.queryByLabelText('Email text'),null)
+ view.rerender(React.createElement(EmailApproval,{...props,business:restored.businesses.find(row=>row.id==='b'),data:restored,repository:{verifyBusinessPage:async()=> 'https://mktvisibility.github.io/LovingLongmont/sample-studio.html'}}))
+ fireEvent.click(screen.getByRole('button',{name:'Prepare Business Story'}));await waitFor(()=>assert.match(screen.getByLabelText('Email text').value,/sample-studio\.html/));assert.equal((await repo.load()).emails.length,before)
+
  }finally{cleanup();rmSync(dir,{recursive:true,force:true});dom.window.close()}
 })

@@ -26,13 +26,23 @@ Deno.serve(async(req:Request)=>{
   const members=await read('cc_members',`workspace_id=eq.${WORKSPACE}&user_id=eq.${encodeURIComponent(user.id)}&enabled=eq.true&select=role`)
   if(!members.some((m:{role:string})=>['owner','editor'].includes(m.role)))return reply({error:'Only approved editors can create public business pages.'},403)
   const body=await req.text();if(body.length>1000)return reply({error:'Request too large.'},413)
-  const {businessId}=JSON.parse(body);if(!/^[0-9a-f-]{36}$/i.test(businessId||''))throw Error('Choose a saved business.')
+  const {businessId,action,site:requestedSite}=JSON.parse(body);if(!/^[0-9a-f-]{36}$/i.test(businessId||''))throw Error('Choose a saved business.')
   const rows=await read('cc_ll_live_publications',`business_id=eq.${businessId}&workspace_id=eq.${WORKSPACE}&select=business_id,route,public_content,sites,active`)
   const row=rows[0];if(!row)throw Error('Publish the business record before creating its page.')
   if(!row.active)return reply({results:[],unpublished:true})
   const businesses=await read('cc_businesses',`id=eq.${businessId}&workspace_id=eq.${WORKSPACE}&select=notes`);let notes:Record<string,unknown>={};try{notes=JSON.parse(businesses[0]?.notes||'{}')}catch{/* legacy notes */}
   const route=typeof notes.pageFilename==='string'?notes.pageFilename:row.route
   if(!validPageFilename(route))throw Error('Invalid business page filename.')
+  if(action==='verify'){
+   const site=requestedSite||'Loving Longmont',config=SITES[site];
+   if(!config||!row.sites.includes(site))throw Error('This business is not published on the selected website.');
+   const url=config.url+route;
+   const response=await fetch(url,{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(15000)});
+   if(!response.ok)throw Error('The named business page is not live yet. Return to Public listing, publish or retry page creation, and wait for hosting to finish before preparing this email.');
+   const html=await response.text();
+   if(!html.includes(`data-ll-profile="${businessId}"`))throw Error('The page link does not identify this business. Verify the named page before sending.');
+   return reply({verified:true,url,site,businessId});
+  }
   const results=[]
   for(const site of row.sites){
    const config=SITES[site];if(!config)continue
