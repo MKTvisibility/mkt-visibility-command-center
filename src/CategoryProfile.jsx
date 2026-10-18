@@ -31,12 +31,12 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
   finally{setSeoBusy(false)}
  }
  async function openCurrentVisibilityReport(){
-  const url=`${import.meta.env?.BASE_URL || '/mkt-visibility-command-center/'}business-visibility-report.html`
-  const popup=window.open('about:blank','_blank')
-  if(!popup){setError('Please allow pop-ups to open the report.');return}
-  popup.document.title='Preparing business visibility report';popup.document.body.innerHTML='<p style="font:16px Arial;padding:30px">Preparing your business visibility report…</p>'
-  setBusy(true);setError('');setNotice('Loading the business-specific visibility report…')
-  try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)throw new Error('The report template is not published yet (HTTP '+response.status+').');const html=await response.text();if(!html.includes('mkt-business-visibility-ready'))throw new Error('The report template is incomplete.');popup.document.open();popup.document.write(html);popup.document.close()}catch(e){popup.document.body.innerHTML='<div style="font:16px Arial;padding:30px"><h2>Report could not open</h2><p>'+String(e.message).replaceAll('<','&lt;')+'</p><p>Please try again after Command Center finishes publishing.</p></div>';setError('Report could not open: '+e.message);setBusy(false);return}
+  const url=new URL(`${import.meta.env.BASE_URL}business-visibility-report.html`,window.location.origin).href
+  // Open the real report URL: writing into about:blank breaks the report's
+  // origin-based data handshake and can leave the user on an empty screen.
+  const popup=window.open(url,'_blank')
+  if(!popup){setError('Please allow pop-ups for Command Center to open the report.');return}
+  setBusy(true);setError('');setNotice('Opening business-specific visibility report…')
   let payload={business:{id:business.id,name:business.name,city:business.city,website:business.website},assessment:{platforms:{}},reviewed:{},traffic:null,seo:seo}
   try{
    const saved=repository?.intelligence?await repository.intelligence.profile(business.id):profile
@@ -64,12 +64,17 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
    }
   }catch(e){setError('Unable to load all saved visibility details: '+e.message)}
   finally{setBusy(false)}
-  const target=new URL(url,window.location.href).origin
+  const target=window.location.origin
   let delivered=false
-  const timeout=setTimeout(()=>{if(!delivered&&!popup.closed){setError('Report did not finish loading. Please retry.');setNotice('The report window opened but did not confirm readiness.')}},12000)
-  const send=()=>{if(delivered||popup.closed)return;popup.postMessage({type:'mkt-business-visibility-payload',payload},target);delivered=true;window.removeEventListener('message',listener);clearTimeout(timeout);setNotice('Business-specific report opened. Select services and print or save the PDF there.')}
-  const listener=e=>{if(e.origin===target&&e.source===popup&&e.data?.type==='mkt-business-visibility-ready')send()}
+  let timeout
+  const listener=e=>{
+   if(e.origin!==target||e.source!==popup||e.data?.type!=='mkt-business-visibility-ready')return
+   popup.postMessage({type:'mkt-business-visibility-payload',payload},target)
+   if(!delivered){delivered=true;clearTimeout(timeout);setNotice('Business-specific report opened. Select services and print or save the PDF there.')}
+  }
   window.addEventListener('message',listener)
+  timeout=setTimeout(()=>{window.removeEventListener('message',listener);if(!delivered&&!popup.closed)setError('The report page did not load. Try opening the report directly: '+url)},20000)
+
  }
  async function change(rows,choice,label){
   const snapshots=[];setUndo(null);setNotice('')
