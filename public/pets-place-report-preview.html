@@ -43,4 +43,48 @@ document.addEventListener("change",compute);compute();
 function copyEstimate(){const q=compute(),txt=["A Pet's Place Animal Hospital — MKT Visibility Estimate","ONE-TIME SETUP",...q.s.map(x=>x.title+": "+money(x.price)),"Setup total: "+money(q.one),"ONGOING SERVICES",...q.m.map(x=>x.title+": "+money(x.price)+"/month"),"Agreement: "+q.months+" months","Prepaid recurring: "+money(q.recurring),"TOTAL: "+money(q.one+q.recurring),"Proposed estimate; subject to scope and approval."];navigator.clipboard.writeText(txt.join("\n")).then(()=>alert("Estimate copied.")).catch(()=>alert("Copy unavailable in this browser."))}
 
 document.getElementById('showNetwork').addEventListener('change',e=>{document.getElementById('networkPage').hidden=!e.target.checked;document.querySelector('.toolbar button').textContent=e.target.checked?'Save 3-page PDF / Print':'Save 2-page PDF / Print'});
+</script>
+<script>
+(function(){
+ const page=document.getElementById('networkPage');
+ if(!page)return;
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const fmt=v=>v==null?'Not available':Number(v).toLocaleString('en-US');
+ const pretty=d=>{if(!d)return 'Not available';const date=new Date(d+'T12:00:00');return Number.isNaN(date.getTime())?esc(d):date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})};
+ let received=false;
+ function render(report){
+  if(!report||typeof report!=='object'||!Array.isArray(report.profile)||!Array.isArray(report.site))return;
+  const profile=report.profile,site=report.site,actions=report.actions||{},exposure=report.exposure||{};
+  const name=report.business?.name||"A Pet's Place Animal Hospital";
+  const period=report.period||report.reporting_period||{};
+  const dates=report.start||report.period_start||period.start;
+  const end=report.end||report.period_end||period.end;
+  const heading=page.querySelector('.network-heading h1');if(heading)heading.textContent=name;
+  const dateBox=page.querySelector('.network-date');
+  if(dateBox&&dates&&end)dateBox.innerHTML='<b>'+pretty(dates)+' – '+pretty(end)+'</b><br>Prepared '+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const measured=profile[0]!=null&&profile[1]!=null;
+  const summary=page.querySelector('.network-summary p');
+  if(summary)summary.textContent=measured?'Your profile recorded '+fmt(profile[0])+' active users and '+fmt(profile[1])+' page views during this reporting window. These visibility figures do not establish inquiries, customers, or sales.':'Profile traffic data is not available for this reporting period. These visibility figures do not establish inquiries, customers, or sales.';
+  const values=[profile[0],profile[1],site[0],site[1]];
+  page.querySelectorAll('.network-stats strong').forEach((node,i)=>{node.textContent=fmt(values[i])});
+  const narrative=page.querySelectorAll('.network-two')[1];
+  if(narrative){const paragraphs=narrative.querySelectorAll('p');if(paragraphs[0])paragraphs[0].textContent=measured?fmt(profile[0])+' active users and '+fmt(profile[1])+' views provide a starting point for measuring your listing over time. This is a baseline, not a growth comparison.':'Profile measurements are not available for this period.'}
+  const counts=[actions.website,actions.phone,actions.email,actions.social,exposure.ll_listing_impression,exposure.ll_profile_open];
+  page.querySelectorAll('.network-table tbody tr').forEach((tr,i)=>{const td=tr.querySelector('td:last-child');if(td)td.textContent=fmt(counts[i])});
+  if(Array.isArray(report.notes)&&report.notes.length){const limits=page.querySelector('.network-limits');if(limits)limits.textContent='Sources and limitations: Google Analytics 4 and available Loving Longmont tracking. '+report.notes.join(' ')}
+  received=true;
+  const toolbar=document.querySelector('.toolbar');
+  if(toolbar&&!document.getElementById('live-report-note')){const note=document.createElement('span');note.id='live-report-note';note.style.color='#087e70';note.textContent='Latest Command Center traffic data loaded';toolbar.appendChild(note)}
+ }
+ window.addEventListener('message',event=>{
+  if(event.origin!==window.location.origin||event.source!==window.opener||event.data?.type!=='mkt-visibility-traffic-report')return;
+  if(!event.data.report?.business?.name?.toLowerCase().includes("pet's place"))return;
+  render(event.data.report);
+ });
+ if(window.opener){
+  let attempts=0;
+  const ping=()=>{if(received||attempts++>=40){clearInterval(timer);return}window.opener.postMessage({type:'mkt-visibility-report-ready'},window.location.origin)};
+  const timer=setInterval(ping,500);ping();
+ }
+})();
 </script></body></html>
