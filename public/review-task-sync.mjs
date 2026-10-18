@@ -5,7 +5,7 @@ const state=document.getElementById('state'),result=document.getElementById('res
 for(const b of approved){const li=document.createElement('li');li.textContent=b.name;document.getElementById('profiles').append(li);}
 let client,ids=[];
 try{
- const config=JSON.parse(sessionStorage.getItem('mkt-public-config')||'null');
+ const config=JSON.parse(sessionStorage.getItem('mkt-public-config')||'null') || await (await fetch('./review-task-public-config.json')).json();
  if(!config?.url||!config?.key)throw Error('Open Command Center and connect first, then return to this page in the same tab.');
  client=createClient(config.url,config.key,{auth:{persistSession:true,storage:sessionStorage,autoRefreshToken:true,detectSessionInUrl:false}});
  const {data:auth,error:authError}=await client.auth.getUser();if(authError||!auth.user)throw Error('Sign in to Command Center first, then return to this page in the same tab.');
