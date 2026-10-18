@@ -14,6 +14,7 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
  const emailLayoutPilot=true
  const [tab,setTab]=useState('Overview'),[profile,setProfile]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[undo,setUndo]=useState(null),[notice,setNotice]=useState('')
  const [closed,setClosed]=useState({})
+ const [seo,setSeo]=useState(null),[seoBusy,setSeoBusy]=useState(false),[seoError,setSeoError]=useState('')
  const foldIds=['approval','campaigns','work','status','details','appointments','recent','correspondence','scheduled','timeline','notes',...WORK_CATEGORIES.map(([key])=>key)]
  const fold=(id,title,className='pilot-panel',summary)=>({id:`profile-category-${id}`,title,className,summary,open:!closed[id],onToggle:e=>{const isClosed=!e.currentTarget.open;setClosed(current=>Boolean(current[id])===isClosed?current:{...current,[id]:isClosed})}})
  function toggleAll(collapse){setClosed(Object.fromEntries(foldIds.map(id=>[id,collapse])))}
@@ -21,12 +22,20 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
  const groups=WORK_CATEGORIES.map(([key,label])=>({key,label,...categorySummary(tasks,key)})),core=groups.filter(g=>['research','listing'].includes(g.key)),workDone=core.every(g=>g.complete)
  const topics=TOPICS.map(([key,label,keys])=>({key,label,keys,state:conversationStatus(business,data,key,tasks)})),waiting=topics.filter(t=>t.state==='Waiting for client'),owed=topics.filter(t=>t.state==='We need to respond')
  async function run(fn){if(lock.current)return;lock.current=true;setBusy(true);setError('');try{await fn()}catch(e){setError(e.message)}finally{lock.current=false;setBusy(false)}}
+ async function runSeoAudit(){
+  if(!safeUrl(business.website)){setSeoError('Add a valid public website URL to this business profile first.');return}
+  if(!repository?.seoAudit){setSeoError('SEO scanning requires a connected live workspace.');return}
+  setSeoBusy(true);setSeoError('')
+  try{const result=await repository.seoAudit(business.website);setSeo(result)}
+  catch(e){setSeoError(e.message)}
+  finally{setSeoBusy(false)}
+ }
  async function openCurrentVisibilityReport(){
   const url=`${import.meta.env?.BASE_URL || '/mkt-visibility-command-center/'}business-visibility-report.html`
   const popup=window.open(url,'_blank')
   if(!popup){setError('Please allow pop-ups to open the report.');return}
   setBusy(true);setError('');setNotice('Loading the business-specific visibility report…')
-  let payload={business:{id:business.id,name:business.name,city:business.city,website:business.website},assessment:{platforms:{}},reviewed:{},traffic:null}
+  let payload={business:{id:business.id,name:business.name,city:business.city,website:business.website},assessment:{platforms:{}},reviewed:{},traffic:null,seo:seo}
   try{
    const saved=repository?.intelligence?await repository.intelligence.profile(business.id):profile
    payload.assessment=saved?.approved||saved?.assessment||{platforms:{}}
@@ -91,7 +100,7 @@ export default function CategoryProfile({business,data,member,writable,onClose,o
    <ProfileSection {...fold('maintenance','Follow-ups & maintenance')}><p className="fine">Existing dates, notes and statuses are preserved. Open a scheduled email or phone call above to edit it.</p>{groups.find(g=>g.key==='maintenance')?.rows.filter(t=>t.type!=='Follow-up'&&!metadata(t).appointmentManager).map(taskRow)}{writable&&<details><summary>Schedule by correspondence topic</summary>{topics.map(topic=><div className="actions" key={topic.key}><strong>{topic.label}</strong><button className="secondary" onClick={()=>onAdd('tasks',{business_id:business.id,type:'Follow-up',title:`${topic.label} follow-up`,notes:JSON.stringify({format:'mkt-portfolio-v1',outreachStage:topic.keys[0],text:'Check for a client reply before contacting.'}),contactChannel:'Email'})}>Schedule email / phone call</button></div>)}</details>}</ProfileSection>
   </div>}
 
-  {emailLayoutPilot&&<div role="tabpanel" id="profile-panel-5" aria-labelledby="profile-tab-5" hidden={tab!=='Visibility Check'}><section className="pilot-panel" style={{padding:'16px'}}><h3>Visibility Check · Report Preview</h3><p className="fine">Review and save verified ratings below. Approve the visibility check internally before sending a client report.</p><button className="secondary" type="button" disabled={busy} onClick={openCurrentVisibilityReport}>Open business-specific report & estimate ↗</button><p className="fine">Client access tracking is not yet connected. Do not send an unapproved report to clients.</p></section>{tab==='Visibility Check'&&ratingsSection}</div>}
+  {emailLayoutPilot&&<div role="tabpanel" id="profile-panel-5" aria-labelledby="profile-tab-5" hidden={tab!=='Visibility Check'}><section className="pilot-panel" style={{padding:'16px'}}><h3>Visibility Check · Report Preview</h3><p className="fine">Review and save verified ratings below. Approve the visibility check internally before sending a client report.</p><button className="secondary" type="button" disabled={busy} onClick={openCurrentVisibilityReport}>Open business-specific report & estimate ↗</button><p className="fine">Client access tracking is not yet connected. Do not send an unapproved report to clients.</p></section>{tab==='Visibility Check'&&ratingsSection}{tab==='Visibility Check'&&<section className="pilot-panel" style={{padding:'16px',marginTop:12}}><h3>Website SEO · Technical & Content Audit</h3><p className="fine">Scan the business website and up to two internal pages for titles, meta descriptions, headings, canonical tags, structured data, image alt text, indexing signals, and visible content depth. The scores are preliminary HTML checks, not search rankings.</p><p><strong>Website:</strong> {safeUrl(business.website)?<a href={safeUrl(business.website)} target="_blank" rel="noreferrer">{business.website}</a>:'Not provided'}</p><button type="button" className="secondary" disabled={seoBusy||!safeUrl(business.website)} onClick={runSeoAudit}>{seoBusy?'Scanning website…':'Run Website SEO Audit'}</button>{seoError&&<p className="error" role="alert">{seoError}</p>}{seo&&<div style={{marginTop:12}}><p><strong>Technical SEO:</strong> {seo.technical_score}/100 · <strong>Content depth:</strong> {seo.content_score}/100 · <strong>Pages scanned:</strong> {seo.pages?.length||0}</p>{(seo.pages||[]).map(page=><details key={page.url}><summary>{page.title||page.url} · {page.score}/100</summary><p className="fine">{page.url}</p><p>{page.words} visible words · {page.h1} H1 headings · {page.images} images · {page.missingAlt} missing alt text</p><ul>{(page.checks||[]).map(check=><li key={check.name}>{check.pass?'✓':'Needs attention:'} <strong>{check.name}</strong> — {check.detail}</li>)}</ul></details>)}<p className="fine">{seo.limitations}</p><p className="fine">Reopen the report and estimate after running the scan to include these findings. This scan is session-based; it does not automatically approve a client report.</p></div>}</section>}</div>}
   {emailLayoutPilot&&<div role="tabpanel" id="profile-panel-6" aria-labelledby="profile-tab-6" hidden={tab!=='Sales & payments'}>{tab==='Sales & payments'&&groups.filter(g=>g.key==='services').map(workSection)}{tab==='Sales & payments'&&salesSection}</div>}
 
  </section>
