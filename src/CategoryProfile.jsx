@@ -61,6 +61,27 @@ export default function CategoryProfile({business,client,data,member,writable,on
    payload.aiFindings=researchRuns.length?researchRuns[0].research?.findings?.map((finding,i)=>({platform:'Visibility finding '+(i+1),finding,status:'Research draft · needs human review',source:researchRuns[0].research?.sources?.[i]||''}))||[]:[]
    payload.aiFindings.push(...pilotAiTasks.map(task=>{const m=metadata(task);return {platform:m.aiVisibilityPlatform||task.title.split(': ').pop(),finding:m.aiResearchFinding||'',source:m.aiResearchSource||'',status:m.aiVisibilityStatus||'Queued for AI research',edited:!!m.aiResearchEditedAt}}).filter(f=>f.finding||f.status))
    payload.research=researchRuns[0]?.research||null
+   // Merge the most recently saved editable draft notes into the report preview.
+   // Human-approved platform data remains authoritative and is never overwritten.
+   const notes=payload.research?.platform_notes||{}
+   const socials=payload.research?.social_accounts||[]
+   const platforms={...(payload.assessment?.platforms||{})}
+   const fromUrl=url=>{const u=String(url||'').toLowerCase();if(u.includes('facebook.com'))return 'Facebook';if(u.includes('instagram.com'))return 'Instagram';if(u.includes('tiktok.com'))return 'TikTok';if(u.includes('linkedin.com'))return 'LinkedIn';if(u.includes('youtube.com'))return 'YouTube';if(u.includes('pinterest.com'))return 'Pinterest';return null}
+   const researchNotesFor=name=>{
+    if(Object.prototype.hasOwnProperty.call(notes,name))return notes[name]
+    if(name==='Website')return payload.research?.website?'Website: '+payload.research.website:''
+    if(name==='TikTok'&&payload.research?.tiktok_status)return payload.research.tiktok_status
+    if(name==='Other')return [...(payload.research?.findings||payload.research?.opportunities||[]),...(payload.research?.third_party_mentions||payload.research?.mentions||[]).map(m=>'Online mention: '+(m.name||m.url)+' — '+m.url)].join('\n')
+    return socials.filter(x=>fromUrl(x.url)===name).map(x=>'Account: '+x.url+(x.verification?' — '+x.verification:'')).join('\n')
+   }
+   for(const name of new Set([...Object.keys(platforms),...Object.keys(notes),'Website','Google Business Profile','Facebook','Instagram','TikTok','LinkedIn','YouTube','Pinterest','Other'])){
+    const p=platforms[name]||{}
+    if(payload.reviewed?.[name])continue
+    const text=researchNotesFor(name)
+    if(text&&!p.explanation)platforms[name]={...p,explanation:text,state:p.state||'Not Researched'}
+   }
+   payload.assessment={...payload.assessment,platforms}
+   payload.reportUpdatedAt=new Date().toISOString()
    if(payload.research?.platform_notes){payload.aiFindings=Object.entries(payload.research.platform_notes).filter(([,finding])=>finding).map(([platform,finding])=>({platform,finding,status:'Research draft · needs human review'})).concat(payload.aiFindings)}
    payload.approved=(data.tasks||[]).some(t=>t.business_id===business.id&&metadata(t).businessChecklistKey==='visibility-report:approved'&&t.status==='Done')
    const reviewTasks=canonicalProfileTasks(business,data,saved||profile)
