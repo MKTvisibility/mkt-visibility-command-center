@@ -242,7 +242,7 @@ function InternalNotes({ business, data, member, writable, onSave }) {
 }
 
 function BusinessProfile({ business, client, data, member, writable, onClose, onEdit, onAdd, onSave, repository, onBusinessSaved, onSchedule }) {
- return <><DiscoveryReview {...{business,member,writable,onSave}}/><CategoryProfile key={business.id} {...{business,data,member,writable,onClose,onEdit,onAdd,onSave,repository,onBusinessSaved,onSchedule}} components={{BusinessBasics,ProfileRatings,LiveBusinessPage,OutreachDecision,InternalNotes}}/><VisibilityResearchHistory client={client} businessId={business.id}/></>
+ return <><DiscoveryReview {...{business,member,writable,onSave}}/><CategoryProfile key={business.id} {...{business,client,data,member,writable,onClose,onEdit,onAdd,onSave,repository,onBusinessSaved,onSchedule}} components={{BusinessBasics,ProfileRatings,LiveBusinessPage,OutreachDecision,InternalNotes}}/><VisibilityResearchHistory client={client} businessId={business.id}/></>
 }
 
 function Pipeline({ data, writable, onEdit, onSave }) {
