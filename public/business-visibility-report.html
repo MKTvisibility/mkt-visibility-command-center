@@ -36,6 +36,14 @@ if(payload.pilot){
  const weakChannels=Object.entries(platforms).filter(([,p])=>p.score>0&&p.score<=3).map(([name])=>name);
  document.getElementById('pilotStrengths').textContent=strongChannels.length?strongChannels.join(' · '):'No verified strengths entered yet.';
  document.getElementById('pilotWeaknesses').textContent=weakChannels.length?weakChannels.join(' · '):'Research findings awaiting human review.';
+ const issueText=ready.map(f=>f.finding.toLowerCase()).join(' ');
+ const suggestions=new Set();
+ if(/website|seo|meta description|heading|search ranking|schema|indexing/.test(issueText))suggestions.add('web');
+ if(/google|local listing|business profile|reviews|maps/.test(issueText))suggestions.add('seo');
+ if(/facebook|instagram|tiktok|linkedin|social|post|engagement/.test(issueText)){suggestions.add('social');suggestions.add('content')}
+ if(/photo|images|photography/.test(issueText))suggestions.add('photo');
+ document.querySelectorAll('#setups .service,#ongoing .service').forEach(label=>{const key=label.querySelector('input')?.value;if(!suggestions.has(key))return;if(label.querySelector('.suggested'))return;const tag=document.createElement('small');tag.className='suggested';tag.textContent=' ★ Recommended from visibility findings';tag.style.color='#087f74';label.querySelector('div')?.appendChild(tag)});
+ if(ready.length){document.getElementById('actions').innerHTML=ready.map((f,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeText(f.platform)+': '+escapeText(f.finding)+'</td><td>Review</td></tr>').join('');document.getElementById('recommend').textContent='Recommended options are marked ★ based on the research findings. Select only the services you want.';}
  document.getElementById('pilotFindings').innerHTML=ready.length?ready.map(f=>'<div class="pilot-ai"><strong>'+escapeText(f.platform)+'</strong><p>'+escapeText(f.finding)+'</p><small>'+escapeText(f.status||'Pending human review')+'</small>'+(f.source?'<p><a target="_blank" rel="noreferrer" href="'+escapeText(f.source)+'">Research source ↗</a></p>':'')+'</div>').join(''):'<p>AI findings will appear here after the research queue has been processed.</p>';
  document.getElementById('pilotApproval').textContent=payload.approved?'Human approval recorded in Command Center. Confirm this is the approved version before sharing.':'Internal draft — pending human review. Not approved for client distribution.';
  if(!payload.approved){document.getElementById('status').textContent='Internal report preview · Not approved for sending';}
