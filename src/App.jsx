@@ -1,3 +1,4 @@
+import SavedVisibilityReports from './SavedVisibilityReports.jsx'
 import VisibilityResearchHistory from './VisibilityResearchHistory.jsx'
 import KnowledgePages from './KnowledgePages.jsx'
 import AIWorkforce from './AIWorkforce.jsx'
@@ -242,7 +243,7 @@ function InternalNotes({ business, data, member, writable, onSave }) {
 }
 
 function BusinessProfile({ business, client, data, member, writable, onClose, onEdit, onAdd, onSave, repository, onBusinessSaved, onSchedule }) {
- return <><DiscoveryReview {...{business,member,writable,onSave}}/><CategoryProfile key={business.id} {...{business,client,data,member,writable,onClose,onEdit,onAdd,onSave,repository,onBusinessSaved,onSchedule}} components={{BusinessBasics,ProfileRatings,LiveBusinessPage,OutreachDecision,InternalNotes}}/><VisibilityResearchHistory client={client} businessId={business.id}/></>
+ return <><DiscoveryReview {...{business,member,writable,onSave}}/><CategoryProfile key={business.id} {...{business,client,data,member,writable,onClose,onEdit,onAdd,onSave,repository,onBusinessSaved,onSchedule}} components={{BusinessBasics,ProfileRatings,LiveBusinessPage,OutreachDecision,InternalNotes}}/><SavedVisibilityReports client={client} businessId={business.id} member={member} writable={writable}/></>
 }
 
 function Pipeline({ data, writable, onEdit, onSave }) {
