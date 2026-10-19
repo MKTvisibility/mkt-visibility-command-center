@@ -32,6 +32,7 @@ if(payload.pilot||payload.research){
  document.getElementById('pilotExtra').classList.remove('hidden');
  const findings=Array.isArray(payload.aiFindings)?payload.aiFindings:[];
  const ready=findings.filter(f=>f.finding);
+ if(payload.research){const r=payload.research;const summary=[...(r.findings||r.opportunities||[]),...(r.strengths||[])];const bottom=document.querySelector('#bottomline, #bottomLine');if(bottom&&summary.length)bottom.textContent=summary.slice(0,3).join(' ');const date=payload.researchDate?new Date(payload.researchDate).toLocaleDateString():'Date not recorded';const note=document.createElement('p');note.className='pilot-ai';note.textContent='Research conducted: '+date+' · Preliminary findings pending human verification';document.getElementById('pilotFindings')?.prepend(note)}
  const strongChannels=Object.entries(platforms).filter(([,p])=>p.score>=4).map(([name])=>name);
  const weakChannels=Object.entries(platforms).filter(([,p])=>p.score>0&&p.score<=3).map(([name])=>name);
  document.getElementById('pilotStrengths').textContent=strongChannels.length?strongChannels.join(' · '):'No verified strengths entered yet.';
