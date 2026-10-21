@@ -22,6 +22,18 @@ export function intelligenceRepository(client) {
     }
   }
   return {
+    async runVisibility(businessId,platforms){
+      const {data,error}=await client.functions.invoke('research-business',{body:{action:'run',business_id:businessId,platforms}});
+      if(error){
+        let detail;
+        try{detail=await error.context?.json()}catch{/* Use the transport error below. */}
+        throw Error(detail?.error||error.message||'Automatic research could not start.');
+      }
+      if(data?.error)throw Error(data.error);
+      return data;
+    },
+    visibilityJob(businessId){return query(client.from('cc_bi_jobs').select('id,business_id,status,error,started_at,created_at').eq('workspace_id',WORKSPACE_ID).eq('business_id',businessId).order('created_at',{ascending:false}).limit(1).maybeSingle())},
+    visibilityRuns(businessId){return query(client.from('cc_visibility_research_runs').select('id,business_id,researched_at,status,research').eq('workspace_id',WORKSPACE_ID).eq('business_id',businessId).order('researched_at',{ascending:false}).limit(20))},
     profiles(){return rows("cc_bi_profiles")},
     profile(businessId){return query(client.from("cc_bi_profiles").select("*").eq("workspace_id",WORKSPACE_ID).eq("business_id",businessId).maybeSingle())},
     taskHistory(id) {

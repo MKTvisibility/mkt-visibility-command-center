@@ -1,5 +1,5 @@
 // Pure validation shared by the worker and tests. Web pages are untrusted data.
-export function normalizeResearch(result) {
+export function normalizeResearch(result, business) {
   if (result.status !== "completed")
     throw Error("Research response was incomplete.");
   const searches = (result.output || []).filter(
@@ -29,6 +29,13 @@ export function normalizeResearch(result) {
     a = parsed.assessment;
   if (!a || typeof a !== "object" || !a.platforms)
     throw Error("Research did not return an assessment.");
+  if (business && a.business_id !== business.id)
+    throw Error('Research identity did not match the requested business. No report was saved.');
+  if (business && a.fields?.name?.value) {
+    const name=value=>String(value).normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+    if(name(a.fields.name.value)!==name(business.name))
+      throw Error('Research returned a different business name. No report was saved.');
+  }
   const limits = Array.isArray(parsed.limitations)
     ? parsed.limitations.map(String)
     : [];
@@ -76,11 +83,33 @@ export function normalizeResearch(result) {
   a.sources = [...sources]
     .filter((s) => /^https?:\/\//.test(s))
     .map((url) => ({ url, date: a.researched_at }));
+  a.third_party_mentions=(a.third_party_mentions||[]).filter(m=>sources.has(m.url));
   return {
     assessment: a,
     limitations: [...new Set(limits)],
     status: limits.length ? "Partial" : "Awaiting Review",
   };
+}
+
+export function visibilityRun(business,normalized,job){
+ const a=normalized.assessment;
+ const seen=new Set();
+ const mentions=(a.third_party_mentions||[]).filter(m=>{
+  try{const host=new URL(m.url).hostname.replace(/^www\./,'');
+   if(seen.has(host)||host===new URL(business.website||'https://invalid.local').hostname.replace(/^www\./,''))return false;
+   seen.add(host);return true;
+  }catch{return false;}
+ });
+ return {workspace_id:job.workspace_id,business_id:business.id,researched_at:a.researched_at,status:'draft',method:'ai_public_web_search',research:{
+  business_id:business.id,business:business.name,job_id:job.id,website:business.website,
+  assessment:a,summary:a.summary||'',findings:a.opportunities||[],
+  platform_notes:Object.fromEntries(Object.entries(a.platforms||{}).map(([name,p])=>[name,p.explanation||''])),
+  social_accounts:Object.entries(a.platforms||{}).filter(([name,p])=>!['Website','Other','Google Business Profile'].includes(name)&&p.url).map(([name,p])=>({platform:name,url:p.url,verification:p.state})),
+  tiktok_status:a.platforms?.TikTok?.explanation||'Recent activity unavailable.',
+  third_party_mentions:mentions,backlink_reference_count:mentions.length,
+  sources:a.sources,canvas_strengths:a.strengths||[],canvas_weaknesses:a.opportunities||[],
+  action_plan:a.action_plan||[],limitations:normalized.limitations.join(' ')
+ }};
 }
 export function suggestionsFor(a) {
   const tasks = [
