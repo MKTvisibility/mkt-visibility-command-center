@@ -1,5 +1,5 @@
 import { normalizeResearch, suggestionsFor, visibilityRun } from './research.mjs'
-const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type,x-cc-bi-token','Access-Control-Allow-Methods':'POST,OPTIONS'}
+const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info,x-cc-bi-token','Access-Control-Allow-Methods':'POST,OPTIONS'}
 const reply=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}})
 const BASE=Deno.env.get('SUPABASE_URL')!,SERVICE=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,WORKSPACE='c8748032-cdd3-443b-8c56-2e846cc9bf31'
 const sh={apikey:SERVICE,Authorization:`Bearer ${SERVICE}`,'Content-Type':'application/json',Prefer:'return=representation'}
