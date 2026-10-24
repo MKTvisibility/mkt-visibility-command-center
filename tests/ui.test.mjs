@@ -82,7 +82,7 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
   fireEvent.click(screen.getByRole('button',{name:'Try the practice workspace'}))
   await screen.findByText('Your next opportunity starts here.')
   const mainNavigation=screen.getByRole('navigation',{name:'Main navigation'})
-  assert.deepEqual([...mainNavigation.querySelectorAll(':scope > .workspace-nav-item > .workspace-nav-row > button:first-child')].map(b=>b.textContent.replace(/^[◈◉]/,'')),['Dashboard','Future Development','How To','AI Workforce','Partner Messages','Appointment Manager','MKT Visibility','MKT Colorado','Loving Longmont','Master Tasks','Reports','Website & Social Stats','Michelle’s Projects'])
+  assert.deepEqual([...mainNavigation.querySelectorAll(':scope > .workspace-nav-item > .workspace-nav-row > button:first-child')].map(b=>b.textContent.replace(/^[◈◉]/,'')),['Dashboard','AI Workforce','Partner Messages','Appointment Manager','MKT Visibility','MKT Colorado','Loving Longmont','Master Tasks','Reports','Website & Social Stats','Michelle’s Projects','Future Development','How To'])
   assert.equal(within(mainNavigation).queryByRole('button',{name:'Sales Pipeline',exact:true}),null)
   assert.ok(within(mainNavigation).getByRole('button',{name:'MKT Colorado clients and prospects'}))
   assert.ok(within(mainNavigation).getByRole('button',{name:'Loving Longmont email campaigns'}))
