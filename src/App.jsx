@@ -46,7 +46,7 @@ const directoryPages = {
 }
 const navigationPages=[...pages,...Object.keys(directoryPages)]
 const menu = [
-  {page:'Dashboard'}, {page:'Future Development'}, {page:'How To'}, {page:'AI Workforce'}, {page:'Partner Messages'}, {page:'Appointment Manager'},
+  {page:'Dashboard'}, {page:'AI Workforce'}, {page:'Partner Messages'}, {page:'Appointment Manager'},
   {page:'MKT Visibility'},
   {page:'MKT Colorado',children:[
     {page:'Colorado Clients & Prospects',label:'Clients & Prospects',accessibilityLabel:'MKT Colorado clients and prospects'},
@@ -60,6 +60,7 @@ const menu = [
   {page:'Master Tasks',children:['Projects & Tasks','Calendar','Follow-Ups','Team Productivity'].map(page=>({page}))},
   {page:'Reports'}, {page:'Website & Social Stats'},
   {label:'Michelle’s Projects',children:[{page:'Open Theory Cove'},{page:'Boulder County Photography'}]},
+  {page:'Future Development'}, {page:'How To'},
 ]
 
 function WorkspaceMenu({activePage,onPage,due}) {
