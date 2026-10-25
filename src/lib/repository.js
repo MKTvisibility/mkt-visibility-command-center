@@ -129,6 +129,20 @@ export function liveRepository(client) {
       if(data?.error)throw new Error(data.error)
       return data.message
     },
+    async loadAIPrompts() {
+      const {data,error}=await client.from('cc_knowledge_topics').select('*').eq('page','AI Prompts').order('created_at',{ascending:true})
+      if(error)throw error
+      return (data||[]).filter(r=>Array.isArray(r.steps)&&r.steps.length>=4).map(r=>({id:r.id,title:r.title,details:r.goal,category:r.steps[0],agent:r.steps[1],command:r.steps[2],effect:r.steps[3]}))
+    },
+    async createAIPrompt(input) {
+      const member=await this.membership();if(member.role==='viewer')throw new Error('Your account is read-only.')
+      const value=Object.fromEntries(['title','category','details','command','agent','effect'].map(key=>[key,String(input[key]||'').trim()]))
+      if(Object.values(value).some(v=>!v))throw new Error('Complete all prompt fields before saving.')
+      if(value.title.length>180||value.category.length>80||value.details.length>4000||value.command.length>12000||value.effect.length>120)throw new Error('The prompt exceeds a field length limit.')
+      const {data,error}=await client.from('cc_knowledge_topics').insert({page:'AI Prompts',title:value.title,goal:value.details,status:value.effect,steps:[value.category,value.agent,value.command,value.effect],created_by:member.display_name||'MKT partner'}).select().single()
+      if(error)throw error
+      return {id:data.id,...value}
+    },
     async loadAIHeadquarters() {
       const [tasks,threads,messages]=await Promise.all(['cc_ai_tasks','cc_ai_threads','cc_ai_messages'].map(table=>readAll(client,table)))
       return {tasks,threads,messages}
