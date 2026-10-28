@@ -80,3 +80,18 @@ export function blogArticleHtml(post,doc,{imageUrl='',preview=false}={}){
 export function blogPreviewDocument(post,doc,options={}){
  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:white;font-family:Arial,sans-serif}*{box-sizing:border-box}main{padding:0 24px}footer{padding:40px 24px;background:#031827;color:#b8c8cf;font-size:15px}footer div{max-width:1132px;margin:auto}${BLOG_HEADER_CSS}${BLOG_ARTICLE_CSS}</style></head><body>${BLOG_HEADER_HTML}<main><article class="mkt-blog-article">${blogArticleHtml(post,doc,{...options,preview:true})}</article></main><footer><div>MKT Visibility · We Keep Your Business Visible.</div></footer></body></html>`
 }
+
+export function prettyBlogHtml(body,doc){
+ const root=doc.createElement('template');root.innerHTML=blogContentHtml(body,doc)
+ const blocks=new Set(['P','DIV','H2','H3','UL','OL','LI','BLOCKQUOTE'])
+ function format(node,depth){
+  const pad='  '.repeat(depth)
+  if(node.nodeType===3)return node.textContent.trim()?pad+escapeHtml(node.textContent.trim()):''
+  if(node.nodeType!==1)return ''
+  if(!blocks.has(node.tagName))return pad+node.outerHTML
+  const shell=node.cloneNode(false).outerHTML,index=shell.lastIndexOf('</'),open=shell.slice(0,index),close=shell.slice(index)
+  if([...node.children].some(child=>blocks.has(child.tagName)))return pad+open+'\n'+[...node.childNodes].map(child=>format(child,depth+1)).filter(Boolean).join('\n')+'\n'+pad+close
+  return pad+open+'\n'+pad+'  '+node.innerHTML.trim()+'\n'+pad+close
+ }
+ return [...root.content.childNodes].map(node=>format(node,0)).filter(Boolean).join('\n\n')
+}

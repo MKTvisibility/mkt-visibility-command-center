@@ -52,3 +52,13 @@ test('cover image precedes the title, empty opening paragraphs are removed, and 
  for(const label of ['Services','Pricing','Why MKT','AI &amp; Automation','Blog','FAQ','Free Visibility Check'])assert.ok(preview.includes('>'+label+'<'))
  assert.match(preview,/MKT%20Visibility%20Logo.png/)
 })
+
+test('HTML source formatting adds indented blocks while retaining inline text styles and links',async()=>{
+ const {prettyBlogHtml}=await import('../src/lib/blog-content.mjs'),{document}=new JSDOM('').window
+ const body=richBlogBody('<p>A <b>bold</b> sentence with <a href="https://example.com">a link</a>.</p><ul><li>One</li><li>Two</li></ul>',document),pretty=prettyBlogHtml(body,document)
+ assert.match(pretty,/<p>\n  A <b>bold<\/b>/);assert.match(pretty,/<ul>\n  <li>\n    One/)
+ const formatted=document.createElement('div');formatted.innerHTML=pretty
+ const original=document.createElement('div');original.innerHTML=blogContentHtml(body,document)
+ assert.equal(formatted.querySelector('p').textContent.trim(),original.querySelector('p').textContent)
+ assert.equal(formatted.querySelector('a').href,'https://example.com/')
+})

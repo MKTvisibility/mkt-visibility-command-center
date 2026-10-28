@@ -19,3 +19,5 @@ export function blogState(releases,postId,now=Date.now()) {
  const rows=releases.filter(r=>r.post_id===postId)
  return {live:rows.filter(r=>Date.parse(r.published_at)<=now).sort((a,b)=>Date.parse(b.published_at)-Date.parse(a.published_at))[0],scheduled:rows.filter(r=>Date.parse(r.published_at)>now).sort((a,b)=>Date.parse(a.published_at)-Date.parse(b.published_at))[0]}
 }
+
+export function blogImageAlt(post){return post.image_path?(post.image_alt?.trim()||`Cover image for: ${post.title||'MKT Visibility blog post'}`).slice(0,300):''}
