@@ -40,8 +40,9 @@ test('application workflow: setup, practice CRUD, directories, email log, remind
  const live=await transformWithOxc(liveRaw,'LiveBusinessPage.jsx',{jsx:{runtime:'automatic'}})
  const liveFile=join(directory,'LiveBusinessPage.mjs');writeFileSync(liveFile,live.code)
  const biModules={}
- for(const name of ['BlogManager','Discovery','Intelligence','MasterTasks','ProfileRatings','BusinessBasics','ProfileAtAGlance','BusinessReports','TaskCalendar','OutreachWorkflow','ProfileCompletion','PilotProfile','EmailApproval','CampaignProfile','CategoryProfile','Campaigns','BusinessOverview','DashboardReports']){
+ for(const name of ['BlogTextEditor','BlogManager','Discovery','Intelligence','MasterTasks','ProfileRatings','BusinessBasics','ProfileAtAGlance','BusinessReports','TaskCalendar','OutreachWorkflow','ProfileCompletion','PilotProfile','EmailApproval','CampaignProfile','CategoryProfile','Campaigns','BusinessOverview','DashboardReports']){
   let source=readFileSync(new URL('../src/'+name+'.jsx',import.meta.url),'utf8').replace('import "./intelligence.css";','').replaceAll('from "./','from "'+pathToFileURL(join(process.cwd(),'src')).href+'/').replace("import './blog.css'",'').replace("import './intelligence.css'",'').replace("import './business-reports.css'",'').replace("import './campaigns.css'",'').replaceAll("from './","from '"+pathToFileURL(join(process.cwd(),'src')).href+'/')
+  if(name==='BlogManager')source=source.replace(pathToFileURL(join(process.cwd(),'src/BlogTextEditor.jsx')).href,pathToFileURL(biModules.BlogTextEditor).href)
   if(['CategoryProfile','Campaigns'].includes(name))source=source.replace(pathToFileURL(join(process.cwd(),'src/EmailApproval.jsx')).href,pathToFileURL(biModules.EmailApproval).href)
   if(name==='CategoryProfile')source=source.replace(pathToFileURL(join(process.cwd(),'src/CampaignProfile.jsx')).href,pathToFileURL(biModules.CampaignProfile).href)
   if(name==='DashboardReports')source=source.replace(pathToFileURL(join(process.cwd(),'src/BusinessOverview.jsx')).href,pathToFileURL(biModules.BusinessOverview).href)
