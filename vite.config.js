@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 export default defineConfig({
+  server: {allowedHosts: ['terminal.local']},
   plugins: [react()],
   base: process.env.GITHUB_PAGES === 'true' ? '/mkt-visibility-command-center/' : '/',
 })
