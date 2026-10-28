@@ -27,3 +27,28 @@ test('font sizes, colors and families survive HTML and visual editor round trips
  const article=blogArticleHtml({title:'Post',body:richBlogBody(html,document),excerpt:'Do not show a separate introduction'},document)
  assert.doesNotMatch(article,/Do not show a separate introduction/)
 })
+test('first-line paragraph indentation toggles for selected paragraphs and survives saving',async()=>{
+ const {indentBlogParagraphs}=await import('../src/lib/blog-content.mjs'),{document}=new JSDOM('<div id="editor"><p>First paragraph.</p><p>Second paragraph.</p></div>').window
+ const root=document.querySelector('#editor'),range=document.createRange();range.selectNodeContents(root)
+ assert.equal(indentBlogParagraphs(root,range),2)
+ assert.ok([...root.querySelectorAll('p')].every(p=>p.style.textIndent==='2em'))
+ assert.match(blogContentHtml(richBlogBody(root.innerHTML,document),document),/text-indent: 2em/)
+ indentBlogParagraphs(root,range);assert.ok([...root.querySelectorAll('p')].every(p=>p.style.textIndent==='0px'))
+})
+test('uniform smaller text resets its paragraph size and line height, removing larger ancestor font struts',()=>{
+ const {document}=new JSDOM('').window
+ const html=blogContentHtml(richBlogBody('<p style="font-size:48px"><span style="font-size:32px"><font size="1">Small paragraph</font></span></p>',document),document)
+ const root=document.createElement('div');root.innerHTML=html
+ assert.equal(root.firstChild.style.fontSize,'12px');assert.equal(root.firstChild.style.lineHeight,'1.5')
+ assert.equal(root.querySelectorAll('p [style*="font-size"]').length,0)
+ assert.equal(blogContentHtml(richBlogBody(html,document),document),html)
+})
+test('cover image precedes the title, empty opening paragraphs are removed, and the preview has the homepage navigation',()=>{
+ const {document}=new JSDOM('').window,post={title:'Cover story',body:richBlogBody('<p><br></p><div><br></div><p>Opening text</p>',document)}
+ const article=blogArticleHtml(post,document,{imageUrl:'https://example.com/upload.jpg'})
+ assert.ok(article.indexOf('<figure>')<article.indexOf('<h1>'));assert.match(article,/src="https:\/\/example.com\/upload.jpg"/)
+ assert.match(article,/<div class="blog-body"><p>Opening text<\/p><\/div>/)
+ const preview=blogPreviewDocument(post,document,{imageUrl:'https://example.com/upload.jpg'})
+ for(const label of ['Services','Pricing','Why MKT','AI &amp; Automation','Blog','FAQ','Free Visibility Check'])assert.ok(preview.includes('>'+label+'<'))
+ assert.match(preview,/MKT%20Visibility%20Logo.png/)
+})

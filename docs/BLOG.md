@@ -17,3 +17,9 @@ No existing business/task tables or scheduled jobs are changed. No example posts
 ## Validation
 
 `node --test tests/blog*.test.mjs`, `npm run lint`, `npm run build`. Live database rollback tests cover draft privacy, future-release filtering, snapshot preservation, image visibility, unpublishing and workspace authorization. The full existing suite also has unrelated assertions that no longer match business-profile tabs, ratings and email approval behavior; these are outside the blog change.
+
+## Layout and paragraph controls
+
+The public directory, individual posts, and embedded website preview share the homepage logo and navigation. The uploaded featured image is used as the directory thumbnail and appears above the post title. Article spacing is compact and leading empty paragraphs are removed from rendering.
+
+**Paragraph** toggles a `2em` first-line indent for the paragraph at the caret or all selected paragraphs. Enter inherits the paragraph style. Changing a whole paragraph to a smaller font promotes that size to the paragraph itself and uses a 1.5 line-height, removing large inline font wrappers that previously held the line spacing open. Mixed-size text keeps the spacing needed for its remaining larger characters.
