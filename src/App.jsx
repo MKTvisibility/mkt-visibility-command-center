@@ -1,5 +1,6 @@
 import BlogManager from './BlogManager.jsx'
 import SavedVisibilityReports from './SavedVisibilityReports.jsx'
+import ClientReportPortal from './ClientReportPortal.jsx'
 import VisibilityResearchHistory from './VisibilityResearchHistory.jsx'
 import KnowledgePages from './KnowledgePages.jsx'
 import AIWorkforce from './AIWorkforce.jsx'
@@ -347,6 +348,10 @@ function Workspace({ repository, client, demo, session, onExit, onSetup }) {
 }
 
 export default function App() {
+  if(new URLSearchParams(window.location.search).has('report')) return <ClientReportPortal/>
+  return <InternalApp/>
+}
+function InternalApp() {
   const [config, setConfig] = useState(readConfig); const [setup, setSetup] = useState(!config); const [demo, setDemo] = useState(false)
   const [session, setSession] = useState(null); const [authLoading, setAuthLoading] = useState(Boolean(config)); const [authError, setAuthError] = useState('')
   const client = useMemo(() => makeSupabase(config), [config])
