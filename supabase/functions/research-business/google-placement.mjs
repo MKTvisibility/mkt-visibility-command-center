@@ -1,7 +1,7 @@
 export function domainMatches(link,website){try{const a=new URL(link).hostname.replace(/^www\./,''),b=new URL(website).hostname.replace(/^www\./,'');return a===b||a.endsWith('.'+b)}catch{return false}}
 export async function googlePlacement(assessment,business,key,fetcher=fetch){
  const queries=[...new Set((assessment.customer_queries||[]).filter(q=>typeof q==='string'&&q.trim()).map(q=>q.slice(0,200)))].slice(0,6);
- if(!key)return {text:'Google placement has not been verified. A Google results provider must be connected before numeric Google positions can be reported. Public web-search observations below are not Google rank measurements.\n\n'+(assessment.search_findings||''),limitation:'Google rank checking is not configured: add SERPAPI_API_KEY to Edge Function secrets. Web-search observations are not verified Google placement.'};
+ if(!key)return {text:'Google placement has not been verified. The searches reviewed do not establish an exact Google position.\n\n'+(assessment.search_findings||''),limitation:'Exact Google positions were not measured in this report.'};
  if(!queries.length)return {text:'Google placement not verified: customer queries were unavailable.',limitation:'No customer search queries were returned for Google checks.'};
  const observations=await Promise.all(queries.map(async query=>{try{
   const params=new URLSearchParams({engine:'google',q:query,api_key:key,hl:'en',gl:'us',device:'desktop'});if(business.city)params.set('location',business.city+', Colorado, United States');

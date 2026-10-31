@@ -19,7 +19,7 @@ async function worker({role='owner',key='test-key',existing=false,found=true}={}
  if(url.includes('/cc_bi_jobs?')&&options.method==='GET')return json(existing?[{id:'old-job',business_id:business.id,status:'Running'}]:[]);
   if(url.endsWith('/cc_bi_jobs')){writes.push({table:'jobs',data});return json([{id:'new-job',...data}])}
   if(url.includes('api.openai.com')){
-   assert.equal(data.input.includes(business.id),true);assert.equal(data.input.includes(business.name),true)
+   assert.equal(data.input.includes(business.id),true);assert.equal(data.input.includes(business.name),true);assert.match(data.instructions,/MANDATORY CLIENT REPORT STYLE/);assert.match(data.instructions,/at most 5 priorities/)
    return json({id:'resp_test',status:'completed',output:[{type:'web_search_call',status:'completed',action:{sources:[{url:business.website}]}},{type:'message',content:[{type:'output_text',text:JSON.stringify({assessment:{business_id:business.id,fields:{name:{value:business.name,source:business.website}},platforms:{Website:{state:'Rated',score:4,explanation:'Clear service information',evidence:[{url:business.website}]}},summary:'Animal care services are clearly described.'},limitations:[]})}]}]});
   }
   if(url.includes('/rest/v1/')){writes.push({table:url.split('/rest/v1/')[1],data});return json([])}

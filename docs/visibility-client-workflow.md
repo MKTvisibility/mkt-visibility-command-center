@@ -40,3 +40,7 @@ Research now submits a background Responses API job and persists its provider re
 ## Platform editor and supplied URLs
 
 Platform edits now remain in place when checklist/tasks refresh. Research Selected Platforms saves pending settings first, submits the selected platforms and supplied URLs, and surfaces launch errors beside the controls. Saved profile platform URLs are also read by the worker for full checks and scheduled continuation, rather than relying only on the business social_urls array. Team-provided links are candidates to inspect, never proof of accessible content; blocked accounts retain their URLs and are labeled unverified rather than not found. Focused reruns preserve unrelated channel findings and team N/A choices. Only explicit Human Reviewed tasks lock previous findings into the report; saving a URL alone does not lock outdated AI prose.
+
+## Default report writing
+
+All new AI visibility reports, including focused reruns and scheduled checks, use the Canvas report's concise style: a short summary, up to four strengths/opportunities, short channel findings with practical bullets and no more than five priority actions. Research remains thorough. Sources, technical checks and raw measurements stay available separately; uncertain findings remain clearly identified. The client-facing report folds detailed website checks behind a disclosure. Existing approved report snapshots are preserved.
