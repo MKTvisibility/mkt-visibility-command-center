@@ -39,8 +39,19 @@ export function normalizeResearch(result, business) {
   const limits = Array.isArray(parsed.limitations)
     ? parsed.limitations.map(String)
     : [];
+  if(Array.isArray(a.platforms)||typeof a.platforms!=='object')throw Error('Research returned an invalid platform collection.');
+  const platformNames=new Set(['Website','Google Business Profile','Facebook','Instagram','TikTok','LinkedIn','YouTube','Pinterest','Other','Yelp','Tripadvisor','TripAdvisor']);
+  for(const [name,p] of Object.entries(a.platforms)){
+    if(!platformNames.has(name)){
+      if(['summary','services','first_contact','company_background','search_findings','content_recommendations','competitor_findings'].includes(name)&&typeof p==='string'&&!a[name])a[name]=p;
+      if(name==='canvas_metrics'&&p&&typeof p==='object'&&!Array.isArray(p)&&!a.canvas_metrics)a.canvas_metrics=p;
+      if(['strengths','opportunities','action_plan','third_party_mentions','customer_queries'].includes(name)&&Array.isArray(p)&&!a[name])a[name]=p;
+      delete a.platforms[name];continue;
+    }
+    if(!p||typeof p!=='object'||Array.isArray(p)){a.platforms[name]={url:null,state:'Unable to Verify',score:null,explanation:typeof p==='string'?p:'This platform was not returned in a usable format.',evidence:[]};limits.push(name+': research format needs review.');}
+  }
   for (const [name, p] of Object.entries(a.platforms)) {
-    p.evidence = (p.evidence || []).filter(
+    p.evidence = (Array.isArray(p.evidence)?p.evidence:[]).filter(
       (e) => sources.has(e.url) && /^https?:\/\//.test(e.url),
     );
     if ((p.score !== null && p.score !== undefined) || p.state === "Missing") {
@@ -83,7 +94,7 @@ export function normalizeResearch(result, business) {
   a.sources = [...sources]
     .filter((s) => /^https?:\/\//.test(s))
     .map((url) => ({ url, date: a.researched_at }));
-  a.third_party_mentions=(a.third_party_mentions||[]).filter(m=>sources.has(m.url));
+  a.third_party_mentions=(Array.isArray(a.third_party_mentions)?a.third_party_mentions:[]).filter(m=>sources.has(m.url));
   return {
     assessment: a,
     limitations: [...new Set(limits)],

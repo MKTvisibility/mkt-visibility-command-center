@@ -1,3 +1,4 @@
+import {knownPlatformLinks,mergePlatformResearch} from '../supabase/functions/research-business/research-links.mjs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import vm from 'node:vm'
@@ -25,7 +26,7 @@ async function worker({role='owner',key='test-key',existing=false,found=true}={}
   throw Error('Unexpected request '+url);
  };
  const code=(await transformWithOxc(readFileSync('supabase/functions/research-business/index.ts','utf8').replace(/^import .*\n/gm,''),'index.ts')).code;
- vm.runInNewContext(code,{Deno:{env:{get:k=>({SUPABASE_URL:'https://test.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'service',SUPABASE_ANON_KEY:'anon',OPENAI_API_KEY:key})[k]},serve:fn=>{handler=fn}},EdgeRuntime:{waitUntil:p=>pending.push(p)},fetch,Response,AbortSignal,console,googlePlacement,normalizeResearch,suggestionsFor,visibilityRun});
+ vm.runInNewContext(code,{Deno:{env:{get:k=>({SUPABASE_URL:'https://test.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'service',SUPABASE_ANON_KEY:'anon',OPENAI_API_KEY:key})[k]},serve:fn=>{handler=fn}},EdgeRuntime:{waitUntil:p=>pending.push(p)},fetch,Response,AbortSignal,console,knownPlatformLinks,mergePlatformResearch,googlePlacement,normalizeResearch,suggestionsFor,visibilityRun});
  const call=async(body,auth=true)=>handler(new Request('https://test.supabase.co/functions/v1/research-business',{method:'POST',headers:{...(auth?{Authorization:'Bearer session'}:{}),'Content-Type':'application/json'},body:JSON.stringify(body)}));
  return {call,writes,pending,requests};
 }

@@ -1,3 +1,4 @@
+import {knownPlatformLinks,mergePlatformResearch} from '../supabase/functions/research-business/research-links.mjs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import vm from 'node:vm'
@@ -16,7 +17,7 @@ async function setup(){let handler,providerState='queued',retrievalFailure=false
  if(url.includes('/cc_visibility_research_runs')){if(method==='GET')return json(report?[report]:[]);report=body;writes.push({table:'report',body});return json([body])}
  if(url.includes('/rest/v1/')){writes.push({table:url,body});return json([])}throw Error('Unexpected '+url)};
  const source=readFileSync('supabase/functions/research-business/index.ts','utf8').replace(/^import .*\n/gm,'');const code=(await transformWithOxc(source,'index.ts')).code;
- vm.runInNewContext(code,{Deno:{env:{get:k=>({SUPABASE_URL:'https://test.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'server-only',SUPABASE_ANON_KEY:'public',OPENAI_API_KEY:'test-key'})[k]},serve:f=>handler=f},EdgeRuntime:{waitUntil:p=>pending.push(p)},fetch,Response,AbortSignal,console,googlePlacement,normalizeResearch,suggestionsFor,visibilityRun});
+ vm.runInNewContext(code,{Deno:{env:{get:k=>({SUPABASE_URL:'https://test.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'server-only',SUPABASE_ANON_KEY:'public',OPENAI_API_KEY:'test-key'})[k]},serve:f=>handler=f},EdgeRuntime:{waitUntil:p=>pending.push(p)},fetch,Response,AbortSignal,console,knownPlatformLinks,mergePlatformResearch,googlePlacement,normalizeResearch,suggestionsFor,visibilityRun});
  const call=async(body,worker=false)=>handler(new Request('https://test.supabase.co/functions/v1/research-business',{method:'POST',headers:{'content-type':'application/json',...(worker?{'x-cc-bi-token':'test-worker-token'}:{authorization:'Bearer staff-session'})},body:JSON.stringify(body)}));
  const drain=async()=>{while(pending.length)await pending.shift()};return {call,drain,requests,writes,get job(){return job},get report(){return report},complete(){providerState='completed'},interrupt(){retrievalFailure=true},recover(){retrievalFailure=false},age(){job.started_at=new Date(Date.now()-4*60000).toISOString()}}
 }

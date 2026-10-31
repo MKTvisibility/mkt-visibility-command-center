@@ -22,7 +22,7 @@ test('profile report excludes another client’s research and preserves approved
  assert.equal(researchMatchesBusiness({...run,research:{...run.research,business:'Barbed Wire Books'}},pets),false)
  assert.deepEqual(reportAssessment(books,null,run).platforms,{})
  const edited={state:'Rated',score:5,explanation:'Approved reviewer note',review_status:'Approved'}
- assert.equal(reportAssessment(pets,{approved:{platforms:{Website:edited}}},run).platforms.Website.explanation,edited.explanation)
+ assert.equal(reportAssessment(pets,{approved:{platforms:{Website:edited}}},run,[{business_id:pets.id,status:'Done',notes:JSON.stringify({format:'mkt-portfolio-v1',businessChecklistKey:'rating:Website'})}]).platforms.Website.explanation,edited.explanation)
  run.research.platform_notes.Website='Corrected draft note'
  assert.equal(reportAssessment(pets,null,run).platforms.Website.explanation,'Corrected draft note')
 })
@@ -44,4 +44,8 @@ test('report renders distinct business findings, no bookstore boilerplate, and b
   assert.match(dom.window.document.getElementById('bottom').textContent,/Barbed Wire Books/)
   assert.doesNotMatch(dom.window.document.getElementById('channels').textContent,/A Pet's Place/)
  }finally{dom.window.close()}
+})
+
+test('report-level text accidentally nested among platforms is recovered without an infinite polling retry',()=>{
+ const r=response(pets),v=JSON.parse(r.output[1].content[0].text);v.assessment.platforms.summary='Recovered summary';delete v.assessment.summary;v.assessment.platforms.Instagram='Public content could not be verified';r.output[1].content[0].text=JSON.stringify(v);const n=normalizeResearch(r,pets);assert.equal(n.assessment.summary,'Recovered summary');assert.equal(n.assessment.platforms.summary,undefined);assert.equal(n.assessment.platforms.Instagram.state,'Unable to Verify');assert.equal(n.assessment.platforms.Instagram.score,null);assert.equal(n.status,'Partial');
 })

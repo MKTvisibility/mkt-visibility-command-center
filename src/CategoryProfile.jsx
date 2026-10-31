@@ -23,11 +23,11 @@ export default function CategoryProfile({business,client,data,member,writable,on
  const [researchJob,setResearchJob]=useState(null),[researchBusy,setResearchBusy]=useState(false),[researchError,setResearchError]=useState('')
  const pilotAiTasks=(data.tasks||[]).filter(t=>t.business_id===business.id&&t.title?.startsWith('Have AI Run Visibility Check:'))
  useEffect(()=>{if(!client)return;let active=true;client.from('cc_visibility_research_runs').select('id,business_id,researched_at,status,research').eq('business_id',business.id).order('researched_at',{ascending:false}).limit(20).then(({data,error})=>{if(active){if(error)setError(error.message);else setResearchRuns((data||[]).filter(r=>researchMatchesBusiness(r,business)))}});return()=>{active=false}},[client,business])
- async function runVisibility(platforms){
+ async function runVisibility(platforms,platformUrls){
   if(!repository?.intelligence?.runVisibility){setResearchError('Connect to the live workspace to run automatic research.');return}
   setResearchBusy(true);setResearchError('');setNotice('');setReportOpen(false)
-  try{const job=await repository.intelligence.runVisibility(business.id,Array.isArray(platforms)?platforms:undefined);setResearchJob({id:job.job_id,business_id:business.id,status:job.status});if(!platforms&&safeUrl(business.website)&&repository?.seoAudit)runSeoAudit()}
-  catch(e){setResearchError(e.message);setResearchBusy(false)}
+  try{const job=await repository.intelligence.runVisibility(business.id,Array.isArray(platforms)?platforms:undefined,platformUrls);setResearchJob({id:job.job_id,business_id:business.id,status:job.status});if(!platforms&&safeUrl(business.website)&&repository?.seoAudit)runSeoAudit()}
+  catch(e){setResearchError(e.message);setResearchBusy(false);if(Array.isArray(platforms))throw e}
  }
  const finishResearch=useEffectEvent(async job=>{
   const rows=(await repository.intelligence.visibilityRuns(business.id)).filter(r=>researchMatchesBusiness(r,business))

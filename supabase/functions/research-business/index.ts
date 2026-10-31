@@ -1,3 +1,4 @@
+import {knownPlatformLinks,mergePlatformResearch} from './research-links.mjs'
 import {googlePlacement} from './google-placement.mjs'
 import { normalizeResearch, suggestionsFor, visibilityRun } from './research.mjs'
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info,x-cc-bi-token','Access-Control-Allow-Methods':'POST,OPTIONS'}
@@ -10,7 +11,7 @@ const DEEP_DIVE=`Perform a deep public-source visibility review, not only a home
 const configurationError='Automatic research is not configured. Add OPENAI_API_KEY in Supabase → Edge Functions → Secrets. Your ChatGPT subscription does not supply the website’s API access.'
 async function db(path:string,body?:unknown,method='POST',prefer='return=representation'){
  const r=await fetch(BASE+'/rest/v1/'+path,{method,headers:{...sh,Prefer:prefer},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(15000)})
- if(!r.ok)throw Error('Research database operation failed.')
+ if(!r.ok){const detail=await r.json().catch(()=>({}));console.error('Research database failure',r.status,detail.code,detail.message);throw Error(r.status>=500?'Research database temporarily unavailable.':'Research database request rejected ('+String(detail.code||r.status)+'): '+String(detail.message||'Unable to save research.').slice(0,300))}
  return r.status===204?null:await r.json()
 }
 async function patchJob(id:string,body:unknown){return db(`cc_bi_jobs?id=eq.${id}&workspace_id=eq.${WORKSPACE}`,body,'PATCH')}
@@ -26,18 +27,24 @@ async function processResearch(job:any,selected=platforms){
   if(!Deno.env.get('OPENAI_API_KEY')){await patchJob(job.id,{status:'Blocked',error:configurationError,finished_at:new Date().toISOString()});return {blocked:true,configured:false}}
   const b=(await db(`cc_businesses?id=eq.${job.business_id}&workspace_id=eq.${WORKSPACE}&select=id,name,city,address,phone,website,social_urls`,undefined,'GET'))[0]
   if(!b)throw Error('Business record unavailable.')
+  selected=Array.isArray(job.requested_platforms)&&job.requested_platforms.length?job.requested_platforms:selected
+  const savedProfile=(await db(`cc_bi_profiles?business_id=eq.${b.id}&workspace_id=eq.${WORKSPACE}&select=approved&limit=1`,undefined,'GET'))[0]?.approved||{}
+  const links=knownPlatformLinks(b,savedProfile,job.platform_urls||{})
+  const excluded=Object.entries(savedProfile.platforms||{}).filter(([,p]:any)=>p.state==='Not Applicable').map(([name])=>name)
+  const previous=(await db(`cc_visibility_research_runs?business_id=eq.${b.id}&workspace_id=eq.${WORKSPACE}&order=researched_at.desc&limit=1`,undefined,'GET'))[0]?.research||null
+
   let result:any
   if(job.provider_response_id){
    if(Date.now()-Date.parse(job.started_at)>30*60*1000)throw Error('Research exceeded 30 minutes. Start a new check to retry.');
    const response=await fetch('https://api.openai.com/v1/responses/'+encodeURIComponent(job.provider_response_id)+'?include[]=web_search_call.action.sources',{headers:{Authorization:`Bearer ${Deno.env.get('OPENAI_API_KEY')}`},signal:AbortSignal.timeout(20000)});
-   if(!response.ok){if(response.status===404)throw Error('The saved research response expired. Start a new check to retry.');throw Error('Research status is temporarily unavailable.')}
+   if(!response.ok){if(response.status===404)throw Error('The saved research response expired. Start a new check to retry.');if(response.status===401||response.status===403)throw Error('The research API connection needs to be reconnected.');throw Error(response.status>=500||response.status===429?'Research status temporarily unavailable (HTTP '+response.status+').':'Research status request rejected (HTTP '+response.status+').')}
    result=await response.json()
   }else{
   const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${Deno.env.get('OPENAI_API_KEY')}`,'Content-Type':'application/json'},signal:AbortSignal.timeout(30000),body:JSON.stringify({
    model:Deno.env.get('BI_RESEARCH_MODEL')||'gpt-5-mini',background:true,store:false,tools:[{type:'web_search',search_context_size:'high'}],tool_choice:'required',include:['web_search_call.action.sources'],max_output_tokens:16000,
-   instructions:RESEARCH_INSTRUCTIONS+DEEP_DIVE+' Required identity: assessment.business_id must be '+JSON.stringify(b.id)+' and assessment.fields.name.value must be '+JSON.stringify(b.name)+'.',
-   text:{format:{type:'json_schema',name:'visibility_research',strict:false,schema:{type:'object',properties:{assessment:{type:'object',properties:{business_id:{type:'string',enum:[b.id]},fields:{type:'object'},platforms:{type:'object'}},required:['business_id','fields','platforms'],additionalProperties:true},limitations:{type:'array',items:{type:'string'}}},required:['assessment','limitations'],additionalProperties:false}}},
-   input:JSON.stringify({business_id:b.id,business:b.name,city:b.city,address:b.address,phone:b.phone,website:b.website,social_urls:b.social_urls,requested_platforms:selected,as_of:new Date().toISOString()})
+   instructions:RESEARCH_INSTRUCTIONS+DEEP_DIVE+' Read known_platform_links first and attempt the supplied URLs directly. A supplied URL is not proof of accessible content; if blocked preserve the URL, state Unable to Verify and explain the access limitation. Never say an account was not found when its URL was supplied. Respect not_applicable_platforms. On a focused run, research requested_platforms and revise report-wide findings/actions to remove obsolete claims about those platforms while preserving unrelated findings in previous_assessment.'+' Required identity: assessment.business_id must be '+JSON.stringify(b.id)+' and assessment.fields.name.value must be '+JSON.stringify(b.name)+'.',
+   text:{format:{type:'json_schema',name:'visibility_research',strict:false,schema:{type:'object',properties:{assessment:{type:'object',properties:{business_id:{type:'string',enum:[b.id]},fields:{type:'object'},platforms:{type:'object',properties:Object.fromEntries([...platforms,'Yelp','TripAdvisor'].map(name=>[name,{type:'object',additionalProperties:true}])),additionalProperties:false}},required:['business_id','fields','platforms'],additionalProperties:true},limitations:{type:'array',items:{type:'string'}}},required:['assessment','limitations'],additionalProperties:false}}},
+   input:JSON.stringify({business_id:b.id,business:b.name,city:b.city,address:b.address,phone:b.phone,website:b.website,social_urls:[...new Set([...(b.social_urls||[]),...Object.entries(links).filter(([name])=>name!=='Website').map(([,url])=>url)])],known_platform_links:links,not_applicable_platforms:excluded,previous_assessment:previous?{platforms:previous.assessment?.platforms,summary:previous.summary,action_plan:previous.action_plan}:null,requested_platforms:selected,as_of:new Date().toISOString()})
   })})
   if(!response.ok&&response.status===400){const detail=await response.json().catch(()=>({}));throw Error('Research request was rejected: '+String(detail?.error?.message||'unsupported provider configuration').slice(0,500))}
   if(!response.ok)throw Error(response.status===429?'Research provider rate limit or API billing limit. Check API billing and retry.':response.status===401?'Research API key is invalid. Update OPENAI_API_KEY in Edge Function Secrets.':'Research provider request failed. Retry later.')
@@ -51,7 +58,7 @@ async function processResearch(job:any,selected=platforms){
   }
   if(result.status!=='completed')throw Error(result.status==='incomplete'?'Research response was incomplete. Start a new check to retry.':'Research provider could not complete this check. Start a new check to retry.')
   await patchJob(job.id,{progress:'Preparing the report and checking search evidence'})
-  const normalized=normalizeResearch(result,b)
+  const normalized=mergePlatformResearch(normalizeResearch(result,b),previous,selected,links,excluded)
   const google=await googlePlacement(normalized.assessment,b,Deno.env.get('SERPAPI_API_KEY'));normalized.assessment.search_findings=google.text;if(google.limitation){normalized.limitations.push(google.limitation);normalized.status='Partial'}
   await db('cc_bi_research?on_conflict=job_id',{job_id:job.id,workspace_id:job.workspace_id,business_id:b.id,assessment:normalized.assessment,status:normalized.status,limitations:normalized.limitations.join('\n'),method:'AI web research'},'POST','resolution=ignore-duplicates,return=representation')
   await db('cc_visibility_research_runs',visibilityRun(b,normalized,job))
@@ -63,8 +70,8 @@ async function processResearch(job:any,selected=platforms){
   return {success:true,status:normalized.status}
  }catch(e){
   const message=e&&typeof e==='object'&&'message' in e?String(e.message):'Research failed.'
-  const temporary=submitted&&/timeout|timed out|temporarily|fetch|network|database/i.test(message)
-  if(temporary){if(leased)try{await patchJob(job.id,{provider_response_id:job.provider_response_id,processing_until:null,progress:'Research continues; reconnecting to collect its result',error:''})}catch{console.error('Research polling lease will expire automatically.')}return {pending:true,status:'Running'}}
+  const temporary=submitted&&(['TimeoutError','AbortError'].includes(e?.name)||/^(Research (status|database).*temporarily|fetch failed|network (error|interrupted)|Signal timed out)/i.test(message))
+  if(temporary){if(leased)try{await patchJob(job.id,{provider_response_id:job.provider_response_id,processing_until:null,progress:'Research continues; reconnecting to collect its result',error:''})}catch{console.error('Research polling lease will expire automatically.')}console.warn('Research result collection will retry',job.id,message);return {pending:true,status:'Running',diagnostic:message}}
   try{await patchJob(job.id,{status:'Failed',error:/timed out|timeout/i.test(message)?'Research submission did not respond in time. Start a new check to retry.':message.slice(0,1000),processing_until:null,progress:'Research needs attention',finished_at:new Date().toISOString()})}catch{console.error('Research job status could not be saved.')}
   return {error:message}
  }
@@ -88,7 +95,7 @@ Deno.serve(async(req:Request)=>{
    role=(await r.json())[0]?.role||''
    if(!['owner','editor','viewer'].includes(role))return reply({error:'Workspace access required.'},403)
   }
-  const raw=await req.text();if(raw.length>2000)return reply({error:'Request too large.'},413)
+  const raw=await req.text();if(raw.length>10000)return reply({error:'Request too large.'},413)
   const body=raw?JSON.parse(raw):{},configured=Boolean(Deno.env.get('OPENAI_API_KEY'))
   if(body.action==='status')return reply({configured,googleRankConfigured:Boolean(Deno.env.get('SERPAPI_API_KEY')),schedule:'Research starts immediately and is collected by a durable worker every minute',model:Deno.env.get('BI_RESEARCH_MODEL')||'gpt-5-mini',limits:'Public sources only. Inaccessible feeds and unobserved metrics remain unknown.'})
   if(body.action==='run'){
@@ -98,11 +105,12 @@ Deno.serve(async(req:Request)=>{
    const b=(await db(`cc_businesses?id=eq.${body.business_id}&workspace_id=eq.${WORKSPACE}&select=id`,undefined,'GET'))[0]
    if(!b)return reply({error:'Business not found in this workspace.'},404)
    const existing=(await db(`cc_bi_jobs?workspace_id=eq.${WORKSPACE}&business_id=eq.${b.id}&status=in.(Queued,Running)&order=created_at.desc&limit=1`,undefined,'GET'))[0]
-   if(existing)return reply({job_id:existing.id,business_id:b.id,status:existing.status},202)
+   if(existing){if(body.platform_urls&&Object.keys(body.platform_urls).length)return reply({error:'A visibility check is already running. Your link changes are saved; wait for it to finish before rerunning selected platforms.'},409);return reply({job_id:existing.id,business_id:b.id,status:existing.status},202)}
    const selected=Array.isArray(body.platforms)&&body.platforms.length?platforms.filter(p=>body.platforms.includes(p)):platforms
    if(!selected.length)return reply({error:'Select a supported platform.'},400)
+   const platform_urls=knownPlatformLinks({}, {},Object.fromEntries(Object.entries(body.platform_urls||{}).filter(([name])=>platforms.includes(name))))
    let jobs
-   try{jobs=await db('cc_bi_jobs',{workspace_id:WORKSPACE,business_id:b.id,status:'Running',started_at:new Date().toISOString(),created_by:userId})}
+   try{jobs=await db('cc_bi_jobs',{workspace_id:WORKSPACE,business_id:b.id,status:'Running',started_at:new Date().toISOString(),created_by:userId,requested_platforms:selected,platform_urls})}
    catch(e){const raced=(await db(`cc_bi_jobs?workspace_id=eq.${WORKSPACE}&business_id=eq.${b.id}&status=in.(Queued,Running)&limit=1`,undefined,'GET'))[0];if(raced)return reply({job_id:raced.id,business_id:b.id,status:raced.status},202);throw e}
    const job=jobs[0]
    EdgeRuntime.waitUntil(processResearch(job,selected))

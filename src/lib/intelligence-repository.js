@@ -22,8 +22,8 @@ export function intelligenceRepository(client) {
     }
   }
   return {
-    async runVisibility(businessId,platforms){
-      const {data,error}=await client.functions.invoke('research-business',{body:{action:'run',business_id:businessId,platforms}});
+    async runVisibility(businessId,platforms,platform_urls){
+      const {data,error}=await client.functions.invoke('research-business',{body:{action:'run',business_id:businessId,platforms,platform_urls}});
       if(error){
         let detail;
         try{detail=await error.context?.json()}catch{/* Use the transport error below. */}

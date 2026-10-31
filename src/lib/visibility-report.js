@@ -16,7 +16,8 @@ export function reportAssessment(business,profile,run,tasks=[]){
  const platforms=Object.fromEntries(Object.entries(draft.platforms||{}).map(([name,p])=>[name,{...p,explanation:research?.platform_notes?.[name]??p.explanation}]))
  for(const [name,p] of Object.entries(approved.platforms||{})){
   const reviewed=tasks.some(t=>t.business_id===business.id&&metadata(t).businessChecklistKey===`rating:${name}`&&t.status==='Done')
-  if(reviewed||p.review_status==='Approved'||p.state==='Not Applicable'||!platforms[name])platforms[name]=p
+  if(reviewed||p.state==='Not Applicable'||!platforms[name])platforms[name]=p
+  else if(p.url_source==='team'&&p.url)platforms[name]={...platforms[name],url:p.url,url_source:'team'}
  }
  return {...approved,...draft,platforms}
 }
