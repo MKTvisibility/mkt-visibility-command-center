@@ -108,7 +108,7 @@ export function visibilityRun(business,normalized,job){
   tiktok_status:a.platforms?.TikTok?.explanation||'Recent activity unavailable.',
   third_party_mentions:mentions,backlink_reference_count:mentions.length,
   sources:a.sources,canvas_strengths:a.strengths||[],canvas_weaknesses:a.opportunities||[],
-  action_plan:a.action_plan||[],limitations:normalized.limitations.join(' ')
+  canvas_metrics:a.canvas_metrics||{},company_background:a.company_background||'',search_findings:a.search_findings||'',content_recommendations:a.content_recommendations||'',competitor_findings:a.competitor_findings||'',action_plan:a.action_plan||[],limitations:normalized.limitations.join(' ')
  }};
 }
 export function suggestionsFor(a) {

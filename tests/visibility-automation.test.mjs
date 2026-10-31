@@ -27,7 +27,7 @@ test('profile report excludes another client’s research and preserves approved
  assert.equal(reportAssessment(pets,null,run).platforms.Website.explanation,'Corrected draft note')
 })
 test('report renders distinct business findings, no bookstore boilerplate, and blocks mismatched payloads',()=>{
- const dom=new JSDOM(readFileSync('public/business-visibility-report.html','utf8'),{url:'https://example.com/',runScripts:'dangerously'})
+ const dom=new JSDOM(readFileSync('public/business-visibility-report.html','utf8').replace('<script src="business-visibility-report.js"></script>','<script>'+readFileSync('public/business-visibility-report.js','utf8')+'</script>'),{url:'https://example.com/',runScripts:'dangerously'})
  try{
   const run=visibilityRun(pets,normalizeResearch(response(pets),pets),{id:'job1',workspace_id:'workspace'})
   dom.window.fill({business:pets,research:run.research,assessment:run.research.assessment})
