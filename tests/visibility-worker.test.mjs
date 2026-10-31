@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import vm from 'node:vm'
 import {readFileSync} from 'node:fs'
 import {transformWithOxc} from 'vite'
+import {googlePlacement} from '../supabase/functions/research-business/google-placement.mjs'
 import {normalizeResearch,suggestionsFor,visibilityRun} from '../supabase/functions/research-business/research.mjs'
 const business={id:'815a9d3a-a929-546d-9720-e461f9d3c05c',name:"A Pet's Place Animal Hospital",website:'https://apetsplacelongmont.com/'}
 async function worker({role='owner',key='test-key',existing=false,found=true}={}){
@@ -22,8 +23,8 @@ async function worker({role='owner',key='test-key',existing=false,found=true}={}
   if(url.includes('/rest/v1/')){writes.push({table:url.split('/rest/v1/')[1],data});return json([])}
   throw Error('Unexpected request '+url);
  };
- const code=(await transformWithOxc(readFileSync('supabase/functions/research-business/index.ts','utf8').replace(/^import .*\n/,''),'index.ts')).code;
- vm.runInNewContext(code,{Deno:{env:{get:k=>({SUPABASE_URL:'https://test.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'service',SUPABASE_ANON_KEY:'anon',OPENAI_API_KEY:key})[k]},serve:fn=>{handler=fn}},EdgeRuntime:{waitUntil:p=>pending.push(p)},fetch,Response,AbortSignal,console,normalizeResearch,suggestionsFor,visibilityRun});
+ const code=(await transformWithOxc(readFileSync('supabase/functions/research-business/index.ts','utf8').replace(/^import .*\n/gm,''),'index.ts')).code;
+ vm.runInNewContext(code,{Deno:{env:{get:k=>({SUPABASE_URL:'https://test.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'service',SUPABASE_ANON_KEY:'anon',OPENAI_API_KEY:key})[k]},serve:fn=>{handler=fn}},EdgeRuntime:{waitUntil:p=>pending.push(p)},fetch,Response,AbortSignal,console,googlePlacement,normalizeResearch,suggestionsFor,visibilityRun});
  const call=async(body,auth=true)=>handler(new Request('https://test.supabase.co/functions/v1/research-business',{method:'POST',headers:{...(auth?{Authorization:'Bearer session'}:{}),'Content-Type':'application/json'},body:JSON.stringify(body)}));
  return {call,writes,pending,requests};
 }
@@ -41,7 +42,7 @@ test('one profile click launches actual web research in the background and saves
  assert.equal(saved.business_id,business.id);assert.equal(saved.research.business,business.name);assert.equal(saved.research.job_id,'new-job');assert.equal(saved.research.assessment.platforms.Website.score,4);
  assert.equal(w.writes.some(x=>x.table==='cc_bi_profiles'),false);
  assert.equal(w.writes.some(x=>/email|publish/.test(x.table)),false);
- assert.equal(w.writes.at(-1).data.status,'Awaiting Review');
+ assert.equal(w.writes.at(-1).data.status,'Partial');
 })
 test('repeated clicks reuse an active job rather than buying duplicate research',async()=>{
  const w=await worker({existing:true});const r=await w.call({action:'run',business_id:business.id});assert.equal((await r.json()).job_id,'old-job');assert.equal(w.pending.length,0);assert.equal(w.writes.length,0);
