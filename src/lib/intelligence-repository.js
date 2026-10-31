@@ -32,7 +32,8 @@ export function intelligenceRepository(client) {
       if(data?.error)throw Error(data.error);
       return data;
     },
-    visibilityJob(businessId){return query(client.from('cc_bi_jobs').select('id,business_id,status,error,started_at,created_at').eq('workspace_id',WORKSPACE_ID).eq('business_id',businessId).order('created_at',{ascending:false}).limit(1).maybeSingle())},
+    async progressVisibility(businessId){const {data,error}=await client.functions.invoke('research-business',{body:{action:'progress',business_id:businessId}});if(error)throw error;return data},
+    visibilityJob(businessId){return query(client.from('cc_bi_jobs').select('id,business_id,status,error,progress,started_at,created_at').eq('workspace_id',WORKSPACE_ID).eq('business_id',businessId).order('created_at',{ascending:false}).limit(1).maybeSingle())},
     visibilityRuns(businessId){return query(client.from('cc_visibility_research_runs').select('id,business_id,researched_at,status,research').eq('workspace_id',WORKSPACE_ID).eq('business_id',businessId).order('researched_at',{ascending:false}).limit(20))},
     profiles(){return rows("cc_bi_profiles")},
     profile(businessId){return query(client.from("cc_bi_profiles").select("*").eq("workspace_id",WORKSPACE_ID).eq("business_id",businessId).maybeSingle())},

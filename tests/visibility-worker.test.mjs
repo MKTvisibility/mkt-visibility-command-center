@@ -14,11 +14,12 @@ async function worker({role='owner',key='test-key',existing=false,found=true}={}
   if(url.endsWith('/auth/v1/user'))return json({id:'test-user'});
   if(url.includes('/cc_members?'))return json([{role}]);
   if(url.includes('/cc_businesses?'))return json(found?[business]:[]);
-  if(url.includes('/cc_bi_jobs?')&&options.method==='GET')return json(existing?[{id:'old-job',business_id:business.id,status:'Running'}]:[]);
+  if(url.includes('/cc_bi_jobs?')&&options.method==='PATCH'){writes.push({table:'job-update',data});return json([{id:'new-job',workspace_id:'c8748032-cdd3-443b-8c56-2e846cc9bf31',business_id:business.id,status:'Running',...data}])}
+ if(url.includes('/cc_bi_jobs?')&&options.method==='GET')return json(existing?[{id:'old-job',business_id:business.id,status:'Running'}]:[]);
   if(url.endsWith('/cc_bi_jobs')){writes.push({table:'jobs',data});return json([{id:'new-job',...data}])}
   if(url.includes('api.openai.com')){
    assert.equal(data.input.includes(business.id),true);assert.equal(data.input.includes(business.name),true)
-   return json({status:'completed',output:[{type:'web_search_call',status:'completed',action:{sources:[{url:business.website}]}},{type:'message',content:[{type:'output_text',text:JSON.stringify({assessment:{business_id:business.id,fields:{name:{value:business.name,source:business.website}},platforms:{Website:{state:'Rated',score:4,explanation:'Clear service information',evidence:[{url:business.website}]}},summary:'Animal care services are clearly described.'},limitations:[]})}]}]});
+   return json({id:'resp_test',status:'completed',output:[{type:'web_search_call',status:'completed',action:{sources:[{url:business.website}]}},{type:'message',content:[{type:'output_text',text:JSON.stringify({assessment:{business_id:business.id,fields:{name:{value:business.name,source:business.website}},platforms:{Website:{state:'Rated',score:4,explanation:'Clear service information',evidence:[{url:business.website}]}},summary:'Animal care services are clearly described.'},limitations:[]})}]}]});
   }
   if(url.includes('/rest/v1/')){writes.push({table:url.split('/rest/v1/')[1],data});return json([])}
   throw Error('Unexpected request '+url);
