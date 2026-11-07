@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 import {JSDOM} from 'jsdom'
+import {setups,monthly,money,estimateSelection} from '../public/visibility-pricing.mjs'
 import {normalizeResearch,visibilityRun} from '../supabase/functions/research-business/research.mjs'
 import {researchMatchesBusiness,reportAssessment} from '../src/lib/visibility-report.js'
 const pets={id:'815a9d3a-a929-546d-9720-e461f9d3c05c',name:"A Pet's Place Animal Hospital",website:'https://apetsplacelongmont.com/'},books={id:'f632d5d8-bf5a-5900-b1d5-40c4035db7cb',name:'Barbed Wire Books',website:'https://www.barbedwirebooks.org/'}
@@ -27,22 +28,24 @@ test('profile report excludes another client’s research and preserves approved
  assert.equal(reportAssessment(pets,null,run).platforms.Website.explanation,'Corrected draft note')
 })
 test('report renders distinct business findings, no bookstore boilerplate, and blocks mismatched payloads',()=>{
- const dom=new JSDOM(readFileSync('public/business-visibility-report.html','utf8').replace('<script src="business-visibility-report.js"></script>','<script>'+readFileSync('public/business-visibility-report.js','utf8')+'</script>'),{url:'https://example.com/',runScripts:'dangerously'})
+ const dom=new JSDOM(readFileSync('public/business-visibility-report.html','utf8'),{url:'https://example.com/',runScripts:'outside-only'});
+ const w=dom.window;w.ResizeObserver=class{observe(){}};Object.assign(w,{setups,monthly,money,estimateSelection});w.eval(readFileSync('public/business-visibility-report.js','utf8').replace(/^import[^\n]+\n/,''));
+ const fill=payload=>w.dispatchEvent(new w.MessageEvent('message',{origin:w.location.origin,source:w.parent,data:{type:'mkt-business-visibility-payload',payload}}));
  try{
-  const run=visibilityRun(pets,normalizeResearch(response(pets),pets),{id:'job1',workspace_id:'workspace'})
-  dom.window.fill({business:pets,research:run.research,assessment:run.research.assessment})
-  assert.match(dom.window.document.getElementById('bottom').textContent,/A Pet's Place/)
-  assert.doesNotMatch(dom.window.document.body.textContent,/Barbed Wire|bookstore|old.*events/i)
-  assert.match(dom.window.document.getElementById('channels').textContent,/4\/5/)
-  assert.match(dom.window.document.getElementById('channels').textContent,/Local reference/)
-  assert.equal(dom.window.document.querySelectorAll('input[data-kind]:checked').length,0)
-  dom.window.fill({business:books,research:run.research,assessment:run.research.assessment})
-  assert.match(dom.window.document.getElementById('bottom').textContent,/does not match/)
-  assert.equal(dom.window.document.getElementById('channels').textContent,'')
-  const bookRun=visibilityRun(books,normalizeResearch(response(books),books),{id:'job2',workspace_id:'workspace'})
-  dom.window.fill({business:books,research:bookRun.research,assessment:bookRun.research.assessment})
-  assert.match(dom.window.document.getElementById('bottom').textContent,/Barbed Wire Books/)
-  assert.doesNotMatch(dom.window.document.getElementById('channels').textContent,/A Pet's Place/)
+  const run=visibilityRun(pets,normalizeResearch(response(pets),pets),{id:'job1',workspace_id:'workspace'});
+  fill({business:pets,research:run.research,assessment:run.research.assessment});
+  assert.match(w.document.getElementById('bottomLine').textContent,/A Pet's Place/);
+  assert.doesNotMatch(w.document.body.textContent,/Barbed Wire|bookstore|old.*events/i);
+  assert.match(w.document.getElementById('channels').textContent,/clear service information/);
+  assert.match(w.document.getElementById('deepDive').textContent,/Local reference/);
+  assert.equal(w.document.querySelectorAll('input[data-kind]:checked').length,0);
+  fill({business:books,research:run.research,assessment:run.research.assessment});
+  assert.match(w.document.getElementById('bottomLine').textContent,/does not match/);
+  assert.equal(w.document.getElementById('channels').textContent,'');
+  const bookRun=visibilityRun(books,normalizeResearch(response(books),books),{id:'job2',workspace_id:'workspace'});
+  fill({business:books,research:bookRun.research,assessment:bookRun.research.assessment});
+  assert.match(w.document.getElementById('bottomLine').textContent,/Barbed Wire Books/);
+  assert.doesNotMatch(w.document.getElementById('channels').textContent,/A Pet's Place/);
  }finally{dom.window.close()}
 })
 
