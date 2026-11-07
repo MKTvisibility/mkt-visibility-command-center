@@ -113,7 +113,7 @@ export function visibilityRun(business,normalized,job){
  });
  return {workspace_id:job.workspace_id,business_id:business.id,researched_at:a.researched_at,status:'draft',method:'ai_public_web_search',research:{
   business_id:business.id,business:business.name,job_id:job.id,website:business.website,
-  assessment:a,summary:a.summary||'',findings:a.opportunities||[],
+  assessment:a,personal_message:a.personal_message||'',bottom_line:a.bottom_line||'',next_step:a.next_step||'',report_channels:a.report_channels||[],summary:a.summary||'',findings:a.opportunities||[],
   platform_notes:Object.fromEntries(Object.entries(a.platforms||{}).map(([name,p])=>[name,p.explanation||''])),
   social_accounts:Object.entries(a.platforms||{}).filter(([name,p])=>!['Website','Other','Google Business Profile'].includes(name)&&p.url).map(([name,p])=>({platform:name,url:p.url,verification:p.state})),
   tiktok_status:a.platforms?.TikTok?.explanation||'Recent activity unavailable.',

@@ -1,0 +1,1 @@
+alter table public.cc_client_report_requests add column if not exists estimate jsonb, add column if not exists notification_status text not null default 'Not sent', add column if not exists notification_id text;
