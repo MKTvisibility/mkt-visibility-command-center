@@ -1,5 +1,5 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.117.3'
-import {clientSnapshot,mountainSlot,SERVICES,REFUND_POLICY} from './contract.mjs'
+import {clientSnapshot,mountainSlot,SERVICES,REFUND_POLICY,validReportPassword} from './contract.mjs'
 import {gmailClient,MAILBOXES} from './gmail.mjs'
 const admin=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false}})
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info','Access-Control-Allow-Methods':'POST,OPTIONS'}
@@ -14,12 +14,25 @@ function clean(v:any,n=4000){return String(v||'').trim().slice(0,n)}
 function emailText(r:any){return {subject:r.status==='Confirmed'?'Your MKT Visibility phone appointment is confirmed':'Your MKT Visibility request',body:`Hello ${r.name},\n\n${r.status==='Confirmed'?`Your 30-minute phone call with ${r.assignee} is confirmed for ${r.requested_date} at ${r.requested_time} Mountain Time. We will call ${r.phone}.`:r.staff_reply}\n\n${r.status==='Confirmed'&&r.staff_reply?r.staff_reply+'\n\n':''}Questions or changes? Reply to mktvisibility@gmail.com.\n\nMKT Visibility`}}
 Deno.serve(async req=>{if(req.method==='OPTIONS')return new Response(null,{headers:cors});if(req.method!=='POST')return reply({error:'Use POST'},405);try{
  const raw=await req.text();if(raw.length>180000)return reply({error:'Request too large'},413);const d=JSON.parse(raw),action=d.action;
- if(['approve_publish','publish','status','revoke','inbox','resolve','email_preview','send_confirmation'].includes(action)){
+ if(['update_report','approve_publish','publish','status','revoke','inbox','resolve','email_preview','send_confirmation'].includes(action)){
   const {user,b}=await staff(req,String(d.businessId||''));
   if(action==='status'||action==='inbox'){const links=await admin.from('cc_client_report_links').select('archive_id,slug,enabled').eq('business_id',b.id);const requests=action==='inbox'?await admin.from('cc_client_report_requests').select('*').eq('business_id',b.id).order('created_at',{ascending:false}).limit(100):null;if(links.error||requests?.error)throw Error('Unable to load portal records');const archives=await admin.from('cc_visibility_report_archives').select('id,version,approved_at').eq('business_id',b.id).order('version',{ascending:false});return reply({links:links.data,requests:requests?.data||[],archives:archives.data||[]})}
+  if(action==='update_report'){
+   if(d.reviewed!==true)throw Error('Review your saved report before updating the client page.');
+   const {data:link}=await admin.from('cc_client_report_links').select('id,archive_id').eq('archive_id',d.archiveId).eq('business_id',b.id).eq('enabled',true).single();
+   const {data:run}=await admin.from('cc_visibility_research_runs').select('*').eq('id',d.runId).eq('business_id',b.id).single();
+   if(!link||!run||run.research?.business_id!==b.id)throw Error('Report does not match this business.');
+   const {data:versions}=await admin.from('cc_visibility_report_archives').select('version').eq('business_id',b.id).order('version',{ascending:false}).limit(1);
+   const {data:a,error}=await admin.from('cc_visibility_report_archives').insert({business_id:b.id,version:(versions?.[0]?.version||0)+1,approved_by:user.id,approved_at:new Date().toISOString(),snapshot:clientSnapshot(b,{...run.research,researched_at:run.researched_at})}).select('id').single();
+   if(error)throw Error('Unable to save report version. Refresh and retry.');
+   const updated=await admin.from('cc_client_report_links').update({archive_id:a.id}).eq('id',link.id).eq('archive_id',link.archive_id).select('id').maybeSingle();
+   if(updated.error||!updated.data)throw Error('The report changed in another session. Refresh before retrying.');
+   await admin.from('cc_client_report_sessions').delete().eq('link_id',link.id);
+   return reply({ok:true,archiveId:a.id});
+  }
   if(action==='revoke'){const {error}=await admin.from('cc_client_report_links').update({enabled:false,revoked_at:new Date().toISOString()}).eq('archive_id',d.archiveId).eq('business_id',b.id);if(error)throw error;return reply({ok:true})}
   if(action==='approve_publish'||action==='publish'){
-   const password=String(d.password||'');if(password.length<12||password.length>128)throw Error('Use a password of 12–128 characters.');let archive:any;
+   const password=String(d.password||'');if(!validReportPassword(password))throw Error('Use a 4–8 digit code or a password of 12–128 characters.');let archive:any;
    if(action==='approve_publish'){
     if(d.reviewed!==true)throw Error('Review report accuracy before publishing.');
     const {data:run}=await admin.from('cc_visibility_research_runs').select('*').eq('id',d.runId).eq('business_id',b.id).single();if(!run||run.research?.business_id&&run.research.business_id!==b.id)throw Error('Research does not match this business.');

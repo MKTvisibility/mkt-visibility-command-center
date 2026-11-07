@@ -20,7 +20,7 @@ function fill(payload){
   document.getElementById('bottom').textContent='The saved research does not match this business. Run a new Visibility Check from its profile.';
   for(const id of ['deepDive','closing','strengthTop','weakTop'])document.getElementById(id).replaceChildren();document.getElementById('status').textContent='Business mismatch — report blocked.';return;
  }
- document.title=b.name+' | Visibility & Estimate';document.getElementById('preparedFor').textContent='Prepared for '+(b.contact_name||b.name)+(b.city?' · '+b.city:'')+(b.website?' · '+b.website:'');document.querySelector('.sheet .bar span:last-child').textContent='FREE VISIBILITY CHECK'+(b.city?' | '+b.city.toUpperCase():'');
+ document.title=research.report_title||b.name+' Visibility Check';document.querySelector('.sheet h1').textContent=document.title;document.getElementById('preparedFor').textContent='Prepared for '+(b.contact_name||b.name)+(b.city?' · '+b.city:'')+(b.website?' · '+b.website:'');document.querySelector('.sheet .bar span:last-child').textContent='FREE VISIBILITY CHECK'+(b.city?' | '+b.city.toUpperCase():'');
  if(payload.researchDate)document.querySelectorAll('.today').forEach(n=>n.textContent=new Date(payload.researchDate).toLocaleDateString('en-US',{timeZone:'America/Denver'}));
  const platforms=assessment.platforms||{},all=Object.entries(platforms).filter(([,p])=>p&&p.state!=='Not Applicable'&&(p.explanation||p.url||Number.isInteger(p.score)));
  const strong=all.filter(([,p])=>Number.isInteger(p.score)&&p.score>=4),weak=all.filter(([,p])=>p.state==='Missing'||Number.isInteger(p.score)&&p.score<=3);
