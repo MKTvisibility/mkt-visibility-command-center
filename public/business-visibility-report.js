@@ -1,4 +1,4 @@
-import {setups,monthly,money,estimateSelection} from './visibility-pricing.mjs';
+import {setups,monthly,money,estimateSelection} from './visibility-pricing.mjs?v=pricing-20261108';
 const $=id=>document.getElementById(id),escapeText=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeUrl=value=>{try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)?u.href:''}catch{return ''}};
 const list=values=>'<ul>'+values.map(x=>'<li>'+escapeText(x)+'</li>').join('')+'</ul>';
