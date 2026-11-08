@@ -37,7 +37,9 @@ test('report renders distinct business findings, no bookstore boilerplate, and b
   assert.match(w.document.getElementById('bottomLine').textContent,/A Pet's Place/);
   assert.doesNotMatch(w.document.body.textContent,/Barbed Wire|bookstore|old.*events/i);
   assert.match(w.document.getElementById('channels').textContent,/clear service information/);
-  assert.match(w.document.getElementById('deepDive').textContent,/Local reference/);
+  assert.equal(w.document.getElementById('researchDetails'),null);
+  assert.equal(w.document.getElementById('deepDive'),null);
+  assert.doesNotMatch(w.document.body.textContent,/Supporting research|Local reference/);
   assert.equal(w.document.querySelectorAll('input[data-kind]:checked').length,0);
   fill({business:books,research:run.research,assessment:run.research.assessment});
   assert.match(w.document.getElementById('bottomLine').textContent,/does not match/);
